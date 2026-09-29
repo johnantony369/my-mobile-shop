@@ -46,11 +46,11 @@ export function useAuth(): UseAuthReturn {
       return;
     }
 
-    const unsubscribeSync = startAutoSync(user.uid, (state, lastSync) => {
+    const unsubscribeSync = startAutoSync(user.uid, (state, lastSync, errorMsg) => {
       setSyncState(state);
       if (lastSync) setLastSyncTime(lastSync);
       if (state === 'error') {
-        setSyncError('Sync failed. Please check internet connection.');
+        setSyncError(errorMsg || 'Sync failed. Please check internet connection.');
       } else {
         setSyncError(null);
       }

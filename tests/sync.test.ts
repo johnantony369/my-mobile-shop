@@ -111,4 +111,33 @@ describe('Firebase Sync Engine Reconciliation', () => {
     expect(localJob).toBeDefined();
     expect(localJob?.customerName).toBe('Anil');
   });
+
+  it('deletes local entry when remote entry has deletedAt tombstone', async () => {
+    const id = await db.entries.add({
+      cloudId: 'cloud-entry-to-delete',
+      type: 'in',
+      amount: 100,
+      date: '2026-09-29',
+      createdAt: 1727600000000,
+      updatedAt: '2026-09-29T10:00:00.000Z',
+      syncStatus: 'synced',
+    });
+
+    const tombstoneEntry: Entry = {
+      cloudId: 'cloud-entry-to-delete',
+      type: 'in',
+      amount: 100,
+      date: '2026-09-29',
+      createdAt: 1727600000000,
+      updatedAt: '2026-09-29T10:05:00.000Z',
+      deletedAt: '2026-09-29T10:05:00.000Z',
+      syncStatus: 'synced',
+    };
+
+    const count = await reconcileRemoteEntries([tombstoneEntry]);
+    expect(count).toBe(1);
+
+    const local = await db.entries.get(id);
+    expect(local).toBeUndefined();
+  });
 });

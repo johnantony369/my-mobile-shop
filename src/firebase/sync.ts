@@ -1,9 +1,8 @@
 import {
   collection,
   doc,
+  writeBatch,
   getDocs,
-  deleteDoc,
-  setDoc,
   onSnapshot,
   Unsubscribe
 } from 'firebase/firestore';
@@ -92,6 +91,16 @@ export async function reconcileRemoteSettings(remoteSettings: AppSettings): Prom
 export async function pushPendingChanges(uid: string): Promise<number> {
   if (!dbFirestore) return 0;
   let pushedCount = 0;
+  let currentBatch = writeBatch(dbFirestore);
+  let batchOps = 0;
+
+  const commitBatchIfNeeded = async () => {
+    if (batchOps >= 400 && dbFirestore) {
+      await currentBatch.commit();
+      currentBatch = writeBatch(dbFirestore);
+      batchOps = 0;
+    }
+  };
 
   // 1. Pending / Deleted entries
   const allEntries = await db.entries.toArray();
@@ -102,14 +111,26 @@ export async function pushPendingChanges(uid: string): Promise<number> {
     const docRef = doc(dbFirestore, 'users', uid, 'entries', entry.cloudId);
 
     if (entry.syncStatus === 'deleted') {
-      await deleteDoc(docRef);
+      const now = new Date().toISOString();
+      const deletedAt = entry.deletedAt || now;
+      // Soft-delete tombstone in Firestore so other devices receive the deletion
+      currentBatch.set(docRef, {
+        cloudId: entry.cloudId,
+        deletedAt,
+        updatedAt: now,
+        syncStatus: 'synced',
+      }, { merge: true });
       if (entry.id) await db.entries.delete(entry.id);
+      batchOps++;
       pushedCount++;
+      await commitBatchIfNeeded();
     } else {
       const { id, ...dataToSync } = entry;
-      await setDoc(docRef, { ...dataToSync, syncStatus: 'synced' }, { merge: true });
+      currentBatch.set(docRef, { ...dataToSync, syncStatus: 'synced' }, { merge: true });
       if (entry.id) await db.entries.update(entry.id, { syncStatus: 'synced' });
+      batchOps++;
       pushedCount++;
+      await commitBatchIfNeeded();
     }
   }
 
@@ -122,14 +143,25 @@ export async function pushPendingChanges(uid: string): Promise<number> {
     const docRef = doc(dbFirestore, 'users', uid, 'jobs', job.cloudId);
 
     if (job.syncStatus === 'deleted') {
-      await deleteDoc(docRef);
+      const now = new Date().toISOString();
+      const deletedAt = job.deletedAt || now;
+      currentBatch.set(docRef, {
+        cloudId: job.cloudId,
+        deletedAt,
+        updatedAt: now,
+        syncStatus: 'synced',
+      }, { merge: true });
       if (job.id) await db.jobs.delete(job.id);
+      batchOps++;
       pushedCount++;
+      await commitBatchIfNeeded();
     } else {
       const { id, ...dataToSync } = job;
-      await setDoc(docRef, { ...dataToSync, syncStatus: 'synced' }, { merge: true });
+      currentBatch.set(docRef, { ...dataToSync, syncStatus: 'synced' }, { merge: true });
       if (job.id) await db.jobs.update(job.id, { syncStatus: 'synced' });
+      batchOps++;
       pushedCount++;
+      await commitBatchIfNeeded();
     }
   }
 
@@ -138,11 +170,16 @@ export async function pushPendingChanges(uid: string): Promise<number> {
   if (localSettings && localSettings.syncStatus !== 'synced') {
     const docRef = doc(dbFirestore, 'users', uid, 'settings', 'appSettings');
     const { id, ...settingsData } = localSettings;
-    await setDoc(docRef, { ...settingsData, syncStatus: 'synced' }, { merge: true });
+    currentBatch.set(docRef, { ...settingsData, syncStatus: 'synced' }, { merge: true });
     if (localSettings.id) {
       await db.settings.update(localSettings.id, { syncStatus: 'synced' });
     }
+    batchOps++;
     pushedCount++;
+  }
+
+  if (batchOps > 0) {
+    await currentBatch.commit();
   }
 
   return pushedCount;
@@ -203,7 +240,7 @@ export async function syncNow(userId?: string): Promise<{
 
 export function startAutoSync(
   uid: string,
-  onStatusChange?: (state: SyncState, lastSync?: Date) => void
+  onStatusChange?: (state: SyncState, lastSync?: Date, errorMsg?: string) => void
 ): () => void {
   if (!isFirebaseConfigured() || !dbFirestore) {
     onStatusChange?.('offline');
@@ -225,7 +262,7 @@ export function startAutoSync(
     if (result.success) {
       onStatusChange?.('synced', new Date());
     } else {
-      onStatusChange?.('error');
+      onStatusChange?.('error', undefined, result.error);
     }
   };
 
@@ -241,26 +278,34 @@ export function startAutoSync(
     window.addEventListener('offline', handleOffline);
   }
 
-  // Live snapshot listeners for real-time multi-device changes
+  // Live snapshot listeners for real-time multi-device changes using delta docChanges()
   try {
     const entriesRef = collection(dbFirestore, 'users', uid, 'entries');
     const unsubEntries = onSnapshot(entriesRef, snapshot => {
-      if (snapshot.metadata.hasPendingWrites) return; // Ignore our own local writes
-      const remote = snapshot.docs.map(d => d.data() as Entry);
-      reconcileRemoteEntries(remote).then(() => {
-        onStatusChange?.('synced', new Date());
-      });
-    }, () => {});
+      if (snapshot.metadata.hasPendingWrites) return;
+      const changed = snapshot.docChanges().map(change => change.doc.data() as Entry);
+      if (changed.length > 0) {
+        reconcileRemoteEntries(changed).then(() => {
+          onStatusChange?.('synced', new Date());
+        });
+      }
+    }, (err) => {
+      onStatusChange?.('error', undefined, err.message);
+    });
     unsubscribers.push(unsubEntries);
 
     const jobsRef = collection(dbFirestore, 'users', uid, 'jobs');
     const unsubJobs = onSnapshot(jobsRef, snapshot => {
       if (snapshot.metadata.hasPendingWrites) return;
-      const remote = snapshot.docs.map(d => d.data() as Job);
-      reconcileRemoteJobs(remote).then(() => {
-        onStatusChange?.('synced', new Date());
-      });
-    }, () => {});
+      const changed = snapshot.docChanges().map(change => change.doc.data() as Job);
+      if (changed.length > 0) {
+        reconcileRemoteJobs(changed).then(() => {
+          onStatusChange?.('synced', new Date());
+        });
+      }
+    }, (err) => {
+      onStatusChange?.('error', undefined, err.message);
+    });
     unsubscribers.push(unsubJobs);
   } catch (e) {
     console.warn('Real-time listeners could not be attached:', e);
