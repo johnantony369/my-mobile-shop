@@ -12,6 +12,7 @@ import { requestPersistentStorage } from './utils/storage';
 import { useAuth } from './firebase/useAuth';
 import { LoginScreen } from './screens/LoginScreen';
 import { InstallBanner } from './components/InstallBanner';
+import { PaywallModal } from './components/PaywallModal';
 import { Language } from './types';
 import { Cloud, CloudOff, RefreshCw, AlertTriangle } from 'lucide-react';
 
@@ -19,6 +20,7 @@ export default function App() {
   const [currentTab, setCurrentTab] = useState<TabType>('book');
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [loadingTimeout, setLoadingTimeout] = useState(false);
+  const [isPaywallOpen, setIsPaywallOpen] = useState(false);
   const { user, loading: authLoading, isConfigured, syncState, triggerSync } = useAuth();
 
   useEffect(() => {
@@ -115,6 +117,7 @@ export default function App() {
   const showRepairs = !!settings.showRepairs;
   const trialDays = getTrialDaysRemaining(settings.firstLaunchDate);
   const isReadOnly = !settings.activated && trialDays <= 0;
+  const isActivated = !!settings.activated;
 
   return (
     <div className="min-h-screen bg-iosBg text-iosLabel font-sans flex flex-col justify-between selection:bg-iosBlue/20">
@@ -149,6 +152,9 @@ export default function App() {
             language={language}
             shopName={settings.shopName}
             isReadOnly={isReadOnly}
+            isActivated={isActivated}
+            trialDays={trialDays}
+            onOpenPaywall={() => setIsPaywallOpen(true)}
           />
         )}
         {showRepairs && currentTab === 'repairs' && (
@@ -156,6 +162,9 @@ export default function App() {
             language={language}
             shopName={settings.shopName}
             isReadOnly={isReadOnly}
+            isActivated={isActivated}
+            trialDays={trialDays}
+            onOpenPaywall={() => setIsPaywallOpen(true)}
           />
         )}
         {currentTab === 'reports' && (
@@ -163,6 +172,8 @@ export default function App() {
             language={language}
             shopName={settings.shopName}
             showRepairs={showRepairs}
+            isActivated={isActivated}
+            onOpenPaywall={() => setIsPaywallOpen(true)}
           />
         )}
         {currentTab === 'settings' && (
@@ -171,6 +182,7 @@ export default function App() {
             language={language}
             onLanguageChange={() => setRefreshTrigger((prev) => prev + 1)}
             onRefreshSettings={() => setRefreshTrigger((prev) => prev + 1)}
+            onOpenPaywall={() => setIsPaywallOpen(true)}
           />
         )}
       </main>
@@ -185,6 +197,15 @@ export default function App() {
         language={language}
         showRepairs={showRepairs}
         readyCount={readyJobsCount}
+      />
+
+      {/* Premium Paywall Modal */}
+      <PaywallModal
+        isOpen={isPaywallOpen}
+        onClose={() => setIsPaywallOpen(false)}
+        language={language}
+        onActivated={() => setRefreshTrigger((prev) => prev + 1)}
+        trialDaysRemaining={trialDays}
       />
     </div>
   );

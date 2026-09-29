@@ -10,18 +10,24 @@ import { DailyRitualCard } from '../components/DailyRitualCard';
 import { EntryList } from '../components/EntryList';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { AddEditSheet } from './AddEditSheet';
-import { Plus, Calendar } from 'lucide-react';
+import { Plus, Calendar, Crown } from 'lucide-react';
 
 interface BookScreenProps {
   language: Language;
   shopName: string;
   isReadOnly: boolean;
+  isActivated?: boolean;
+  trialDays?: number;
+  onOpenPaywall?: () => void;
 }
 
 export const BookScreen: React.FC<BookScreenProps> = ({
   language,
   shopName,
   isReadOnly,
+  isActivated,
+  trialDays,
+  onOpenPaywall,
 }) => {
   const [selectedDate, setSelectedDate] = useState<string>(getLocalDateString());
   const [isScrolled, setIsScrolled] = useState(false);
@@ -87,9 +93,21 @@ export const BookScreen: React.FC<BookScreenProps> = ({
             {shopName || 'My Mobile Shop'}
           </span>
           {isScrolled && (
-            <span className="text-xs text-iosBlue font-semibold truncate max-w-[130px]">
-              {dateTitle}
-            </span>
+            <div className="flex items-center space-x-2">
+              {!isActivated && onOpenPaywall && (
+                <button
+                  type="button"
+                  onClick={onOpenPaywall}
+                  className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-xs active:scale-95 transition-all"
+                >
+                  <Crown className="w-3 h-3 text-yellow-200" />
+                  <span>PRO</span>
+                </button>
+              )}
+              <span className="text-xs text-iosBlue font-semibold truncate max-w-[130px]">
+                {dateTitle}
+              </span>
+            </div>
           )}
         </div>
       </div>
@@ -101,9 +119,29 @@ export const BookScreen: React.FC<BookScreenProps> = ({
             <h1 className="text-[30px] font-black text-black tracking-tight leading-tight">
               {shopName || 'My Mobile Shop'}
             </h1>
-            <div className="flex items-center space-x-1 text-xs font-medium text-[#8E8E93] bg-white px-2.5 py-1 rounded-full border border-black/[0.04] shadow-xs">
-              <Calendar className="w-3.5 h-3.5 text-iosBlue" />
-              <span>{selectedDate}</span>
+            <div className="flex items-center space-x-1.5">
+              {!isActivated && onOpenPaywall && (
+                <button
+                  type="button"
+                  onClick={onOpenPaywall}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold active:scale-95 transition-all shadow-xs border ${
+                    isReadOnly
+                      ? 'bg-red-50 text-iosRed border-red-200 animate-pulse'
+                      : 'bg-gradient-to-r from-amber-50 to-yellow-50 text-amber-900 border-amber-200/90 hover:from-amber-100 hover:to-yellow-100'
+                  }`}
+                >
+                  <Crown className={`w-3.5 h-3.5 ${isReadOnly ? 'text-iosRed' : 'text-amber-600'}`} />
+                  <span>
+                    {isReadOnly
+                      ? (language === 'ml' ? 'അൺലോക്ക് പ്രോ' : 'Unlock Pro')
+                      : (language === 'ml' ? `പ്രോ: ${trialDays ?? 0}d` : `Pro: ${trialDays ?? 0}d left`)}
+                  </span>
+                </button>
+              )}
+              <div className="flex items-center space-x-1 text-xs font-medium text-[#8E8E93] bg-white px-2.5 py-1 rounded-full border border-black/[0.04] shadow-xs">
+                <Calendar className="w-3.5 h-3.5 text-iosBlue" />
+                <span>{selectedDate}</span>
+              </div>
             </div>
           </div>
           <p className="text-[17px] font-bold text-iosBlue tracking-tight mt-0.5">
@@ -146,16 +184,31 @@ export const BookScreen: React.FC<BookScreenProps> = ({
       <div className="fixed bottom-[calc(env(safe-area-inset-bottom)+66px)] right-5 z-30">
         <button
           type="button"
-          onClick={handleOpenAdd}
-          aria-label={t('add_entry', language)}
+          onClick={() => {
+            if (isReadOnly && onOpenPaywall) {
+              onOpenPaywall();
+            } else {
+              handleOpenAdd();
+            }
+          }}
+          aria-label={isReadOnly ? 'Unlock Pro to Add' : t('add_entry', language)}
           className={`h-13 px-5 py-3 rounded-full flex items-center space-x-2 font-bold text-[15px] shadow-lg active:scale-95 transition-all duration-150 ${
             isReadOnly
-              ? 'bg-gray-400 text-white cursor-not-allowed'
+              ? 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-amber-500/35'
               : 'bg-iosBlue text-white shadow-iosBlue/35 hover:bg-blue-600'
           }`}
         >
-          <Plus className="w-5 h-5 stroke-[2.5]" />
-          <span>{t('add_entry', language)}</span>
+          {isReadOnly ? (
+            <>
+              <Crown className="w-5 h-5 text-yellow-200" />
+              <span>{language === 'ml' ? 'പ്രോ അൺലോക്ക് ചെയ്യുക' : 'Unlock Pro to Add'}</span>
+            </>
+          ) : (
+            <>
+              <Plus className="w-5 h-5 stroke-[2.5]" />
+              <span>{t('add_entry', language)}</span>
+            </>
+          )}
         </button>
       </div>
 

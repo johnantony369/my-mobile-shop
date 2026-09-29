@@ -27,7 +27,10 @@ import {
   LogOut,
   Smartphone,
   ArrowDownToLine,
+  Crown,
+  ChevronRight,
 } from 'lucide-react';
+import { PaywallModal } from '../components/PaywallModal';
 
 /** Standalone sub-component so it has its own state without polluting SettingsScreen */
 const AppUpdatesSection: React.FC<{ language: Language }> = ({ language }) => {
@@ -149,6 +152,7 @@ interface SettingsScreenProps {
   language: Language;
   onLanguageChange: (lang: Language) => void;
   onRefreshSettings: () => void;
+  onOpenPaywall?: () => void;
 }
 
 export const SettingsScreen: React.FC<SettingsScreenProps> = ({
@@ -156,9 +160,20 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   language,
   onLanguageChange,
   onRefreshSettings,
+  onOpenPaywall,
 }) => {
   const [shopName, setShopName] = useState(settings.shopName);
   const [isSavedNotice, setIsSavedNotice] = useState(false);
+
+  // Paywall state
+  const [isLocalPaywallOpen, setIsLocalPaywallOpen] = useState(false);
+  const handleOpenPaywall = () => {
+    if (onOpenPaywall) {
+      onOpenPaywall();
+    } else {
+      setIsLocalPaywallOpen(true);
+    }
+  };
 
   // Activation state
   const [activationInput, setActivationInput] = useState('');
@@ -292,6 +307,58 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             <div className="flex-1 text-xs text-amber-900 leading-relaxed font-medium">
               {t('backup_warning_30days', language)}
             </div>
+          </div>
+        )}
+
+        {/* Featured Lifetime Pro Upgrade Banner */}
+        {!(settings.activated || activationSuccess) ? (
+          <div className="bg-gradient-to-br from-amber-500 via-amber-600 to-yellow-600 rounded-[16px] p-4 text-white shadow-md shadow-amber-500/20 relative overflow-hidden">
+            <div className="absolute -right-4 -bottom-4 w-28 h-28 bg-white/10 rounded-full blur-xl pointer-events-none" />
+            <div className="flex items-center justify-between mb-2">
+              <span className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wider bg-black/20 backdrop-blur-md px-2.5 py-0.5 rounded-full border border-white/20">
+                <Crown className="w-3.5 h-3.5 text-yellow-300" />
+                <span>{t('paywall_pricing_badge', language)}</span>
+              </span>
+              <span className="text-[11px] font-bold text-amber-100 bg-white/20 px-2 py-0.5 rounded-full">
+                {isExpired
+                  ? t('trial_expired', language)
+                  : t('trial_days_remaining', language, { days: trialDays })}
+              </span>
+            </div>
+
+            <h3 className="text-[19px] font-extrabold tracking-tight leading-tight mt-1">
+              {t('upgrade_to_pro', language)}
+            </h3>
+            <p className="text-xs text-amber-100 font-medium mt-1 leading-relaxed">
+              {t('paywall_subtitle', language)}
+            </p>
+
+            <button
+              type="button"
+              onClick={handleOpenPaywall}
+              className="mt-3.5 w-full py-3 px-4 bg-white hover:bg-amber-50 text-slate-900 rounded-[12px] font-bold text-sm flex items-center justify-center gap-2 shadow-sm active:scale-[0.98] transition-all"
+            >
+              <Sparkles className="w-4 h-4 text-amber-600" />
+              <span>{t('upgrade_button', language)}</span>
+              <ChevronRight className="w-4 h-4 ml-0.5 text-slate-400" />
+            </button>
+          </div>
+        ) : (
+          <div className="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-[16px] p-4 text-white shadow-sm flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shadow-xs">
+                <Crown className="w-5 h-5 text-yellow-300" />
+              </div>
+              <div>
+                <h3 className="text-[15px] font-bold tracking-tight">
+                  {t('pro_member_badge', language)}
+                </h3>
+                <p className="text-xs text-emerald-100">
+                  {t('pro_active_desc', language)}
+                </p>
+              </div>
+            </div>
+            <CheckCircle2 className="w-6 h-6 text-white shrink-0" />
           </div>
         )}
 
@@ -437,6 +504,21 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               >
                 {t('activate_btn', language)}
               </button>
+
+              <div className="pt-2 text-center border-t border-[#E5E5EA]">
+                <button
+                  type="button"
+                  onClick={handleOpenPaywall}
+                  className="text-xs font-semibold text-iosBlue hover:opacity-80 inline-flex items-center gap-1 active:scale-95 transition-all"
+                >
+                  <Crown className="w-3.5 h-3.5 text-amber-500" />
+                  <span>
+                    {language === 'ml'
+                      ? 'കോഡ് ഇല്ലേ? ലൈഫ്‌ടൈം പ്രോ വാങ്ങുക'
+                      : "Don't have a code? Buy Lifetime Access"}
+                  </span>
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -730,6 +812,15 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         onClose={() => setIsLoginModalOpen(false)}
         onSuccess={() => onRefreshSettings()}
         language={language}
+      />
+
+      {/* Paywall Bottom Sheet */}
+      <PaywallModal
+        isOpen={isLocalPaywallOpen}
+        onClose={() => setIsLocalPaywallOpen(false)}
+        language={language}
+        onActivated={onRefreshSettings}
+        trialDaysRemaining={trialDays}
       />
     </div>
   );

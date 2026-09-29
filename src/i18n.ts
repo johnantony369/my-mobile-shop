@@ -328,6 +328,91 @@ export const translations = {
     ml: 'ആപ്പ് വിജയകരമായി ആക്റ്റിവേറ്റ് ചെയ്തു!',
     en: 'App successfully activated!',
   },
+  // Paywall & Upgrade
+  pro_badge: {
+    ml: 'പ്രോ',
+    en: 'PRO',
+  },
+  upgrade_to_pro: {
+    ml: 'പ്രോയിലേക്ക് അപ്‌ഗ്രേഡ് ചെയ്യുക',
+    en: 'Upgrade to Lifetime Pro',
+  },
+  upgrade_button: {
+    ml: 'പ്രോ നേടുക',
+    en: 'Upgrade to Pro',
+  },
+  paywall_title: {
+    ml: 'My Mobile Shop പ്രോ നേടൂ',
+    en: 'Unlock My Mobile Shop Pro',
+  },
+  paywall_subtitle: {
+    ml: 'ഒരു തവണ വാങ്ങൂ, എല്ലാ സൗകര്യങ്ങളും ആജീവനാന്തം ആസ്വദിക്കൂ',
+    en: 'One-time payment, lifetime unlimited access',
+  },
+  paywall_tagline: {
+    ml: 'പ്രതിമാസ ഫീസുകളില്ല • ആജീവനാന്ത ലൈസൻസ്',
+    en: 'No monthly subscriptions • Lifetime Validity',
+  },
+  paywall_feature_1: {
+    ml: 'അൺലിമിറ്റഡ് ഡേ ബുക്ക് കണക്കുകളും വിൽപ്പനയും ചെലവുകളും',
+    en: 'Unlimited daily transactions, sales & expenses',
+  },
+  paywall_feature_2: {
+    ml: 'ഓട്ടോമാറ്റിക് ക്ലൗഡ് ബാക്കപ്പും ഒന്നിലധികം ഉപകരണങ്ങളിൽ സിങ്കും',
+    en: 'Automatic cloud backup & multi-device sync',
+  },
+  paywall_feature_3: {
+    ml: 'മൊബൈൽ സർവീസ് / റിപ്പയർ ട്രാക്കിംഗ് പൂർണ്ണമായും',
+    en: 'Complete mobile service & repair management module',
+  },
+  paywall_feature_4: {
+    ml: 'മാസ റിപ്പോർട്ടുകളും ഒറ്റ ക്ലിക്കിൽ Excel / CSV ഡൗൺലോഡും',
+    en: 'Monthly sales analytics & one-click Excel / CSV export',
+  },
+  paywall_feature_5: {
+    ml: '100% ഓഫ്‌ലൈൻ വർക്കിംഗ് + ഭാവിയിലെ എല്ലാ പുതിയ അപ്‌ഡേറ്റുകളും സൗജന്യം',
+    en: '100% offline-first + all future app updates included',
+  },
+  paywall_feature_6: {
+    ml: 'നിങ്ങളുടെ കടയുടെ ഡാറ്റ സുരക്ഷിതമായി നിങ്ങളുടെ ഫോണിൽ മാത്രം',
+    en: 'Fast, secure & private — your shop data stays yours',
+  },
+  paywall_pricing_badge: {
+    ml: 'പ്രത്യേക ഓഫർ • ഒറ്റത്തവണ പേയ്‌മെന്റ്',
+    en: 'Special Offer • One-Time Payment',
+  },
+  paywall_cta: {
+    ml: 'ലൈഫ്‌ടൈം പ്രോ നേടുക (Get Lifetime Access)',
+    en: 'Get Lifetime Access',
+  },
+  paywall_secure_note: {
+    ml: 'Razorpay വഴി 100% സുരക്ഷിത പേയ്‌മെന്റ് (UPI, GPay, PhonePe, Cards)',
+    en: '100% Secure via Razorpay (UPI, GPay, PhonePe, Cards)',
+  },
+  paywall_have_code: {
+    ml: 'ഇതിനകം ആക്റ്റിവേഷൻ കോഡ് ഉണ്ടോ? ഇവിടെ നൽകുക',
+    en: 'Already paid? Enter Activation Code',
+  },
+  paywall_enter_code: {
+    ml: 'ആക്റ്റിവേഷൻ കോഡ് നൽകുക',
+    en: 'Enter Activation Code',
+  },
+  paywall_verify_btn: {
+    ml: 'പരിശോധിച്ച് ആക്റ്റിവേറ്റ് ചെയ്യുക',
+    en: 'Verify & Activate',
+  },
+  paywall_close: {
+    ml: 'പിന്നീടാവാം',
+    en: 'Maybe Later',
+  },
+  pro_member_badge: {
+    ml: 'ലൈഫ്‌ടൈം പ്രോ അംഗം',
+    en: 'Lifetime Pro Member',
+  },
+  pro_active_desc: {
+    ml: 'നിങ്ങളുടെ ആപ്പ് പൂർണ്ണമായും ആക്റ്റിവേറ്റ് ചെയ്തിരിക്കുന്നു.',
+    en: 'All premium features and lifetime updates unlocked.',
+  },
   section_backup: {
     ml: 'ഡാറ്റ ബാക്കപ്പും പുനഃസ്ഥാപനവും',
     en: 'Data Backup & Restore',

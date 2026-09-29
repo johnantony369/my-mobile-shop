@@ -16,12 +16,16 @@ import {
   Clock,
   MessageSquare,
   X,
+  Crown,
 } from 'lucide-react';
 
 interface RepairsScreenProps {
   language: Language;
   shopName: string;
   isReadOnly: boolean;
+  isActivated?: boolean;
+  trialDays?: number;
+  onOpenPaywall?: () => void;
 }
 
 type RepairSegment = 'active' | 'ready' | 'history';
@@ -30,6 +34,9 @@ export const RepairsScreen: React.FC<RepairsScreenProps> = ({
   language,
   shopName,
   isReadOnly,
+  isActivated,
+  trialDays,
+  onOpenPaywall,
 }) => {
   const [currentSegment, setCurrentSegment] = useState<RepairSegment>('active');
   const [searchQuery, setSearchQuery] = useState('');
@@ -112,9 +119,29 @@ export const RepairsScreen: React.FC<RepairsScreenProps> = ({
             <h1 className="text-[30px] font-black text-black tracking-tight leading-tight">
               {shopName || 'My Mobile Shop'}
             </h1>
-            <span className="text-xs font-bold text-iosBlue bg-blue-50 px-2.5 py-1 rounded-full border border-blue-100">
-              {t('tab_repairs', language)}
-            </span>
+            <div className="flex items-center space-x-1.5">
+              {!isActivated && onOpenPaywall && (
+                <button
+                  type="button"
+                  onClick={onOpenPaywall}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold active:scale-95 transition-all shadow-xs border ${
+                    isReadOnly
+                      ? 'bg-red-50 text-iosRed border-red-200 animate-pulse'
+                      : 'bg-gradient-to-r from-amber-50 to-yellow-50 text-amber-900 border-amber-200/90 hover:from-amber-100 hover:to-yellow-100'
+                  }`}
+                >
+                  <Crown className={`w-3.5 h-3.5 ${isReadOnly ? 'text-iosRed' : 'text-amber-600'}`} />
+                  <span>
+                    {isReadOnly
+                      ? (language === 'ml' ? 'അൺലോക്ക് പ്രോ' : 'Unlock Pro')
+                      : (language === 'ml' ? `പ്രോ: ${trialDays ?? 0}d` : `Pro: ${trialDays ?? 0}d left`)}
+                  </span>
+                </button>
+              )}
+              <span className="text-xs font-bold text-iosBlue bg-blue-50 px-2.5 py-1 rounded-full border border-blue-100">
+                {t('tab_repairs', language)}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -185,13 +212,21 @@ export const RepairsScreen: React.FC<RepairsScreenProps> = ({
               <button
                 type="button"
                 onClick={() => {
-                  setJobToEdit(null);
-                  setIsAddEditOpen(true);
+                  if (isReadOnly && onOpenPaywall) {
+                    onOpenPaywall();
+                  } else {
+                    setJobToEdit(null);
+                    setIsAddEditOpen(true);
+                  }
                 }}
-                className="mt-4 inline-flex items-center space-x-1.5 px-4 py-2 bg-iosBlue text-white text-sm font-semibold rounded-full shadow-sm active:opacity-80 transition-opacity"
+                className={`mt-4 inline-flex items-center space-x-1.5 px-4 py-2 text-sm font-semibold rounded-full shadow-sm active:opacity-80 transition-opacity ${
+                  isReadOnly
+                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white'
+                    : 'bg-iosBlue text-white'
+                }`}
               >
-                <Plus className="w-4 h-4" />
-                <span>{t('new_job_btn', language)}</span>
+                {isReadOnly ? <Crown className="w-4 h-4 text-yellow-200" /> : <Plus className="w-4 h-4" />}
+                <span>{isReadOnly ? (language === 'ml' ? 'പ്രോ അൺലോക്ക് ചെയ്യുക' : 'Unlock Pro') : t('new_job_btn', language)}</span>
               </button>
             )}
           </div>
@@ -271,18 +306,30 @@ export const RepairsScreen: React.FC<RepairsScreenProps> = ({
         <button
           type="button"
           onClick={() => {
-            setJobToEdit(null);
-            setIsAddEditOpen(true);
+            if (isReadOnly && onOpenPaywall) {
+              onOpenPaywall();
+            } else {
+              setJobToEdit(null);
+              setIsAddEditOpen(true);
+            }
           }}
-          disabled={isReadOnly}
           className={`h-13 px-5 py-3 rounded-full flex items-center space-x-2 font-bold text-[15px] shadow-lg active:scale-95 transition-all duration-150 ${
             isReadOnly
-              ? 'bg-gray-400 text-white cursor-not-allowed'
+              ? 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-amber-500/35'
               : 'bg-iosBlue text-white shadow-iosBlue/35 hover:bg-blue-600'
           }`}
         >
-          <Plus className="w-5 h-5 stroke-[2.5]" />
-          <span>{t('new_job_btn', language)}</span>
+          {isReadOnly ? (
+            <>
+              <Crown className="w-5 h-5 text-yellow-200" />
+              <span>{language === 'ml' ? 'പ്രോ അൺലോക്ക് ചെയ്യുക' : 'Unlock Pro'}</span>
+            </>
+          ) : (
+            <>
+              <Plus className="w-5 h-5 stroke-[2.5]" />
+              <span>{t('new_job_btn', language)}</span>
+            </>
+          )}
         </button>
       </div>
 

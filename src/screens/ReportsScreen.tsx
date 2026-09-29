@@ -7,18 +7,22 @@ import { formatMonthName } from '../utils/date';
 import { DailyBarChart } from '../components/DailyBarChart';
 import { buildShareSummaryText, shareSummary } from '../utils/share';
 import { exportEntriesToCSV } from '../utils/csv';
-import { ChevronLeft, ChevronRight, Share2, Download, ArrowDownLeft, ArrowUpRight, TrendingUp, Wrench } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Share2, Download, ArrowDownLeft, ArrowUpRight, TrendingUp, Wrench, Crown } from 'lucide-react';
 
 interface ReportsScreenProps {
   language: Language;
   shopName: string;
   showRepairs?: boolean;
+  isActivated?: boolean;
+  onOpenPaywall?: () => void;
 }
 
 export const ReportsScreen: React.FC<ReportsScreenProps> = ({
   language,
   shopName,
   showRepairs = false,
+  isActivated,
+  onOpenPaywall,
 }) => {
   const today = new Date();
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
@@ -109,9 +113,21 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
           <h1 className="text-[30px] font-black text-black tracking-tight leading-tight">
             {shopName || 'My Mobile Shop'}
           </h1>
-          <span className="text-xs font-bold text-iosBlue bg-blue-50 px-2.5 py-1 rounded-full border border-blue-100">
-            {t('reports_header', language)}
-          </span>
+          <div className="flex items-center space-x-1.5">
+            {!isActivated && onOpenPaywall && (
+              <button
+                type="button"
+                onClick={onOpenPaywall}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-xs border border-amber-600 active:scale-95 transition-all"
+              >
+                <Crown className="w-3.5 h-3.5 text-yellow-200" />
+                <span>PRO</span>
+              </button>
+            )}
+            <span className="text-xs font-bold text-iosBlue bg-blue-50 px-2.5 py-1 rounded-full border border-blue-100">
+              {t('reports_header', language)}
+            </span>
+          </div>
         </div>
 
         {/* Month Selector Pill */}
