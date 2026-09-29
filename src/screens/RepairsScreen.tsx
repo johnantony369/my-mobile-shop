@@ -106,14 +106,16 @@ export const RepairsScreen: React.FC<RepairsScreenProps> = ({
   return (
     <div className="min-h-screen pb-28 pt-2">
       <div className="max-w-lg mx-auto px-4">
-        {/* Header Title */}
-        <div className="flex items-center justify-between mb-2">
-          <h1 className="text-[32px] font-extrabold text-black tracking-tight">
-            {t('tab_repairs', language)}
-          </h1>
-          <span className="text-xs font-semibold text-iosBlue uppercase tracking-wider">
-            {shopName}
-          </span>
+        {/* Header Title with Big Shop Name */}
+        <div className="pt-2 pb-1 mb-2">
+          <div className="flex items-center justify-between">
+            <h1 className="text-[30px] font-black text-black tracking-tight leading-tight">
+              {shopName || 'My Mobile Shop'}
+            </h1>
+            <span className="text-xs font-bold text-iosBlue bg-blue-50 px-2.5 py-1 rounded-full border border-blue-100">
+              {t('tab_repairs', language)}
+            </span>
+          </div>
         </div>
 
         {/* Search Bar */}

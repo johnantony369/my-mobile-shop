@@ -80,35 +80,35 @@ export const BookScreen: React.FC<BookScreenProps> = ({
       >
         <div className="max-w-lg mx-auto px-4 flex items-center justify-between">
           <span
-            className={`text-[17px] font-semibold text-black transition-opacity duration-200 ${
+            className={`text-[17px] font-bold text-black transition-opacity duration-200 ${
               isScrolled ? 'opacity-100' : 'opacity-0 pointer-events-none'
             }`}
           >
-            {dateTitle}
+            {shopName || 'My Mobile Shop'}
           </span>
           {isScrolled && (
-            <span className="text-xs text-[#8E8E93] font-medium truncate max-w-[120px]">
-              {shopName}
+            <span className="text-xs text-iosBlue font-semibold truncate max-w-[130px]">
+              {dateTitle}
             </span>
           )}
         </div>
       </div>
 
       <div className="max-w-lg mx-auto">
-        {/* Large Title Header */}
-        <div className="px-4 pt-2 pb-1">
+        {/* Large Shop Name & Date Header */}
+        <div className="px-4 pt-3 pb-1">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-iosBlue uppercase tracking-wider">
+            <h1 className="text-[30px] font-black text-black tracking-tight leading-tight">
               {shopName || 'My Mobile Shop'}
-            </span>
-            <div className="flex items-center space-x-1 text-xs text-[#8E8E93]">
-              <Calendar className="w-3.5 h-3.5" />
+            </h1>
+            <div className="flex items-center space-x-1 text-xs font-medium text-[#8E8E93] bg-white px-2.5 py-1 rounded-full border border-black/[0.04] shadow-xs">
+              <Calendar className="w-3.5 h-3.5 text-iosBlue" />
               <span>{selectedDate}</span>
             </div>
           </div>
-          <h1 className="text-[32px] font-extrabold text-black tracking-tight mt-0.5">
+          <p className="text-[17px] font-bold text-iosBlue tracking-tight mt-0.5">
             {dateTitle}
-          </h1>
+          </p>
         </div>
 
         {/* Swipeable Date Strip (Last 14 days) */}

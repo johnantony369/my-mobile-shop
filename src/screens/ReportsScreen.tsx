@@ -104,10 +104,15 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
   return (
     <div className="min-h-screen pb-24 pt-2">
       <div className="max-w-lg mx-auto px-4">
-        {/* Header */}
-        <h1 className="text-[32px] font-extrabold text-black tracking-tight mb-2">
-          {t('reports_header', language)}
-        </h1>
+        {/* Header with Big Shop Name */}
+        <div className="pt-2 mb-2 flex items-center justify-between">
+          <h1 className="text-[30px] font-black text-black tracking-tight leading-tight">
+            {shopName || 'My Mobile Shop'}
+          </h1>
+          <span className="text-xs font-bold text-iosBlue bg-blue-50 px-2.5 py-1 rounded-full border border-blue-100">
+            {t('reports_header', language)}
+          </span>
+        </div>
 
         {/* Month Selector Pill */}
         <div className="bg-white rounded-[14px] p-2 flex items-center justify-between shadow-sm border border-black/[0.04] mb-3">
