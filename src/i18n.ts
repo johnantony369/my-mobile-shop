@@ -684,10 +684,11 @@ export const translations = {
 
 export type TranslationKey = keyof typeof translations;
 
-export function t(key: TranslationKey, lang: Language = 'ml', params?: Record<string, string | number>): string {
+export function t(key: TranslationKey, lang: Language = 'en', params?: Record<string, string | number>): string {
   const item = translations[key];
   if (!item) return key;
-  let text = item[lang] || item.ml || key;
+  // Malayalam is disabled for now - use English by default
+  let text = item['en'] || item[lang] || item.ml || key;
   if (params) {
     Object.entries(params).forEach(([k, v]) => {
       text = text.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));

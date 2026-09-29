@@ -174,7 +174,7 @@ export const RepairsScreen: React.FC<RepairsScreenProps> = ({
             </div>
             <h3 className="text-[17px] font-semibold text-black">
               {searchQuery
-                ? 'ഫലങ്ങൾ ഒന്നും കണ്ടെത്തിയില്ല'
+                ? 'No matching repairs found'
                 : currentSegment === 'active'
                 ? t('empty_active_jobs', language)
                 : currentSegment === 'ready'

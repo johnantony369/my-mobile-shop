@@ -30,7 +30,7 @@ export async function getAppSettings(): Promise<AppSettings | undefined> {
 
 export async function initAppSettings(
   shopName: string,
-  language: 'ml' | 'en',
+  language: 'ml' | 'en' = 'en',
   showRepairs: boolean = false
 ): Promise<AppSettings> {
   const existing = await getAppSettings();
@@ -56,7 +56,7 @@ export async function updateAppSettings(partial: Partial<AppSettings>): Promise<
   } else {
     await db.settings.add({
       shopName: '',
-      language: 'ml',
+      language: 'en',
       firstLaunchDate: getLocalDateString(),
       activated: false,
       lastBackupAt: null,

@@ -77,7 +77,7 @@ export const DeliverySheet: React.FC<DeliverySheetProps> = ({
           type: 'in',
           amount: parsedFinal,
           paymentMethod,
-          item: `റിപ്പയർ — ${job.model}`,
+          item: `Repair — ${job.model}`,
           customerName: job.customerName,
           note: job.complaint,
           repairId: job.id,

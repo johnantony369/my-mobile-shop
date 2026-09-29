@@ -7,9 +7,9 @@ export function buildReadyNotificationMessage(job: Job, shopName: string): strin
   const balance = (job.estimate || 0) - (job.advance || 0);
   
   if (job.estimate && balance > 0) {
-    return `നിങ്ങളുടെ ${job.model} റെഡിയാണ്.\nബാക്കി ${formatINR(balance)} ഉണ്ട്.\nവന്ന് എടുക്കാമോ? — ${shop}`;
+    return `Your ${job.model} is ready.\nBalance due: ${formatINR(balance)}.\nPlease collect it from — ${shop}`;
   }
-  return `നിങ്ങളുടെ ${job.model} റെഡിയാണ്. വന്ന് എടുക്കാമോ? — ${shop}`;
+  return `Your ${job.model} is ready. Please collect it from — ${shop}`;
 }
 
 export function openWhatsAppNotification(job: Job, shopName: string): void {

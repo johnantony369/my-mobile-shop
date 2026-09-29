@@ -10,7 +10,7 @@ interface OnboardingScreenProps {
 }
 
 export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
-  const [language, setLanguage] = useState<Language>('ml');
+  const [language, setLanguage] = useState<Language>('en');
   const [shopName, setShopName] = useState('');
   const [repairsChoice, setRepairsChoice] = useState<'no' | 'yes'>('no');
   const [error, setError] = useState<string | null>(null);

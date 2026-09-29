@@ -15,16 +15,16 @@ export interface ShareDataInput {
 export function buildShareSummaryText(data: ShareDataInput): string {
   const shop = data.shopName.trim() || 'My Mobile Shop';
   return (
-    `സമ്മറി — ${shop}\n` +
+    `Summary — ${shop}\n` +
     `${data.dateStr}\n` +
-    `വിറ്റുവരവ്: ${formatINR(data.inTotal)} (${data.inCount} items)\n` +
-    `ചെലവ്: ${formatINR(data.outTotal)}\n` +
+    `Sales: ${formatINR(data.inTotal)} (${data.inCount} items)\n` +
+    `Expenses: ${formatINR(data.outTotal)}\n` +
     `Net: ${formatINR(data.net)}\n` +
     `Cash ${formatINR(data.cashTotal)} | UPI ${formatINR(data.upiTotal)} | Card ${formatINR(data.cardTotal)}`
   );
 }
 
-export async function shareSummary(text: string, title = 'സമ്മറി'): Promise<boolean> {
+export async function shareSummary(text: string, title = 'Summary'): Promise<boolean> {
   if (navigator.share) {
     try {
       await navigator.share({

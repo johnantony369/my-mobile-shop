@@ -159,13 +159,13 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
           <label className="text-xs font-semibold text-[#8E8E93] ml-1">
             {t('field_customer_name', language)} *
           </label>
-          <input
+            <input
             ref={nameInputRef}
             type="text"
             required
             value={customerName}
             onChange={(e) => setCustomerName(e.target.value)}
-            placeholder="ഉദാ: രാജേഷ്"
+            placeholder="e.g. Rajesh"
             className="w-full bg-[#F2F2F7] rounded-[10px] px-3.5 py-2.5 text-[15px] text-black focus:outline-none focus:ring-2 focus:ring-iosBlue/40 border border-black/[0.04]"
           />
         </div>
@@ -206,7 +206,7 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
             required
             value={model}
             onChange={(e) => setModel(e.target.value)}
-            placeholder="ഉദാ: Redmi Note 10 Pro / iPhone 11"
+            placeholder="e.g. Redmi Note 10 Pro / iPhone 11"
             className="w-full bg-[#F2F2F7] rounded-[10px] px-3.5 py-2.5 text-[15px] text-black focus:outline-none focus:ring-2 focus:ring-iosBlue/40 border border-black/[0.04]"
           />
         </div>
@@ -221,7 +221,7 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
             required
             value={complaint}
             onChange={(e) => setComplaint(e.target.value)}
-            placeholder="ഉദാ: ഡിസ്‌പ്ലേ തകർന്നു, ചാർജിംഗ് ആകുന്നില്ല"
+            placeholder="e.g. Screen broken, not charging"
             className="w-full bg-[#F2F2F7] rounded-[10px] px-3.5 py-2.5 text-[15px] text-black focus:outline-none focus:ring-2 focus:ring-iosBlue/40 border border-black/[0.04]"
           />
         </div>
@@ -277,7 +277,7 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
               type="text"
               value={imei}
               onChange={(e) => setImei(e.target.value)}
-              placeholder="ഓപ്ഷണൽ"
+              placeholder="Optional"
               className="w-full bg-[#F2F2F7] rounded-[10px] px-3 py-2 text-[13px] font-mono text-black focus:outline-none focus:ring-2 focus:ring-iosBlue/40 border border-black/[0.04]"
             />
           </div>

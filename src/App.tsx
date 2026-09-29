@@ -83,7 +83,7 @@ export default function App() {
   }
 
   const settings = settingsList[0];
-  const language: Language = settings.language || 'ml';
+  const language: Language = settings.language || 'en';
   const showRepairs = !!settings.showRepairs;
   const trialDays = getTrialDaysRemaining(settings.firstLaunchDate);
   const isReadOnly = !settings.activated && trialDays <= 0;
