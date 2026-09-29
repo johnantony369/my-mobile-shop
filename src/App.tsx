@@ -10,6 +10,7 @@ import { OnboardingScreen } from './screens/OnboardingScreen';
 import { getTrialDaysRemaining } from './utils/activation';
 import { requestPersistentStorage } from './utils/storage';
 import { useAuth } from './firebase/useAuth';
+import { LoginScreen } from './screens/LoginScreen';
 import { Language } from './types';
 import { Cloud, CloudOff, RefreshCw, AlertTriangle } from 'lucide-react';
 
@@ -17,7 +18,7 @@ export default function App() {
   const [currentTab, setCurrentTab] = useState<TabType>('book');
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [loadingTimeout, setLoadingTimeout] = useState(false);
-  const { user, syncState, triggerSync } = useAuth();
+  const { user, loading: authLoading, isConfigured, syncState, triggerSync } = useAuth();
 
   useEffect(() => {
     // Request OS to keep storage persistent
@@ -77,6 +78,25 @@ export default function App() {
           </div>
         )}
       </div>
+    );
+  }
+
+  // Show loading spinner while determining auth state
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-iosBg flex flex-col items-center justify-center p-6 text-center select-none">
+        <div className="w-9 h-9 border-3 border-iosBlue border-t-transparent rounded-full animate-spin mb-4" />
+      </div>
+    );
+  }
+
+  // If Firebase is configured and user is not logged in: SHOW LOGIN SCREEN
+  if (isConfigured && !user) {
+    return (
+      <LoginScreen
+        language={settingsList?.[0]?.language || 'en'}
+        onSuccess={() => setRefreshTrigger((prev) => prev + 1)}
+      />
     );
   }
 

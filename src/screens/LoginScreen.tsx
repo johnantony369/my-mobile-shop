@@ -1,0 +1,446 @@
+import React, { useState, useRef } from 'react';
+import {
+  loginWithPassword,
+  registerWithPassword,
+  loginWithGoogle,
+  createRecaptchaVerifier,
+  sendOtp,
+  confirmOtp
+} from '../firebase/auth';
+import { ConfirmationResult, RecaptchaVerifier } from 'firebase/auth';
+import {
+  Store,
+  Lock,
+  Eye,
+  EyeOff,
+  Phone,
+  Loader2,
+  AlertCircle,
+  CheckCircle2,
+  ArrowRight
+} from 'lucide-react';
+
+interface LoginScreenProps {
+  onSuccess: () => void;
+  language?: 'ml' | 'en';
+}
+
+export function LoginScreen({ onSuccess, language = 'en' }: LoginScreenProps) {
+  const isMl = language === 'ml';
+
+  // View: 'password' | 'phone_number' | 'phone_otp'
+  const [view, setView] = useState<'password' | 'phone_number' | 'phone_otp'>('password');
+  const [mode, setMode] = useState<'login' | 'register'>('login');
+
+  // Password State
+  const [loginId, setLoginId] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+
+  // Phone State
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const confirmationRef = useRef<ConfirmationResult | null>(null);
+  const recaptchaVerifierRef = useRef<RecaptchaVerifier | null>(null);
+
+  // Status
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSuccessMsg(null);
+
+    const cleanId = loginId.trim();
+    if (!cleanId) {
+      setError(isMl ? 'ലോഗിൻ ഐഡി നൽകുക' : 'Please enter your Login ID or Email');
+      return;
+    }
+    if (password.length < 6) {
+      setError(isMl ? 'പാസ്‌വേഡ് കുറഞ്ഞത് 6 അക്ഷരങ്ങൾ വേണം' : 'Password must be at least 6 characters');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      if (mode === 'register') {
+        await registerWithPassword(cleanId, password);
+        setSuccessMsg(isMl ? 'അക്കൗണ്ട് വിജയകരമായി സൃഷ്ടിച്ചു!' : 'Account created successfully!');
+      } else {
+        await loginWithPassword(cleanId, password);
+        setSuccessMsg(isMl ? 'വിജയകരമായി ലോഗിൻ ചെയ്തു!' : 'Logged in successfully!');
+      }
+      setTimeout(() => {
+        onSuccess();
+      }, 400);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes('user-not-found') || msg.includes('wrong-password') || msg.includes('invalid-credential')) {
+        setError(isMl ? 'തെറ്റായ ലോഗിൻ ഐഡി അല്ലെങ്കിൽ പാസ്‌വേഡ്' : 'Invalid Login ID or Password');
+      } else if (msg.includes('email-already-in-use')) {
+        setError(isMl ? 'ഈ ഐഡിയിൽ ഇതിനകം അക്കൗണ്ട് ഉണ്ട്. ലോഗിൻ ചെയ്യുക.' : 'This Login ID already exists. Please Sign In.');
+      } else if (msg.includes('weak-password')) {
+        setError(isMl ? 'ശക്തമായ പാസ്‌വേഡ് നൽകുക' : 'Password should be stronger (at least 6 characters)');
+      } else {
+        setError(msg || (isMl ? 'ലോഗിൻ പരാജയപ്പെട്ടു' : 'Authentication failed'));
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setError(null);
+    setSuccessMsg(null);
+    try {
+      setLoading(true);
+      await loginWithGoogle();
+      setSuccessMsg(isMl ? 'വിജയകരമായി ലോഗിൻ ചെയ്തു!' : 'Logged in successfully!');
+      setTimeout(() => {
+        onSuccess();
+      }, 400);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (!msg.includes('popup-closed-by-user')) {
+        setError(msg || (isMl ? 'Google ലോഗിൻ പരാജയപ്പെട്ടു' : 'Google sign-in failed'));
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSendPhoneOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    const clean = phoneNumber.replace(/\D/g, '');
+    if (clean.length < 10) {
+      setError(isMl ? 'സാധുവായ 10 അക്ക മൊബൈൽ നമ്പർ നൽകുക' : 'Please enter a valid 10-digit mobile number');
+      return;
+    }
+    const formatted = clean.length === 10 ? `+91${clean}` : `+${clean}`;
+
+    try {
+      setLoading(true);
+      if (!recaptchaVerifierRef.current) {
+        recaptchaVerifierRef.current = createRecaptchaVerifier('login-recaptcha-screen');
+      }
+      const confirmation = await sendOtp(formatted, recaptchaVerifierRef.current);
+      confirmationRef.current = confirmation;
+      setView('phone_otp');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes('invalid-phone-number')) {
+        setError(isMl ? 'തെറ്റായ ഫോൺ നമ്പർ' : 'Invalid phone number format');
+      } else if (msg.includes('quota-exceeded')) {
+        setError(isMl ? 'SMS ക്വാട്ട കഴിഞ്ഞു' : 'SMS quota exceeded. Please use Login ID or Google.');
+      } else {
+        setError(msg || (isMl ? 'OTP അയക്കുന്നതിൽ പരാജയപ്പെട്ടു' : 'Failed to send OTP'));
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyPhoneOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!confirmationRef.current) return;
+    setError(null);
+
+    if (otpCode.length !== 6) {
+      setError(isMl ? '6 അക്ക OTP നൽകുക' : 'Enter 6-digit OTP code');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await confirmOtp(confirmationRef.current, otpCode);
+      setSuccessMsg(isMl ? 'വിജയകരമായി ലോഗിൻ ചെയ്തു!' : 'Logged in successfully!');
+      setTimeout(() => {
+        onSuccess();
+      }, 400);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes('invalid-verification-code')) {
+        setError(isMl ? 'തെറ്റായ OTP' : 'Invalid verification code');
+      } else {
+        setError(msg || (isMl ? 'സ്ഥിരീകരണം പരാജയപ്പെട്ടു' : 'Verification failed'));
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-iosBg flex flex-col justify-center items-center p-4 sm:p-6 selection:bg-iosBlue/20">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-sm p-6 sm:p-8 shadow-xl border border-slate-200 dark:border-slate-800">
+        {/* Header */}
+        <div className="mb-6 text-center">
+          <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-2xl flex items-center justify-center mx-auto mb-3.5 shadow-inner">
+            <Store className="w-8 h-8" />
+          </div>
+          <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+            My Mobile Shop
+          </h1>
+          <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 mt-1">
+            {view === 'password'
+              ? mode === 'login'
+                ? isMl ? 'ഷോപ്പ് ലോഗിൻ' : 'Shop Sign In'
+                : isMl ? 'പുതിയ അക്കൗണ്ട്' : 'Create Shop Account'
+              : view === 'phone_number'
+              ? isMl ? 'ഫോൺ നമ്പർ ലോഗിൻ' : 'Sign in with Phone'
+              : isMl ? 'OTP നൽകുക' : 'Enter Verification Code'}
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            {view === 'password'
+              ? isMl
+                ? 'നിങ്ങളുടെ ക്ലൗഡ് ലെഡ്ജർ വിവരങ്ങൾ നേടുക'
+                : 'Access your cloud ledger and customer repairs'
+              : view === 'phone_number'
+              ? isMl
+                ? 'നിങ്ങളുടെ മൊബൈൽ നമ്പർ നൽകുക'
+                : 'Enter your 10-digit mobile number'
+              : isMl
+              ? `${phoneNumber} ലേക്ക് അയച്ച OTP നൽകുക`
+              : `Enter the code sent to ${phoneNumber}`}
+          </p>
+        </div>
+
+        {/* Notifications */}
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-xl text-xs flex items-center gap-2 border border-red-200 dark:border-red-900/50">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {successMsg && (
+          <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-xl text-xs flex items-center gap-2 border border-green-200 dark:border-green-900/50">
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <span>{successMsg}</span>
+          </div>
+        )}
+
+        {/* VIEW 1: Password Form */}
+        {view === 'password' && (
+          <div>
+            <form onSubmit={handlePasswordSubmit} className="space-y-3.5">
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                  {isMl ? 'ലോഗിൻ ഐഡി / ഇമെയിൽ' : 'Login ID / Shop ID'}
+                </label>
+                <div className="flex items-center gap-2.5 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/80 focus-within:ring-2 focus-within:ring-blue-500 transition-all">
+                  <Store className="w-4 h-4 text-slate-400 shrink-0" />
+                  <input
+                    type="text"
+                    placeholder={isMl ? 'ഉദാ: keralamobile' : 'e.g. keralamobile or email'}
+                    value={loginId}
+                    onChange={e => setLoginId(e.target.value)}
+                    className="w-full bg-transparent text-sm font-medium text-slate-900 dark:text-white outline-none"
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                  {isMl ? 'പാസ്‌വേഡ്' : 'Password'}
+                </label>
+                <div className="flex items-center gap-2.5 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/80 focus-within:ring-2 focus-within:ring-blue-500 transition-all">
+                  <Lock className="w-4 h-4 text-slate-400 shrink-0" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    className="w-full bg-transparent text-sm font-medium text-slate-900 dark:text-white outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading || !loginId.trim() || !password}
+                className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25 active:scale-98"
+              >
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
+                {mode === 'login'
+                  ? isMl ? 'ലോഗിൻ ചെയ്യുക' : 'Sign In'
+                  : isMl ? 'അക്കൗണ്ട് സൃഷ്ടിക്കുക' : 'Create Account'}
+              </button>
+            </form>
+
+            {/* Toggle Mode */}
+            <div className="mt-3.5 text-center">
+              <button
+                type="button"
+                onClick={() => {
+                  setMode(mode === 'login' ? 'register' : 'login');
+                  setError(null);
+                }}
+                className="text-xs text-blue-600 dark:text-blue-400 hover:underline font-semibold"
+              >
+                {mode === 'login'
+                  ? isMl
+                    ? 'പുതിയ ഷോപ്പാണോ? ഇവിടെ രജിസ്റ്റർ ചെയ്യുക'
+                    : "Don't have a shop account? Register here"
+                  : isMl
+                  ? 'ഇതിനകം അക്കൗണ്ട് ഉണ്ടോ? ലോഗിൻ ചെയ്യുക'
+                  : 'Already have an account? Sign in'}
+              </button>
+            </div>
+
+            {/* Divider */}
+            <div className="relative flex items-center justify-center my-4">
+              <div className="border-t border-slate-200 dark:border-slate-800 w-full" />
+              <span className="bg-white dark:bg-slate-900 px-2.5 text-[11px] text-slate-400 font-medium uppercase tracking-wider absolute">
+                {isMl ? 'അഥവാ' : 'or continue with'}
+              </span>
+            </div>
+
+            {/* Social Buttons: Google & Phone */}
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={handleGoogleSignIn}
+                disabled={loading}
+                className="py-2.5 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 active:scale-98 transition-all shadow-sm"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24">
+                  <path
+                    fill="#4285F4"
+                    d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.66v3.04h3.88c2.27-2.09 3.66-5.17 3.66-9.14z"
+                  />
+                  <path
+                    fill="#34A853"
+                    d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.04c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.13C3.26 21.36 7.33 24 12 24z"
+                  />
+                  <path
+                    fill="#FBBC05"
+                    d="M5.28 14.28c-.25-.72-.38-1.49-.38-2.28s.13-1.56.38-2.28V6.59H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.41l4.03-3.13z"
+                  />
+                  <path
+                    fill="#EA4335"
+                    d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.59l4.03 3.13c.95-2.83 3.6-4.97 6.72-4.97z"
+                  />
+                </svg>
+                <span>Google</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setError(null);
+                  setView('phone_number');
+                }}
+                disabled={loading}
+                className="py-2.5 px-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 active:scale-98 transition-all"
+              >
+                <Phone className="w-3.5 h-3.5 text-blue-500" />
+                <span>Phone OTP</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* VIEW 2: Phone Input */}
+        {view === 'phone_number' && (
+          <form onSubmit={handleSendPhoneOtp} className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5">
+                {isMl ? 'മൊബൈൽ നമ്പർ' : 'Mobile Number'}
+              </label>
+              <div className="flex items-center gap-2 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 focus-within:ring-2 focus-within:ring-blue-500">
+                <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">+91</span>
+                <input
+                  type="tel"
+                  placeholder="9876543210"
+                  maxLength={10}
+                  value={phoneNumber}
+                  onChange={e => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
+                  className="w-full bg-transparent text-sm font-medium text-slate-900 dark:text-white outline-none"
+                  autoFocus
+                />
+              </div>
+            </div>
+
+            <div id="login-recaptcha-screen" />
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setError(null);
+                  setView('password');
+                }}
+                disabled={loading}
+                className="w-1/3 py-2.5 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium text-xs hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                {isMl ? 'തിരികെ' : 'Back'}
+              </button>
+              <button
+                type="submit"
+                disabled={loading || phoneNumber.length < 10}
+                className="w-2/3 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-blue-500/25"
+              >
+                {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                {isMl ? 'OTP അയക്കുക' : 'Send OTP'}
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* VIEW 3: OTP Code */}
+        {view === 'phone_otp' && (
+          <form onSubmit={handleVerifyPhoneOtp} className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5">
+                {isMl ? '6-അക്ക OTP കോഡ്' : '6-digit OTP Code'}
+              </label>
+              <input
+                type="text"
+                placeholder="123456"
+                maxLength={6}
+                value={otpCode}
+                onChange={e => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                className="w-full tracking-widest text-center text-lg font-bold border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2.5 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                autoFocus
+              />
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setError(null);
+                  setView('phone_number');
+                }}
+                disabled={loading}
+                className="w-1/3 py-2.5 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium text-xs hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                {isMl ? 'തിരികെ' : 'Back'}
+              </button>
+              <button
+                type="submit"
+                disabled={loading || otpCode.length !== 6}
+                className="w-2/3 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-blue-500/25"
+              >
+                {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                {isMl ? 'സ്ഥിരീകരിക്കുക' : 'Verify & Sign In'}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
