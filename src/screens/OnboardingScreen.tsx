@@ -3,7 +3,11 @@ import { Language } from '../types';
 import { t } from '../i18n';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { initAppSettings } from '../db/db';
-import { Smartphone, ArrowRight } from 'lucide-react';
+import { isFirebaseConfigured } from '../firebase/config';
+import { loginWithGoogle } from '../firebase/auth';
+import { pullCloudChanges } from '../firebase/sync';
+import { PhoneAuthModal } from '../components/PhoneAuthModal';
+import { Smartphone, ArrowRight, Cloud, Phone } from 'lucide-react';
 
 interface OnboardingScreenProps {
   onComplete: () => void;
@@ -14,6 +18,32 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
   const [shopName, setShopName] = useState('');
   const [repairsChoice, setRepairsChoice] = useState<'no' | 'yes'>('no');
   const [error, setError] = useState<string | null>(null);
+  const [isPhoneModalOpen, setIsPhoneModalOpen] = useState(false);
+  const [restoreLoading, setRestoreLoading] = useState(false);
+  const [restoreError, setRestoreError] = useState<string | null>(null);
+
+  const handleGoogleRestore = async () => {
+    try {
+      setRestoreError(null);
+      setRestoreLoading(true);
+      const user = await loginWithGoogle();
+      if (user) {
+        await pullCloudChanges(user.uid);
+        onComplete();
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (!msg.includes('popup-closed-by-user')) {
+        setRestoreError(msg || 'Google Sign-in failed');
+      }
+    } finally {
+      setRestoreLoading(false);
+    }
+  };
+
+  const handlePhoneRestoreSuccess = async () => {
+    onComplete();
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,7 +137,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
       </form>
 
       {/* Bottom Button */}
-      <div className="pb-6">
+      <div className="pb-6 space-y-4">
         <button
           type="button"
           onClick={handleSubmit}
@@ -116,7 +146,56 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
           <span>{t('onboarding_start_button', language)}</span>
           <ArrowRight className="w-5 h-5" />
         </button>
+
+        {isFirebaseConfigured() && (
+          <div className="pt-1 text-center">
+            <div className="relative flex items-center justify-center mb-3">
+              <div className="border-t border-slate-200 dark:border-slate-800 w-full" />
+              <span className="bg-iosBg px-2.5 text-xs text-[#8E8E93] font-medium uppercase tracking-wider absolute">
+                {language === 'ml' ? 'അഥവാ' : 'or'}
+              </span>
+            </div>
+
+            <p className="text-xs text-[#8E8E93] mb-2 font-medium">
+              {language === 'ml'
+                ? 'മുമ്പ് സേവ് ചെയ്ത ഷോപ്പ് ബാക്കപ്പ് ഉണ്ടോ?'
+                : 'Already have a cloud backup?'}
+            </p>
+
+            {restoreError && (
+              <p className="text-xs text-iosRed font-medium mb-2">{restoreError}</p>
+            )}
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={handleGoogleRestore}
+                disabled={restoreLoading}
+                className="flex-1 py-2.5 px-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 rounded-[10px] text-xs font-semibold flex items-center justify-center gap-1.5 active:scale-98 transition-all shadow-sm"
+              >
+                <Cloud className="w-3.5 h-3.5 text-blue-500" />
+                <span>{restoreLoading ? 'Loading...' : 'Google Restore'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsPhoneModalOpen(true)}
+                disabled={restoreLoading}
+                className="flex-1 py-2.5 px-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 rounded-[10px] text-xs font-semibold flex items-center justify-center gap-1.5 active:scale-98 transition-all shadow-sm"
+              >
+                <Phone className="w-3.5 h-3.5 text-blue-500" />
+                <span>Phone OTP</span>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
+
+      <PhoneAuthModal
+        isOpen={isPhoneModalOpen}
+        onClose={() => setIsPhoneModalOpen(false)}
+        onSuccess={handlePhoneRestoreSuccess}
+        language={language}
+      />
     </div>
   );
 };

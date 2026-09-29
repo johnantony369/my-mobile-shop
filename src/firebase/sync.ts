@@ -1,7 +1,6 @@
 import {
   collection,
   doc,
-  writeBatch,
   getDocs,
   deleteDoc,
   setDoc,

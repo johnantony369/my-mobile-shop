@@ -7,6 +7,9 @@ import { checkCode, formatActivationCode, getTrialDaysRemaining } from '../utils
 import { exportBackup, importBackup, isBackupNeeded } from '../utils/backup';
 import { seedDevEntries, seedDevJobs, clearAllEntries } from '../utils/seedData';
 import { ConfirmModal } from '../components/ConfirmModal';
+import { useAuth } from '../firebase/useAuth';
+import { loginWithGoogle } from '../firebase/auth';
+import { PhoneAuthModal } from '../components/PhoneAuthModal';
 import {
   ShieldCheck,
   Clock,
@@ -19,6 +22,10 @@ import {
   Store,
   Info,
   Wrench,
+  Cloud,
+  RefreshCw,
+  LogOut,
+  Phone,
 } from 'lucide-react';
 
 interface SettingsScreenProps {
@@ -42,6 +49,13 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const [activationError, setActivationError] = useState<string | null>(null);
   const [activationSuccess, setActivationSuccess] = useState(false);
 
+  // Cloud Sync state
+  const { user, isConfigured, syncState, lastSyncTime, syncError, triggerSync, signOut } = useAuth();
+  const [isPhoneModalOpen, setIsPhoneModalOpen] = useState(false);
+  const [isSignOutModalOpen, setIsSignOutModalOpen] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
   // Backup state
   const [backupMsg, setBackupMsg] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -53,6 +67,28 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const trialDays = getTrialDaysRemaining(settings.firstLaunchDate);
   const isExpired = trialDays <= 0 && !settings.activated;
   const backupWarning = isBackupNeeded(settings.lastBackupAt);
+
+  const handleGoogleSignIn = async () => {
+    try {
+      setAuthError(null);
+      setGoogleLoading(true);
+      await loginWithGoogle();
+      onRefreshSettings();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (!msg.includes('popup-closed-by-user')) {
+        setAuthError(msg || 'Google Sign-in failed');
+      }
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  const handleSignOutConfirm = async () => {
+    await signOut();
+    setIsSignOutModalOpen(false);
+    onRefreshSettings();
+  };
 
   const handleSaveShopName = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -302,7 +338,163 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           )}
         </div>
 
-        {/* Section 4: Backup & Restore */}
+        {/* Section 4: Cloud Sync & Backup (Firebase) */}
+        <div className="bg-white rounded-[14px] p-4 shadow-sm border border-black/[0.04]">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center space-x-2 text-xs font-semibold text-[#8E8E93] uppercase tracking-wider">
+              <Cloud className="w-4 h-4 text-iosBlue" />
+              <span>{language === 'ml' ? 'ക്ലൗഡ് ബാക്കപ്പും സമന്വയവും' : 'Cloud Sync & Backup'}</span>
+            </div>
+            {user && (
+              <span
+                className={`text-[11px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1 ${
+                  syncState === 'synced'
+                    ? 'bg-green-50 text-iosGreen'
+                    : syncState === 'syncing'
+                    ? 'bg-blue-50 text-iosBlue animate-pulse'
+                    : syncState === 'error'
+                    ? 'bg-red-50 text-iosRed'
+                    : 'bg-gray-100 text-gray-500'
+                }`}
+              >
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${
+                    syncState === 'synced'
+                      ? 'bg-iosGreen'
+                      : syncState === 'syncing'
+                      ? 'bg-iosBlue'
+                      : syncState === 'error'
+                      ? 'bg-iosRed'
+                      : 'bg-gray-400'
+                  }`}
+                />
+                {syncState === 'synced'
+                  ? language === 'ml' ? 'സമന്വയിപ്പിച്ചു' : 'Synced'
+                  : syncState === 'syncing'
+                  ? language === 'ml' ? 'സമന്വയിപ്പിക്കുന്നു...' : 'Syncing...'
+                  : syncState === 'error'
+                  ? language === 'ml' ? 'പിശക്' : 'Error'
+                  : language === 'ml' ? 'ഓഫ്‌ലൈൻ' : 'Offline'}
+              </span>
+            )}
+          </div>
+
+          {!isConfigured ? (
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-[10px] text-xs text-slate-600 leading-relaxed">
+              <div className="font-semibold text-slate-800 mb-1 flex items-center gap-1.5">
+                <AlertTriangle className="w-4 h-4 text-amber-500" />
+                <span>{language === 'ml' ? 'ക്ലൗഡ് ക്രമീകരണം ആവശ്യമാണ്' : 'Firebase Not Configured'}</span>
+              </div>
+              <p>
+                {language === 'ml'
+                  ? 'ക്ലൗഡ് ബാക്കപ്പ് പ്രവർത്തനക്ഷമമാക്കാൻ .env ഫയലിൽ Firebase API കീകൾ ചേർക്കുക.'
+                  : 'Add your Firebase credentials to the .env file to enable automatic cloud backup.'}
+              </p>
+            </div>
+          ) : user ? (
+            <div className="space-y-3">
+              <div className="p-3 bg-[#F2F2F7] rounded-[10px] flex items-center justify-between text-xs">
+                <div>
+                  <span className="text-[#8E8E93] block">
+                    {language === 'ml' ? 'ലോഗിൻ ചെയ്ത അക്കൗണ്ട്' : 'Connected Account'}
+                  </span>
+                  <span className="font-semibold text-black text-sm">
+                    {user.email || user.phoneNumber || user.displayName || 'Shop Owner'}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsSignOutModalOpen(true)}
+                  className="p-1.5 text-iosRed hover:bg-red-50 rounded-lg transition-colors flex items-center gap-1 text-xs font-medium"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>{language === 'ml' ? 'ലോഗ് ഔട്ട്' : 'Sign Out'}</span>
+                </button>
+              </div>
+
+              {syncError && (
+                <div className="p-2.5 bg-red-50 text-iosRed text-xs rounded-lg flex items-center gap-1.5">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                  <span>{syncError}</span>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between text-xs text-[#8E8E93]">
+                <span>
+                  {language === 'ml' ? 'അവസാനം സമന്വയിപ്പിച്ചത്:' : 'Last Synced:'}{' '}
+                  <strong className="text-black font-medium">
+                    {lastSyncTime ? lastSyncTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : (language === 'ml' ? 'ഇതുവരെയില്ല' : 'Not yet')}
+                  </strong>
+                </span>
+
+                <button
+                  type="button"
+                  onClick={triggerSync}
+                  disabled={syncState === 'syncing'}
+                  className="px-3 py-1.5 bg-iosBlue/10 hover:bg-iosBlue/20 text-iosBlue font-semibold rounded-lg flex items-center gap-1.5 transition-colors"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${syncState === 'syncing' ? 'animate-spin' : ''}`} />
+                  <span>{language === 'ml' ? 'ഇപ്പോൾ സമന്വയിക്കുക' : 'Sync Now'}</span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-xs text-[#8E8E93] leading-relaxed">
+                {language === 'ml'
+                  ? 'നിങ്ങളുടെ ഷോപ്പ് ഡാറ്റ ക്ലൗഡിൽ സുരക്ഷിതമായി സൂക്ഷിക്കാനും ഏത് ഫോണിൽ നിന്നും കമ്പ്യൂട്ടറിൽ നിന്നും ഉപയോഗിക്കാനും ലോഗിൻ ചെയ്യുക.'
+                  : 'Sign in to automatically back up your ledger & repairs to the cloud and sync across multiple phones or computers.'}
+              </p>
+
+              {authError && (
+                <div className="p-2.5 bg-red-50 text-iosRed text-xs rounded-lg flex items-center gap-1.5">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                  <span>{authError}</span>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={handleGoogleSignIn}
+                  disabled={googleLoading}
+                  className="py-2.5 px-3 bg-white border border-slate-300 hover:bg-slate-50 text-slate-800 rounded-[10px] text-xs font-semibold flex items-center justify-center gap-2 active:scale-98 transition-all shadow-sm"
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24">
+                    <path
+                      fill="#4285F4"
+                      d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.66v3.04h3.88c2.27-2.09 3.66-5.17 3.66-9.14z"
+                    />
+                    <path
+                      fill="#34A853"
+                      d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.04c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.13C3.26 21.36 7.33 24 12 24z"
+                    />
+                    <path
+                      fill="#FBBC05"
+                      d="M5.28 14.28c-.25-.72-.38-1.49-.38-2.28s.13-1.56.38-2.28V6.59H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.41l4.03-3.13z"
+                    />
+                    <path
+                      fill="#EA4335"
+                      d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.59l4.03 3.13c.95-2.83 3.6-4.97 6.72-4.97z"
+                    />
+                  </svg>
+                  <span>{googleLoading ? (language === 'ml' ? 'ലോഗിൻ ചെയ്യുന്നു...' : 'Signing in...') : 'Google'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsPhoneModalOpen(true)}
+                  className="py-2.5 px-3 bg-[#F2F2F7] hover:bg-slate-200 text-slate-800 rounded-[10px] text-xs font-semibold flex items-center justify-center gap-2 active:scale-98 transition-all"
+                >
+                  <Phone className="w-3.5 h-3.5 text-iosBlue" />
+                  <span>{language === 'ml' ? 'മൊബൈൽ നമ്പർ' : 'Phone OTP'}</span>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Section 5: Local Backup & Restore */}
         <div className="bg-white rounded-[14px] p-4 shadow-sm border border-black/[0.04]">
           <div className="flex items-center space-x-2 text-xs font-semibold text-[#8E8E93] uppercase tracking-wider mb-2">
             <Download className="w-4 h-4 text-iosBlue" />
@@ -431,6 +623,30 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         isDestructive={true}
         onConfirm={handleClearDev}
         onCancel={() => setIsClearModalOpen(false)}
+      />
+
+      {/* Sign Out Confirmation Modal */}
+      <ConfirmModal
+        isOpen={isSignOutModalOpen}
+        title={language === 'ml' ? 'ലോഗ് ഔട്ട് ചെയ്യണോ?' : 'Sign Out?'}
+        message={
+          language === 'ml'
+            ? 'ലോഗ് ഔട്ട് ചെയ്താലും നിങ്ങളുടെ ഫോണിലെ വിവരങ്ങൾ സുരക്ഷിതമായിരിക്കും.'
+            : 'Your local shop records will remain safely saved on this device after signing out.'
+        }
+        confirmLabel={language === 'ml' ? 'ലോഗ് ഔട്ട്' : 'Sign Out'}
+        cancelLabel={t('cancel_action', language)}
+        isDestructive={false}
+        onConfirm={handleSignOutConfirm}
+        onCancel={() => setIsSignOutModalOpen(false)}
+      />
+
+      {/* Phone OTP Authentication Modal */}
+      <PhoneAuthModal
+        isOpen={isPhoneModalOpen}
+        onClose={() => setIsPhoneModalOpen(false)}
+        onSuccess={() => onRefreshSettings()}
+        language={language}
       />
     </div>
   );
