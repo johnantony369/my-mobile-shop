@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { User } from 'firebase/auth';
-import { subscribeToAuthChanges, logout } from './auth';
-import { isFirebaseConfigured } from './config';
+import { User, onAuthStateChanged } from 'firebase/auth';
+import { logout } from './auth';
+import { auth, isFirebaseConfigured } from './config';
 import { startAutoSync, syncNow, SyncState } from './sync';
 
 export interface UseAuthReturn {
@@ -16,7 +16,7 @@ export interface UseAuthReturn {
 }
 
 export function useAuth(): UseAuthReturn {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() => auth?.currentUser || null);
   const [loading, setLoading] = useState<boolean>(true);
   const [syncState, setSyncState] = useState<SyncState>('idle');
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
@@ -25,18 +25,64 @@ export function useAuth(): UseAuthReturn {
   const configured = isFirebaseConfigured();
 
   useEffect(() => {
-    if (!configured) {
+    if (!configured || !auth) {
       setLoading(false);
       setSyncState('offline');
       return;
     }
 
-    const unsubscribeAuth = subscribeToAuthChanges(currentUser => {
-      setUser(currentUser);
-      setLoading(false);
+    let isMounted = true;
+    let authReady = false;
+
+    // 1. Listen for auth changes (sign in, sign out, user switch)
+    const unsubscribe = onAuthStateChanged(auth, currentUser => {
+      if (!isMounted) return;
+      if (currentUser) {
+        setUser(currentUser);
+        localStorage.setItem('mms_authenticated', 'true');
+        localStorage.setItem('mms_user_id', currentUser.uid);
+        setLoading(false);
+      } else if (authReady) {
+        // Only set user to null after initial persistence restore is ready
+        setUser(null);
+        localStorage.removeItem('mms_authenticated');
+        localStorage.removeItem('mms_user_id');
+        setLoading(false);
+      }
     });
 
-    return () => unsubscribeAuth();
+    // 2. Wait for authStateReady() so persisted credentials from IndexedDB are completely restored
+    if (typeof auth.authStateReady === 'function') {
+      auth.authStateReady()
+        .then(() => {
+          if (!isMounted) return;
+          authReady = true;
+          if (auth?.currentUser) {
+            setUser(auth.currentUser);
+            localStorage.setItem('mms_authenticated', 'true');
+            localStorage.setItem('mms_user_id', auth.currentUser.uid);
+          } else {
+            setUser(null);
+            localStorage.removeItem('mms_authenticated');
+            localStorage.removeItem('mms_user_id');
+          }
+          setLoading(false);
+        })
+        .catch(err => {
+          console.warn('authStateReady error:', err);
+          if (isMounted) {
+            authReady = true;
+            setLoading(false);
+          }
+        });
+    } else {
+      authReady = true;
+    }
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
   }, [configured]);
 
   // Bind auto-sync when user changes
@@ -74,6 +120,8 @@ export function useAuth(): UseAuthReturn {
   }, [user]);
 
   const signOut = useCallback(async () => {
+    localStorage.removeItem('mms_authenticated');
+    localStorage.removeItem('mms_user_id');
     await logout();
     setUser(null);
     setSyncState('idle');

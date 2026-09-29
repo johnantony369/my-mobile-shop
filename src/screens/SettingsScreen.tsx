@@ -9,6 +9,7 @@ import { seedDevEntries, seedDevJobs, clearAllEntries } from '../utils/seedData'
 import { ConfirmModal } from '../components/ConfirmModal';
 import { useAuth } from '../firebase/useAuth';
 import { LoginModal } from '../components/LoginModal';
+import { usePWAInstall } from '../utils/usePWAInstall';
 import {
   ShieldCheck,
   Clock,
@@ -24,7 +25,124 @@ import {
   Cloud,
   RefreshCw,
   LogOut,
+  Smartphone,
+  ArrowDownToLine,
 } from 'lucide-react';
+
+/** Standalone sub-component so it has its own state without polluting SettingsScreen */
+const AppUpdatesSection: React.FC<{ language: Language }> = ({ language }) => {
+  const { isInstalled, canInstall, platform, triggerInstall } = usePWAInstall();
+  const [updateStatus, setUpdateStatus] = useState<'idle' | 'checking' | 'upToDate' | 'updating'>('idle');
+  const [showIOSHint, setShowIOSHint] = useState(false);
+
+  const handleInstallClick = async () => {
+    if (platform === 'ios') {
+      setShowIOSHint(true);
+      setTimeout(() => setShowIOSHint(false), 5000);
+    } else {
+      await triggerInstall();
+    }
+  };
+
+  const handleCheckUpdate = async () => {
+    setUpdateStatus('checking');
+    try {
+      const reg = await navigator.serviceWorker?.getRegistration();
+      if (!reg) {
+        setUpdateStatus('upToDate');
+        setTimeout(() => setUpdateStatus('idle'), 3000);
+        return;
+      }
+      await reg.update();
+      // If a new SW is waiting, the onNeedRefresh callback in main.tsx will handle the reload.
+      // Otherwise, we're up to date.
+      if (reg.waiting) {
+        setUpdateStatus('updating');
+      } else {
+        setUpdateStatus('upToDate');
+        setTimeout(() => setUpdateStatus('idle'), 3000);
+      }
+    } catch {
+      setUpdateStatus('upToDate');
+      setTimeout(() => setUpdateStatus('idle'), 3000);
+    }
+  };
+
+  return (
+    <div className="bg-white rounded-[14px] p-4 shadow-sm border border-black/[0.04]">
+      <div className="flex items-center space-x-2 text-xs font-semibold text-[#8E8E93] uppercase tracking-wider mb-3">
+        <Smartphone className="w-4 h-4 text-iosBlue" />
+        <span>{t('section_app_updates', language)}</span>
+      </div>
+
+      {/* Install row */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="pr-3">
+          <span className="text-[15px] font-semibold text-black block">
+            {isInstalled
+              ? t('pwa_installed_status', language)
+              : t('pwa_install_btn', language)}
+          </span>
+          <span className="text-xs text-[#8E8E93] block mt-0.5">
+            {isInstalled
+              ? (language === 'ml' ? 'ഫോൺ ഹോം സ്ക്രീനിൽ ഇൻസ്റ്റാൾ ചെയ്തിരിക്കുന്നു' : 'Running as a home screen app')
+              : (language === 'ml' ? 'ഹോം സ്ക്രീനിൽ ഷോർട്ട്കട്ട് ആക്കുക' : 'Add a shortcut to your home screen')}
+          </span>
+          {showIOSHint && (
+            <span className="text-[11px] text-iosBlue font-medium block mt-1 leading-snug">
+              {language === 'ml'
+                ? '📤 Safari-ൽ Share → Add to Home Screen ടാപ്പ് ചെയ്യുക'
+                : '📤 In Safari: tap Share → "Add to Home Screen"'}
+            </span>
+          )}
+        </div>
+        {isInstalled ? (
+          <span className="flex items-center gap-1 text-[11px] font-semibold text-iosGreen bg-green-50 px-2.5 py-1 rounded-full flex-shrink-0">
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            {language === 'ml' ? 'ഇൻസ്റ്റാൾ ചെയ്തു' : 'Installed'}
+          </span>
+        ) : (canInstall || platform === 'ios') ? (
+          <button
+            type="button"
+            onClick={handleInstallClick}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-iosBlue text-white text-xs font-bold rounded-full flex-shrink-0 active:opacity-80 transition-opacity"
+          >
+            <ArrowDownToLine className="w-3.5 h-3.5" />
+            {language === 'ml' ? 'ഇൻസ്റ്റാൾ' : 'Install'}
+          </button>
+        ) : (
+          <span className="text-[11px] text-[#8E8E93] text-right flex-shrink-0 max-w-[120px] leading-tight">
+            {language === 'ml' ? 'ഈ ബ്രൗസർ ഇൻസ്റ്റാൾ പ്രോംപ്റ്റ് പിന്തുണയ്ക്കുന്നില്ല' : 'Open in Chrome or Safari to install'}
+          </span>
+        )}
+      </div>
+
+      <div className="h-px bg-[#E5E5EA] mb-3" />
+
+      {/* Updates row */}
+      <div className="flex items-center justify-between">
+        <div className="pr-3 flex-1">
+          <span className="text-xs text-[#8E8E93] leading-relaxed block">
+            {updateStatus === 'upToDate'
+              ? t('pwa_up_to_date', language)
+              : updateStatus === 'updating'
+              ? t('pwa_updating', language)
+              : t('pwa_updates_note', language)}
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={handleCheckUpdate}
+          disabled={updateStatus === 'checking' || updateStatus === 'updating'}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-[#F2F2F7] hover:bg-gray-200 rounded-[10px] text-xs font-semibold text-black flex-shrink-0 active:opacity-80 transition-all disabled:opacity-50"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${updateStatus === 'checking' ? 'animate-spin' : ''}`} />
+          {language === 'ml' ? 'പരിശോധിക്കുക' : 'Check'}
+        </button>
+      </div>
+    </div>
+  );
+};
 
 interface SettingsScreenProps {
   settings: AppSettings;
@@ -539,6 +657,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           </div>
         </div>
 
+        {/* Section: App & Updates */}
+        <AppUpdatesSection language={language} />
+
         {/* Section 6: About */}
         <div className="bg-white rounded-[14px] p-4 shadow-sm border border-black/[0.04]">
           <div className="flex items-center space-x-2 text-xs font-semibold text-[#8E8E93] uppercase tracking-wider mb-2">
@@ -560,6 +681,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             </div>
           </div>
         </div>
+
 
         {/* Section 7: Log Out / Switch Shop Button (iOS Grouped Style) */}
         <div className="bg-white rounded-[14px] p-2 shadow-sm border border-black/[0.04]">

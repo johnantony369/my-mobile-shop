@@ -99,10 +99,14 @@ export function LoginModal({
     try {
       setLoading(true);
       if (mode === 'register') {
-        await registerWithPassword(cleanId, password);
+        const u = await registerWithPassword(cleanId, password);
+        localStorage.setItem('mms_authenticated', 'true');
+        localStorage.setItem('mms_user_id', u.uid);
         setSuccessMsg(isMl ? 'അക്കൗണ്ട് വിജയകരമായി സൃഷ്ടിച്ചു!' : 'Account created successfully!');
       } else {
-        await loginWithPassword(cleanId, password);
+        const u = await loginWithPassword(cleanId, password);
+        localStorage.setItem('mms_authenticated', 'true');
+        localStorage.setItem('mms_user_id', u.uid);
         setSuccessMsg(isMl ? 'വിജയകരമായി ലോഗിൻ ചെയ്തു!' : 'Logged in successfully!');
       }
       setTimeout(() => {
@@ -131,7 +135,9 @@ export function LoginModal({
     setSuccessMsg(null);
     try {
       setLoading(true);
-      await loginWithGoogle();
+      const u = await loginWithGoogle();
+      localStorage.setItem('mms_authenticated', 'true');
+      localStorage.setItem('mms_user_id', u.uid);
       setSuccessMsg(isMl ? 'വിജയകരമായി ലോഗിൻ ചെയ്തു!' : 'Logged in successfully!');
       setTimeout(() => {
         onSuccess();
@@ -194,7 +200,9 @@ export function LoginModal({
 
     try {
       setLoading(true);
-      await confirmOtp(confirmationRef.current, otpCode);
+      const u = await confirmOtp(confirmationRef.current, otpCode);
+      localStorage.setItem('mms_authenticated', 'true');
+      localStorage.setItem('mms_user_id', u.uid);
       setSuccessMsg(isMl ? 'വിജയകരമായി ലോഗിൻ ചെയ്തു!' : 'Logged in successfully!');
       setTimeout(() => {
         onSuccess();

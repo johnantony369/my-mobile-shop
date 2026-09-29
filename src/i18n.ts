@@ -680,6 +680,36 @@ export const translations = {
     ml: 'അപ്ഡേറ്റ് ചെയ്യുക',
     en: 'Update Job',
   },
+
+  // PWA Install & Updates
+  section_app_updates: {
+    ml: 'ആപ്പും അപ്‌ഡേറ്റുകളും',
+    en: 'App & Updates',
+  },
+  pwa_install_btn: {
+    ml: 'ഫോണിൽ ഇൻസ്റ്റാൾ ചെയ്യുക',
+    en: 'Install App to Home Screen',
+  },
+  pwa_installed_status: {
+    ml: 'ആപ്പ് ഇൻസ്റ്റാൾ ചെയ്തിരിക്കുന്നു',
+    en: 'Installed as App',
+  },
+  pwa_updates_note: {
+    ml: 'ആപ്പ് പ്രവർത്തനക്ഷമമാകുമ്പോൾ അപ്‌ഡേറ്റുകൾ യാന്ത്രികമായി ഇൻസ്റ്റാൾ ആകും',
+    en: 'Updates install automatically in the background when you open the app',
+  },
+  pwa_check_update_btn: {
+    ml: 'അപ്‌ഡേറ്റ് പരിശോധിക്കുക',
+    en: 'Check for Updates',
+  },
+  pwa_up_to_date: {
+    ml: 'ആപ്പ് ഏറ്റവും പുതിയ പതിപ്പിലാണ്',
+    en: 'App is up to date',
+  },
+  pwa_updating: {
+    ml: 'അപ്‌ഡേറ്റ് ഇൻസ്റ്റാൾ ആകുന്നു…',
+    en: 'Installing update…',
+  },
 };
 
 export type TranslationKey = keyof typeof translations;

@@ -11,6 +11,7 @@ import { getTrialDaysRemaining } from './utils/activation';
 import { requestPersistentStorage } from './utils/storage';
 import { useAuth } from './firebase/useAuth';
 import { LoginScreen } from './screens/LoginScreen';
+import { InstallBanner } from './components/InstallBanner';
 import { Language } from './types';
 import { Cloud, CloudOff, RefreshCw, AlertTriangle } from 'lucide-react';
 
@@ -173,6 +174,9 @@ export default function App() {
           />
         )}
       </main>
+
+      {/* Install Banner — shown to first-time browser visitors */}
+      <InstallBanner language={language} />
 
       {/* Persistent Bottom Tab Bar */}
       <TabBar
