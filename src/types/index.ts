@@ -2,7 +2,16 @@ export type EntryType = 'in' | 'out';
 export type PaymentMethod = 'cash' | 'upi' | 'card';
 export type Language = 'ml' | 'en';
 
-export interface Entry {
+export type SyncStatus = 'synced' | 'pending' | 'deleted';
+
+export interface SyncMetadata {
+  cloudId?: string;
+  updatedAt?: string; // ISO 8601
+  syncStatus?: SyncStatus;
+  deletedAt?: string | null; // ISO 8601
+}
+
+export interface Entry extends SyncMetadata {
   id?: number;
   type: EntryType;
   amount: number;
@@ -17,7 +26,7 @@ export interface Entry {
 
 export type JobStatus = 'received' | 'waiting' | 'ready' | 'delivered' | 'returned';
 
-export interface Job {
+export interface Job extends SyncMetadata {
   id?: number;
   customerName: string;
   phone: string; // 10-digit Indian mobile
@@ -35,7 +44,7 @@ export interface Job {
   bookEntryId?: number | null; // link to entries table
 }
 
-export interface AppSettings {
+export interface AppSettings extends SyncMetadata {
   id?: number;
   shopName: string;
   language: Language;

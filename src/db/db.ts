@@ -2,6 +2,13 @@ import Dexie, { Table } from 'dexie';
 import { Entry, AppSettings, DaySummary, Job } from '../types';
 import { getLocalDateString } from '../utils/date';
 
+export function generateCloudId(): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return 'id_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10);
+}
+
 export class ShopDatabase extends Dexie {
   entries!: Table<Entry, number>;
   settings!: Table<AppSettings, number>;
@@ -17,6 +24,64 @@ export class ShopDatabase extends Dexie {
       entries: '++id, type, amount, date, createdAt, paymentMethod, repairId',
       settings: '++id',
       jobs: '++id, status, phone, customerName, model, receivedAt, readyAt, deliveredAt, bookEntryId',
+    });
+    this.version(3).stores({
+      entries: '++id, cloudId, type, amount, date, createdAt, updatedAt, syncStatus, paymentMethod, repairId',
+      settings: '++id, cloudId, updatedAt, syncStatus',
+      jobs: '++id, cloudId, status, phone, customerName, model, receivedAt, readyAt, deliveredAt, bookEntryId, updatedAt, syncStatus',
+    }).upgrade(async tx => {
+      await tx.table('entries').toCollection().modify((entry: Entry) => {
+        if (!entry.cloudId) entry.cloudId = generateCloudId();
+        if (!entry.updatedAt) entry.updatedAt = entry.createdAt ? new Date(entry.createdAt).toISOString() : new Date().toISOString();
+        if (!entry.syncStatus) entry.syncStatus = 'pending';
+      });
+      await tx.table('jobs').toCollection().modify((job: Job) => {
+        if (!job.cloudId) job.cloudId = generateCloudId();
+        if (!job.updatedAt) job.updatedAt = job.receivedAt ? new Date(job.receivedAt).toISOString() : new Date().toISOString();
+        if (!job.syncStatus) job.syncStatus = 'pending';
+      });
+      await tx.table('settings').toCollection().modify((settings: AppSettings) => {
+        if (!settings.cloudId) settings.cloudId = generateCloudId();
+        if (!settings.updatedAt) settings.updatedAt = new Date().toISOString();
+        if (!settings.syncStatus) settings.syncStatus = 'pending';
+      });
+    });
+
+    // Hooks to ensure new records receive sync fields automatically
+    this.entries.hook('creating', (_primKey, obj) => {
+      if (!obj.cloudId) obj.cloudId = generateCloudId();
+      if (!obj.updatedAt) obj.updatedAt = new Date().toISOString();
+      if (!obj.syncStatus) obj.syncStatus = 'pending';
+    });
+    this.entries.hook('updating', (modifications: Partial<Entry>) => {
+      if (!modifications.updatedAt) {
+        return { ...modifications, updatedAt: new Date().toISOString(), syncStatus: modifications.syncStatus || 'pending' };
+      }
+      return undefined;
+    });
+
+    this.jobs.hook('creating', (_primKey, obj) => {
+      if (!obj.cloudId) obj.cloudId = generateCloudId();
+      if (!obj.updatedAt) obj.updatedAt = new Date().toISOString();
+      if (!obj.syncStatus) obj.syncStatus = 'pending';
+    });
+    this.jobs.hook('updating', (modifications: Partial<Job>) => {
+      if (!modifications.updatedAt) {
+        return { ...modifications, updatedAt: new Date().toISOString(), syncStatus: modifications.syncStatus || 'pending' };
+      }
+      return undefined;
+    });
+
+    this.settings.hook('creating', (_primKey, obj) => {
+      if (!obj.cloudId) obj.cloudId = generateCloudId();
+      if (!obj.updatedAt) obj.updatedAt = new Date().toISOString();
+      if (!obj.syncStatus) obj.syncStatus = 'pending';
+    });
+    this.settings.hook('updating', (modifications: Partial<AppSettings>) => {
+      if (!modifications.updatedAt) {
+        return { ...modifications, updatedAt: new Date().toISOString(), syncStatus: modifications.syncStatus || 'pending' };
+      }
+      return undefined;
     });
   }
 }
@@ -37,6 +102,7 @@ export async function initAppSettings(
   if (existing) {
     return existing;
   }
+  const now = new Date().toISOString();
   const newSettings: AppSettings = {
     shopName,
     language,
@@ -44,15 +110,23 @@ export async function initAppSettings(
     activated: false,
     lastBackupAt: null,
     showRepairs,
+    cloudId: generateCloudId(),
+    updatedAt: now,
+    syncStatus: 'pending',
   };
   const id = await db.settings.add(newSettings);
   return { ...newSettings, id };
 }
 
 export async function updateAppSettings(partial: Partial<AppSettings>): Promise<void> {
+  const now = new Date().toISOString();
   const existing = await getAppSettings();
   if (existing && existing.id) {
-    await db.settings.update(existing.id, partial);
+    await db.settings.update(existing.id, {
+      ...partial,
+      updatedAt: now,
+      syncStatus: 'pending',
+    });
   } else {
     await db.settings.add({
       shopName: '',
@@ -61,9 +135,30 @@ export async function updateAppSettings(partial: Partial<AppSettings>): Promise<
       activated: false,
       lastBackupAt: null,
       showRepairs: false,
+      cloudId: generateCloudId(),
+      updatedAt: now,
+      syncStatus: 'pending',
       ...partial,
     });
   }
+}
+
+export async function softDeleteEntry(id: number): Promise<void> {
+  const now = new Date().toISOString();
+  await db.entries.update(id, {
+    syncStatus: 'deleted',
+    deletedAt: now,
+    updatedAt: now,
+  });
+}
+
+export async function softDeleteJob(id: number): Promise<void> {
+  const now = new Date().toISOString();
+  await db.jobs.update(id, {
+    syncStatus: 'deleted',
+    deletedAt: now,
+    updatedAt: now,
+  });
 }
 
 export function computeSummary(entries: Entry[]): DaySummary {
