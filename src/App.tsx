@@ -13,21 +13,62 @@ import { Language } from './types';
 export default function App() {
   const [currentTab, setCurrentTab] = useState<TabType>('book');
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [loadingTimeout, setLoadingTimeout] = useState(false);
 
-  // Live query for settings
-  const settingsList = useLiveQuery(() => db.settings.toArray(), [refreshTrigger]);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoadingTimeout(true);
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, []);
 
-  // Live query for ready jobs count
+  // Safe live query for settings
+  const settingsList = useLiveQuery(
+    async () => {
+      try {
+        await db.open();
+        return await db.settings.toArray();
+      } catch (err) {
+        console.error('Error loading settings from IndexedDB:', err);
+        return [];
+      }
+    },
+    [refreshTrigger]
+  );
+
+  // Safe live query for ready jobs count
   const readyJobsCount = useLiveQuery(
-    () => db.jobs.where('status').equals('ready').count(),
+    async () => {
+      try {
+        if (!db.jobs) return 0;
+        return await db.jobs.where('status').equals('ready').count();
+      } catch (err) {
+        console.warn('Error querying ready jobs count:', err);
+        return 0;
+      }
+    },
     []
   ) ?? 0;
 
-  // Loading state
+  // Loading state with timeout fallback
   if (settingsList === undefined) {
     return (
-      <div className="min-h-screen bg-iosBg flex items-center justify-center">
-        <div className="w-8 h-8 border-3 border-iosBlue border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-iosBg flex flex-col items-center justify-center p-6 text-center select-none">
+        <div className="w-9 h-9 border-3 border-iosBlue border-t-transparent rounded-full animate-spin mb-4" />
+        {loadingTimeout && (
+          <div className="mt-4 space-y-3 animate-fade-in">
+            <p className="text-xs text-[#8E8E93]">
+              ഡാറ്റ ലോഡ് ആകാൻ സമയമെടുക്കുന്നു...
+            </p>
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-iosBlue text-white text-xs font-semibold rounded-full shadow-sm"
+            >
+              റീലോഡ് ചെയ്യുക (Reload)
+            </button>
+          </div>
+        )}
       </div>
     );
   }
@@ -46,13 +87,6 @@ export default function App() {
   const showRepairs = !!settings.showRepairs;
   const trialDays = getTrialDaysRemaining(settings.firstLaunchDate);
   const isReadOnly = !settings.activated && trialDays <= 0;
-
-  // If user disables repairs while on repairs tab, switch to book
-  useEffect(() => {
-    if (!showRepairs && currentTab === 'repairs') {
-      setCurrentTab('book');
-    }
-  }, [showRepairs, currentTab]);
 
   return (
     <div className="min-h-screen bg-iosBg text-iosLabel font-sans flex flex-col justify-between selection:bg-iosBlue/20">
