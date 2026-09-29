@@ -10,7 +10,7 @@ import { DailyRitualCard } from '../components/DailyRitualCard';
 import { EntryList } from '../components/EntryList';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { AddEditSheet } from './AddEditSheet';
-import { Plus, Calendar, Crown } from 'lucide-react';
+import { Plus, Crown } from 'lucide-react';
 
 interface BookScreenProps {
   language: Language;
@@ -113,38 +113,32 @@ export const BookScreen: React.FC<BookScreenProps> = ({
       </div>
 
       <div className="max-w-lg mx-auto">
-        {/* Large Shop Name & Date Header */}
+        {/* Large Shop Name & Action Header */}
         <div className="px-4 pt-3 pb-1">
-          <div className="flex items-center justify-between">
-            <h1 className="text-[30px] font-black text-black tracking-tight leading-tight">
+          <div className="flex items-center justify-between gap-3">
+            <h1 className="text-[28px] sm:text-[30px] font-black text-black tracking-tight leading-tight truncate flex-1 min-w-0">
               {shopName || 'My Mobile Shop'}
             </h1>
-            <div className="flex items-center space-x-1.5">
-              {!isActivated && onOpenPaywall && (
-                <button
-                  type="button"
-                  onClick={onOpenPaywall}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold active:scale-95 transition-all shadow-xs border ${
-                    isReadOnly
-                      ? 'bg-red-50 text-iosRed border-red-200 animate-pulse'
-                      : 'bg-gradient-to-r from-amber-50 to-yellow-50 text-amber-900 border-amber-200/90 hover:from-amber-100 hover:to-yellow-100'
-                  }`}
-                >
-                  <Crown className={`w-3.5 h-3.5 ${isReadOnly ? 'text-iosRed' : 'text-amber-600'}`} />
-                  <span>
-                    {isReadOnly
-                      ? (language === 'ml' ? 'അൺലോക്ക് പ്രോ' : 'Unlock Pro')
-                      : (language === 'ml' ? `പ്രോ: ${trialDays ?? 0}d` : `Pro: ${trialDays ?? 0}d left`)}
-                  </span>
-                </button>
-              )}
-              <div className="flex items-center space-x-1 text-xs font-medium text-[#8E8E93] bg-white px-2.5 py-1 rounded-full border border-black/[0.04] shadow-xs">
-                <Calendar className="w-3.5 h-3.5 text-iosBlue" />
-                <span>{selectedDate}</span>
-              </div>
-            </div>
+            {!isActivated && onOpenPaywall && (
+              <button
+                type="button"
+                onClick={onOpenPaywall}
+                className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold active:scale-95 transition-all shadow-xs border ${
+                  isReadOnly
+                    ? 'bg-red-50 text-iosRed border-red-200 animate-pulse'
+                    : 'bg-gradient-to-r from-amber-50 to-yellow-50 text-amber-900 border-amber-200/90 hover:from-amber-100 hover:to-yellow-100'
+                }`}
+              >
+                <Crown className={`w-3.5 h-3.5 ${isReadOnly ? 'text-iosRed' : 'text-amber-600'}`} />
+                <span>
+                  {isReadOnly
+                    ? 'Unlock Pro'
+                    : `Pro: ${trialDays ?? 0}d left`}
+                </span>
+              </button>
+            )}
           </div>
-          <p className="text-[17px] font-bold text-iosBlue tracking-tight mt-0.5">
+          <p className="text-[16px] font-bold text-iosBlue tracking-tight mt-0.5">
             {dateTitle}
           </p>
         </div>
@@ -201,7 +195,7 @@ export const BookScreen: React.FC<BookScreenProps> = ({
           {isReadOnly ? (
             <>
               <Crown className="w-5 h-5 text-yellow-200" />
-              <span>{language === 'ml' ? 'പ്രോ അൺലോക്ക് ചെയ്യുക' : 'Unlock Pro to Add'}</span>
+              <span>Unlock Pro to Add</span>
             </>
           ) : (
             <>

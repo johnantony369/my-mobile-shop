@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ml">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/icon.svg" />
@@ -18,7 +18,7 @@
       window.addEventListener('error', function(e) {
         var root = document.getElementById('root');
         if (root && root.innerHTML.trim() === '') {
-          root.innerHTML = '<div style="font-family: -apple-system, sans-serif; padding: 24px; text-align: center; background: #F2F2F7; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;"><div style="width: 56px; height: 56px; border-radius: 16px; background: #FF3B30; color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; margin-bottom: 16px;">!</div><h3 style="font-size: 18px; font-weight: bold; margin-bottom: 8px;">ലോഡിംഗ് തകരാർ</h3><p style="color: #8E8E93; font-size: 13px; margin-bottom: 20px;">' + (e.message || 'Failed to load app scripts') + '</p><button onclick="if(window.caches) { caches.keys().then(function(keys){ keys.forEach(function(k){ caches.delete(k); }); window.location.reload(true); }); } else { window.location.reload(true); }" style="padding: 12px 24px; background: #007AFF; color: white; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer;">ക്യാഷ് ഒഴിവാക്കി റീലോഡ് ചെയ്യുക (Clear Cache & Reload)</button></div>';
+          root.innerHTML = '<div style="font-family: -apple-system, sans-serif; padding: 24px; text-align: center; background: #F2F2F7; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;"><div style="width: 56px; height: 56px; border-radius: 16px; background: #FF3B30; color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; margin-bottom: 16px;">!</div><h3 style="font-size: 18px; font-weight: bold; margin-bottom: 8px;">Loading Error</h3><p style="color: #8E8E93; font-size: 13px; margin-bottom: 20px;">' + (e.message || 'Failed to load app scripts') + '</p><button onclick="if(window.caches) { caches.keys().then(function(keys){ keys.forEach(function(k){ caches.delete(k); }); window.location.reload(true); }); } else { window.location.reload(true); }" style="padding: 12px 24px; background: #007AFF; color: white; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer;">Clear Cache & Reload</button></div>';
         }
       });
     </script>

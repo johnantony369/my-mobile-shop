@@ -13,7 +13,7 @@ interface OnboardingScreenProps {
 }
 
 export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
-  const [language, setLanguage] = useState<Language>('en');
+  const language: Language = 'en';
   const [shopName, setShopName] = useState('');
   const [repairsChoice, setRepairsChoice] = useState<'no' | 'yes'>('no');
   const [error, setError] = useState<string | null>(null);
@@ -66,21 +66,6 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
 
       {/* Form Section */}
       <form onSubmit={handleSubmit} className="my-auto py-4 space-y-4">
-        {/* Language Selection */}
-        <div className="bg-white rounded-[14px] p-4 shadow-sm border border-black/[0.04]">
-          <label className="text-xs font-semibold text-[#8E8E93] uppercase tracking-wider block mb-2">
-            {t('onboarding_language_label', language)}
-          </label>
-          <SegmentedControl<Language>
-            value={language}
-            onChange={(val) => setLanguage(val)}
-            size="md"
-            options={[
-              { value: 'ml', label: 'മലയാളം' },
-              { value: 'en', label: 'English' },
-            ]}
-          />
-        </div>
 
         {/* Shop Name Input */}
         <div className="bg-white rounded-[14px] p-4 shadow-sm border border-black/[0.04]">
@@ -101,7 +86,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
           {error && <p className="text-xs text-iosRed font-medium mt-1.5">{error}</p>}
         </div>
 
-        {/* Repairs Question: നിങ്ങൾ ഫോൺ റിപ്പയർ ചെയ്യുന്നുണ്ടോ? (ഉണ്ട് / ഇല്ല) */}
+        {/* Repairs Question: Do you offer phone repairs? (Yes / No) */}
         <div className="bg-white rounded-[14px] p-4 shadow-sm border border-black/[0.04]">
           <label className="text-xs font-semibold text-[#8E8E93] uppercase tracking-wider block mb-2">
             {t('onboarding_repairs_question', language)}
@@ -134,14 +119,12 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
             <div className="relative flex items-center justify-center mb-3">
               <div className="border-t border-slate-200 dark:border-slate-800 w-full" />
               <span className="bg-iosBg px-2.5 text-xs text-[#8E8E93] font-medium uppercase tracking-wider absolute">
-                {language === 'ml' ? 'അഥവാ' : 'or'}
+                or
               </span>
             </div>
 
             <p className="text-xs text-[#8E8E93] mb-2 font-medium">
-              {language === 'ml'
-                ? 'മുമ്പ് സേവ് ചെയ്ത ഷോപ്പ് അക്കൗണ്ട് ഉണ്ടോ?'
-                : 'Already have a shop account?'}
+              Already have a shop account?
             </p>
 
             <button
@@ -151,9 +134,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
             >
               <Store className="w-4 h-4 text-blue-600" />
               <span>
-                {language === 'ml'
-                  ? 'ലോഗിൻ ചെയ്ത് ഡാറ്റ റീസ്റ്റോർ ചെയ്യുക'
-                  : 'Sign In to Restore Your Shop'}
+                Sign In to Restore Your Shop
               </span>
             </button>
           </div>

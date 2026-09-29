@@ -234,9 +234,7 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
             </div>
 
             <p className="text-[12px] text-slate-600 mt-1 leading-snug">
-              {language === 'ml'
-                ? 'മാസാമാസം നൽകേണ്ടതില്ല. ഒരിക്കൽ അടച്ചാൽ നിങ്ങളുടെ കടയിൽ ആജീവനാന്തം ഉപയോഗിക്കാം.'
-                : 'No monthly or annual subscription fees. Pay once and use forever.'}
+              No monthly or annual subscription fees. Pay once and use forever.
             </p>
 
             {/* Direct Razorpay Checkout Button */}

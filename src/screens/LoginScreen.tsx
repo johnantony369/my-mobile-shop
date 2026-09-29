@@ -22,12 +22,10 @@ import {
 
 interface LoginScreenProps {
   onSuccess: () => void;
-  language?: 'ml' | 'en';
+  language?: string;
 }
 
-export function LoginScreen({ onSuccess, language = 'en' }: LoginScreenProps) {
-  const isMl = language === 'ml';
-
+export function LoginScreen({ onSuccess }: LoginScreenProps) {
   // View: 'password' | 'phone_number' | 'phone_otp'
   const [view, setView] = useState<'password' | 'phone_number' | 'phone_otp'>('password');
   const [mode, setMode] = useState<'login' | 'register'>('login');
@@ -55,11 +53,11 @@ export function LoginScreen({ onSuccess, language = 'en' }: LoginScreenProps) {
 
     const cleanId = loginId.trim();
     if (!cleanId) {
-      setError(isMl ? 'ലോഗിൻ ഐഡി നൽകുക' : 'Please enter your Login ID or Email');
+      setError('Please enter your Login ID or Email');
       return;
     }
     if (password.length < 6) {
-      setError(isMl ? 'പാസ്‌വേഡ് കുറഞ്ഞത് 6 അക്ഷരങ്ങൾ വേണം' : 'Password must be at least 6 characters');
+      setError('Password must be at least 6 characters');
       return;
     }
 
@@ -69,12 +67,12 @@ export function LoginScreen({ onSuccess, language = 'en' }: LoginScreenProps) {
         const u = await registerWithPassword(cleanId, password);
         localStorage.setItem('mms_authenticated', 'true');
         localStorage.setItem('mms_user_id', u.uid);
-        setSuccessMsg(isMl ? 'അക്കൗണ്ട് വിജയകരമായി സൃഷ്ടിച്ചു!' : 'Account created successfully!');
+        setSuccessMsg('Account created successfully!');
       } else {
         const u = await loginWithPassword(cleanId, password);
         localStorage.setItem('mms_authenticated', 'true');
         localStorage.setItem('mms_user_id', u.uid);
-        setSuccessMsg(isMl ? 'വിജയകരമായി ലോഗിൻ ചെയ്തു!' : 'Logged in successfully!');
+        setSuccessMsg('Logged in successfully!');
       }
       setTimeout(() => {
         onSuccess();
@@ -82,13 +80,13 @@ export function LoginScreen({ onSuccess, language = 'en' }: LoginScreenProps) {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       if (msg.includes('user-not-found') || msg.includes('wrong-password') || msg.includes('invalid-credential')) {
-        setError(isMl ? 'തെറ്റായ ലോഗിൻ ഐഡി അല്ലെങ്കിൽ പാസ്‌വേഡ്' : 'Invalid Login ID or Password');
+        setError('Invalid Login ID or Password');
       } else if (msg.includes('email-already-in-use')) {
-        setError(isMl ? 'ഈ ഐഡിയിൽ ഇതിനകം അക്കൗണ്ട് ഉണ്ട്. ലോഗിൻ ചെയ്യുക.' : 'This Login ID already exists. Please Sign In.');
+        setError('This Login ID already exists. Please Sign In.');
       } else if (msg.includes('weak-password')) {
-        setError(isMl ? 'ശക്തമായ പാസ്‌വേഡ് നൽകുക' : 'Password should be stronger (at least 6 characters)');
+        setError('Password should be stronger (at least 6 characters)');
       } else {
-        setError(msg || (isMl ? 'ലോഗിൻ പരാജയപ്പെട്ടു' : 'Authentication failed'));
+        setError(msg || 'Authentication failed');
       }
     } finally {
       setLoading(false);
@@ -103,14 +101,14 @@ export function LoginScreen({ onSuccess, language = 'en' }: LoginScreenProps) {
       const u = await loginWithGoogle();
       localStorage.setItem('mms_authenticated', 'true');
       localStorage.setItem('mms_user_id', u.uid);
-      setSuccessMsg(isMl ? 'വിജയകരമായി ലോഗിൻ ചെയ്തു!' : 'Logged in successfully!');
+      setSuccessMsg('Logged in successfully!');
       setTimeout(() => {
         onSuccess();
       }, 400);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       if (!msg.includes('popup-closed-by-user')) {
-        setError(msg || (isMl ? 'Google ലോഗിൻ പരാജയപ്പെട്ടു' : 'Google sign-in failed'));
+        setError(msg || 'Google sign-in failed');
       }
     } finally {
       setLoading(false);
@@ -123,7 +121,7 @@ export function LoginScreen({ onSuccess, language = 'en' }: LoginScreenProps) {
 
     const clean = phoneNumber.replace(/\D/g, '');
     if (clean.length < 10) {
-      setError(isMl ? 'സാധുവായ 10 അക്ക മൊബൈൽ നമ്പർ നൽകുക' : 'Please enter a valid 10-digit mobile number');
+      setError('Please enter a valid 10-digit mobile number');
       return;
     }
     const formatted = clean.length === 10 ? `+91${clean}` : `+${clean}`;
@@ -139,11 +137,11 @@ export function LoginScreen({ onSuccess, language = 'en' }: LoginScreenProps) {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       if (msg.includes('invalid-phone-number')) {
-        setError(isMl ? 'തെറ്റായ ഫോൺ നമ്പർ' : 'Invalid phone number format');
+        setError('Invalid phone number format');
       } else if (msg.includes('quota-exceeded')) {
-        setError(isMl ? 'SMS ക്വാട്ട കഴിഞ്ഞു' : 'SMS quota exceeded. Please use Login ID or Google.');
+        setError('SMS quota exceeded. Please use Login ID or Google.');
       } else {
-        setError(msg || (isMl ? 'OTP അയക്കുന്നതിൽ പരാജയപ്പെട്ടു' : 'Failed to send OTP'));
+        setError(msg || 'Failed to send OTP');
       }
     } finally {
       setLoading(false);
@@ -156,7 +154,7 @@ export function LoginScreen({ onSuccess, language = 'en' }: LoginScreenProps) {
     setError(null);
 
     if (otpCode.length !== 6) {
-      setError(isMl ? '6 അക്ക OTP നൽകുക' : 'Enter 6-digit OTP code');
+      setError('Enter 6-digit OTP code');
       return;
     }
 
@@ -165,16 +163,16 @@ export function LoginScreen({ onSuccess, language = 'en' }: LoginScreenProps) {
       const u = await confirmOtp(confirmationRef.current, otpCode);
       localStorage.setItem('mms_authenticated', 'true');
       localStorage.setItem('mms_user_id', u.uid);
-      setSuccessMsg(isMl ? 'വിജയകരമായി ലോഗിൻ ചെയ്തു!' : 'Logged in successfully!');
+      setSuccessMsg('Logged in successfully!');
       setTimeout(() => {
         onSuccess();
       }, 400);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       if (msg.includes('invalid-verification-code')) {
-        setError(isMl ? 'തെറ്റായ OTP' : 'Invalid verification code');
+        setError('Invalid verification code');
       } else {
-        setError(msg || (isMl ? 'സ്ഥിരീകരണം പരാജയപ്പെട്ടു' : 'Verification failed'));
+        setError(msg || 'Verification failed');
       }
     } finally {
       setLoading(false);
@@ -195,23 +193,17 @@ export function LoginScreen({ onSuccess, language = 'en' }: LoginScreenProps) {
           <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 mt-1">
             {view === 'password'
               ? mode === 'login'
-                ? isMl ? 'ഷോപ്പ് ലോഗിൻ' : 'Shop Sign In'
-                : isMl ? 'പുതിയ അക്കൗണ്ട്' : 'Create Shop Account'
+                ? 'Shop Sign In'
+                : 'Create Shop Account'
               : view === 'phone_number'
-              ? isMl ? 'ഫോൺ നമ്പർ ലോഗിൻ' : 'Sign in with Phone'
-              : isMl ? 'OTP നൽകുക' : 'Enter Verification Code'}
+              ? 'Sign in with Phone'
+              : 'Enter Verification Code'}
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
             {view === 'password'
-              ? isMl
-                ? 'നിങ്ങളുടെ ക്ലൗഡ് ലെഡ്ജർ വിവരങ്ങൾ നേടുക'
-                : 'Access your cloud ledger and customer repairs'
+              ? 'Access your cloud ledger and customer repairs'
               : view === 'phone_number'
-              ? isMl
-                ? 'നിങ്ങളുടെ മൊബൈൽ നമ്പർ നൽകുക'
-                : 'Enter your 10-digit mobile number'
-              : isMl
-              ? `${phoneNumber} ലേക്ക് അയച്ച OTP നൽകുക`
+              ? 'Enter your 10-digit mobile number'
               : `Enter the code sent to ${phoneNumber}`}
           </p>
         </div>
@@ -237,13 +229,13 @@ export function LoginScreen({ onSuccess, language = 'en' }: LoginScreenProps) {
             <form onSubmit={handlePasswordSubmit} className="space-y-3.5">
               <div>
                 <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">
-                  {isMl ? 'ലോഗിൻ ഐഡി / ഇമെയിൽ' : 'Login ID / Shop ID'}
+                  Login ID / Shop ID
                 </label>
                 <div className="flex items-center gap-2.5 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/80 focus-within:ring-2 focus-within:ring-blue-500 transition-all">
                   <Store className="w-4 h-4 text-slate-400 shrink-0" />
                   <input
                     type="text"
-                    placeholder={isMl ? 'ഉദാ: keralamobile' : 'e.g. keralamobile or email'}
+                    placeholder="e.g. keralamobile or email"
                     value={loginId}
                     onChange={e => setLoginId(e.target.value)}
                     className="w-full bg-transparent text-sm font-medium text-slate-900 dark:text-white outline-none"
@@ -254,7 +246,7 @@ export function LoginScreen({ onSuccess, language = 'en' }: LoginScreenProps) {
 
               <div>
                 <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">
-                  {isMl ? 'പാസ്‌വേഡ്' : 'Password'}
+                  Password
                 </label>
                 <div className="flex items-center gap-2.5 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/80 focus-within:ring-2 focus-within:ring-blue-500 transition-all">
                   <Lock className="w-4 h-4 text-slate-400 shrink-0" />
@@ -281,9 +273,7 @@ export function LoginScreen({ onSuccess, language = 'en' }: LoginScreenProps) {
                 className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25 active:scale-98"
               >
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
-                {mode === 'login'
-                  ? isMl ? 'ലോഗിൻ ചെയ്യുക' : 'Sign In'
-                  : isMl ? 'അക്കൗണ്ട് സൃഷ്ടിക്കുക' : 'Create Account'}
+                {mode === 'login' ? 'Sign In' : 'Create Account'}
               </button>
             </form>
 
@@ -298,11 +288,7 @@ export function LoginScreen({ onSuccess, language = 'en' }: LoginScreenProps) {
                 className="text-xs text-blue-600 dark:text-blue-400 hover:underline font-semibold"
               >
                 {mode === 'login'
-                  ? isMl
-                    ? 'പുതിയ ഷോപ്പാണോ? ഇവിടെ രജിസ്റ്റർ ചെയ്യുക'
-                    : "Don't have a shop account? Register here"
-                  : isMl
-                  ? 'ഇതിനകം അക്കൗണ്ട് ഉണ്ടോ? ലോഗിൻ ചെയ്യുക'
+                  ? "Don't have a shop account? Register here"
                   : 'Already have an account? Sign in'}
               </button>
             </div>
@@ -311,7 +297,7 @@ export function LoginScreen({ onSuccess, language = 'en' }: LoginScreenProps) {
             <div className="relative flex items-center justify-center my-4">
               <div className="border-t border-slate-200 dark:border-slate-800 w-full" />
               <span className="bg-white dark:bg-slate-900 px-2.5 text-[11px] text-slate-400 font-medium uppercase tracking-wider absolute">
-                {isMl ? 'അഥവാ' : 'or continue with'}
+                or continue with
               </span>
             </div>
 
@@ -365,7 +351,7 @@ export function LoginScreen({ onSuccess, language = 'en' }: LoginScreenProps) {
           <form onSubmit={handleSendPhoneOtp} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5">
-                {isMl ? 'മൊബൈൽ നമ്പർ' : 'Mobile Number'}
+                Mobile Number
               </label>
               <div className="flex items-center gap-2 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 focus-within:ring-2 focus-within:ring-blue-500">
                 <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">+91</span>
@@ -393,7 +379,7 @@ export function LoginScreen({ onSuccess, language = 'en' }: LoginScreenProps) {
                 disabled={loading}
                 className="w-1/3 py-2.5 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium text-xs hover:bg-slate-100 dark:hover:bg-slate-800"
               >
-                {isMl ? 'തിരികെ' : 'Back'}
+                Back
               </button>
               <button
                 type="submit"
@@ -401,7 +387,7 @@ export function LoginScreen({ onSuccess, language = 'en' }: LoginScreenProps) {
                 className="w-2/3 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-blue-500/25"
               >
                 {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                {isMl ? 'OTP അയക്കുക' : 'Send OTP'}
+                Send OTP
               </button>
             </div>
           </form>
@@ -412,7 +398,7 @@ export function LoginScreen({ onSuccess, language = 'en' }: LoginScreenProps) {
           <form onSubmit={handleVerifyPhoneOtp} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5">
-                {isMl ? '6-അക്ക OTP കോഡ്' : '6-digit OTP Code'}
+                6-digit OTP Code
               </label>
               <input
                 type="text"
@@ -435,7 +421,7 @@ export function LoginScreen({ onSuccess, language = 'en' }: LoginScreenProps) {
                 disabled={loading}
                 className="w-1/3 py-2.5 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium text-xs hover:bg-slate-100 dark:hover:bg-slate-800"
               >
-                {isMl ? 'തിരികെ' : 'Back'}
+                Back
               </button>
               <button
                 type="submit"
@@ -443,7 +429,7 @@ export function LoginScreen({ onSuccess, language = 'en' }: LoginScreenProps) {
                 className="w-2/3 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-blue-500/25"
               >
                 {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                {isMl ? 'സ്ഥിരീകരിക്കുക' : 'Verify & Sign In'}
+                Verify & Sign In
               </button>
             </div>
           </form>

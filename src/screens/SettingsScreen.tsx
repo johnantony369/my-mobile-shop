@@ -88,21 +88,19 @@ const AppUpdatesSection: React.FC<{ language: Language }> = ({ language }) => {
           </span>
           <span className="text-xs text-[#8E8E93] block mt-0.5">
             {isInstalled
-              ? (language === 'ml' ? 'ഫോൺ ഹോം സ്ക്രീനിൽ ഇൻസ്റ്റാൾ ചെയ്തിരിക്കുന്നു' : 'Running as a home screen app')
-              : (language === 'ml' ? 'ഹോം സ്ക്രീനിൽ ഷോർട്ട്കട്ട് ആക്കുക' : 'Add a shortcut to your home screen')}
+              ? 'Running as a home screen app'
+              : 'Add a shortcut to your home screen'}
           </span>
           {showIOSHint && (
             <span className="text-[11px] text-iosBlue font-medium block mt-1 leading-snug">
-              {language === 'ml'
-                ? '📤 Safari-ൽ Share → Add to Home Screen ടാപ്പ് ചെയ്യുക'
-                : '📤 In Safari: tap Share → "Add to Home Screen"'}
+              📤 In Safari: tap Share → "Add to Home Screen"
             </span>
           )}
         </div>
         {isInstalled ? (
           <span className="flex items-center gap-1 text-[11px] font-semibold text-iosGreen bg-green-50 px-2.5 py-1 rounded-full flex-shrink-0">
             <CheckCircle2 className="w-3.5 h-3.5" />
-            {language === 'ml' ? 'ഇൻസ്റ്റാൾ ചെയ്തു' : 'Installed'}
+            Installed
           </span>
         ) : (canInstall || platform === 'ios') ? (
           <button
@@ -111,11 +109,11 @@ const AppUpdatesSection: React.FC<{ language: Language }> = ({ language }) => {
             className="flex items-center gap-1.5 px-3.5 py-2 bg-iosBlue text-white text-xs font-bold rounded-full flex-shrink-0 active:opacity-80 transition-opacity"
           >
             <ArrowDownToLine className="w-3.5 h-3.5" />
-            {language === 'ml' ? 'ഇൻസ്റ്റാൾ' : 'Install'}
+            Install
           </button>
         ) : (
           <span className="text-[11px] text-[#8E8E93] text-right flex-shrink-0 max-w-[120px] leading-tight">
-            {language === 'ml' ? 'ഈ ബ്രൗസർ ഇൻസ്റ്റാൾ പ്രോംപ്റ്റ് പിന്തുണയ്ക്കുന്നില്ല' : 'Open in Chrome or Safari to install'}
+            Open in Chrome or Safari to install
           </span>
         )}
       </div>
@@ -140,7 +138,7 @@ const AppUpdatesSection: React.FC<{ language: Language }> = ({ language }) => {
           className="flex items-center gap-1.5 px-3 py-1.5 bg-[#F2F2F7] hover:bg-gray-200 rounded-[10px] text-xs font-semibold text-black flex-shrink-0 active:opacity-80 transition-all disabled:opacity-50"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${updateStatus === 'checking' ? 'animate-spin' : ''}`} />
-          {language === 'ml' ? 'പരിശോധിക്കുക' : 'Check'}
+          Check
         </button>
       </div>
     </div>
@@ -158,7 +156,7 @@ interface SettingsScreenProps {
 export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   settings,
   language,
-  onLanguageChange,
+  onLanguageChange: _onLanguageChange,
   onRefreshSettings,
   onOpenPaywall,
 }) => {
@@ -217,11 +215,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     onRefreshSettings();
   };
 
-  const handleLanguageToggle = async (val: Language) => {
-    onLanguageChange(val);
-    await updateAppSettings({ language: val });
-    onRefreshSettings();
-  };
 
   const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatActivationCode(e.target.value);
@@ -398,21 +391,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           </form>
         </div>
 
-        {/* Section 2: Language */}
-        <div className="bg-white rounded-[14px] p-4 shadow-sm border border-black/[0.04]">
-          <span className="text-xs font-semibold text-[#8E8E93] uppercase tracking-wider block mb-2">
-            {t('section_language', language)}
-          </span>
-          <SegmentedControl<Language>
-            value={language}
-            onChange={handleLanguageToggle}
-            size="md"
-            options={[
-              { value: 'ml', label: t('lang_malayalam', language) },
-              { value: 'en', label: t('lang_english', language) },
-            ]}
-          />
-        </div>
 
         {/* Section: Repairs Service Module Toggle */}
         <div className="bg-white rounded-[14px] p-4 shadow-sm border border-black/[0.04]">
@@ -513,9 +491,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 >
                   <Crown className="w-3.5 h-3.5 text-amber-500" />
                   <span>
-                    {language === 'ml'
-                      ? 'കോഡ് ഇല്ലേ? ലൈഫ്‌ടൈം പ്രോ വാങ്ങുക'
-                      : "Don't have a code? Buy Lifetime Access"}
+                    Don't have a code? Buy Lifetime Access
                   </span>
                 </button>
               </div>
@@ -528,7 +504,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center space-x-2 text-xs font-semibold text-[#8E8E93] uppercase tracking-wider">
               <Cloud className="w-4 h-4 text-iosBlue" />
-              <span>{language === 'ml' ? 'ക്ലൗഡ് ബാക്കപ്പും സമന്വയവും' : 'Cloud Sync & Backup'}</span>
+              <span>Cloud Sync & Backup</span>
             </div>
             {user && (
               <span
@@ -554,12 +530,12 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   }`}
                 />
                 {syncState === 'synced'
-                  ? language === 'ml' ? 'സമന്വയിപ്പിച്ചു' : 'Synced'
+                  ? 'Synced'
                   : syncState === 'syncing'
-                  ? language === 'ml' ? 'സമന്വയിപ്പിക്കുന്നു...' : 'Syncing...'
+                  ? 'Syncing...'
                   : syncState === 'error'
-                  ? language === 'ml' ? 'പിശക്' : 'Error'
-                  : language === 'ml' ? 'ഓഫ്‌ലൈൻ' : 'Offline'}
+                  ? 'Error'
+                  : 'Offline'}
               </span>
             )}
           </div>
@@ -568,12 +544,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             <div className="p-3 bg-slate-50 border border-slate-200 rounded-[10px] text-xs text-slate-600 leading-relaxed">
               <div className="font-semibold text-slate-800 mb-1 flex items-center gap-1.5">
                 <AlertTriangle className="w-4 h-4 text-amber-500" />
-                <span>{language === 'ml' ? 'ക്ലൗഡ് ക്രമീകരണം ആവശ്യമാണ്' : 'Firebase Not Configured'}</span>
+                <span>Firebase Not Configured</span>
               </div>
               <p>
-                {language === 'ml'
-                  ? 'ക്ലൗഡ് ബാക്കപ്പ് പ്രവർത്തനക്ഷമമാക്കാൻ .env ഫയലിൽ Firebase API കീകൾ ചേർക്കുക.'
-                  : 'Add your Firebase credentials to the .env file to enable automatic cloud backup.'}
+                Add your Firebase credentials to the .env file to enable automatic cloud backup.
               </p>
             </div>
           ) : user ? (
@@ -581,7 +555,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               <div className="p-3 bg-[#F2F2F7] rounded-[10px] flex items-center justify-between text-xs">
                 <div>
                   <span className="text-[#8E8E93] block">
-                    {language === 'ml' ? 'ലോഗിൻ ചെയ്ത അക്കൗണ്ട്' : 'Connected Account'}
+                    Connected Account
                   </span>
                   <span className="font-semibold text-black text-sm">
                     {user.email || user.phoneNumber || user.displayName || 'Shop Owner'}
@@ -593,7 +567,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   className="p-1.5 text-iosRed hover:bg-red-50 rounded-lg transition-colors flex items-center gap-1 text-xs font-medium"
                 >
                   <LogOut className="w-3.5 h-3.5" />
-                  <span>{language === 'ml' ? 'ലോഗ് ഔട്ട്' : 'Sign Out'}</span>
+                  <span>Sign Out</span>
                 </button>
               </div>
 
@@ -606,9 +580,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
               <div className="flex items-center justify-between text-xs text-[#8E8E93]">
                 <span>
-                  {language === 'ml' ? 'അവസാനം സമന്വയിപ്പിച്ചത്:' : 'Last Synced:'}{' '}
+                  Last Synced:{' '}
                   <strong className="text-black font-medium">
-                    {lastSyncTime ? lastSyncTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : (language === 'ml' ? 'ഇതുവരെയില്ല' : 'Not yet')}
+                    {lastSyncTime ? lastSyncTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Not yet'}
                   </strong>
                 </span>
 
@@ -619,16 +593,14 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   className="px-3 py-1.5 bg-iosBlue/10 hover:bg-iosBlue/20 text-iosBlue font-semibold rounded-lg flex items-center gap-1.5 transition-colors"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${syncState === 'syncing' ? 'animate-spin' : ''}`} />
-                  <span>{language === 'ml' ? 'ഇപ്പോൾ സമന്വയിക്കുക' : 'Sync Now'}</span>
+                  <span>Sync Now</span>
                 </button>
               </div>
             </div>
           ) : (
             <div className="space-y-3">
               <p className="text-xs text-[#8E8E93] leading-relaxed">
-                {language === 'ml'
-                  ? 'നിങ്ങളുടെ ഷോപ്പ് ഡാറ്റ ക്ലൗഡിൽ സുരക്ഷിതമായി സൂക്ഷിക്കാനും ഏത് ഫോണിൽ നിന്നും കമ്പ്യൂട്ടറിൽ നിന്നും ഉപയോഗിക്കാനും ലോഗിൻ ചെയ്യുക.'
-                  : 'Sign in to automatically back up your ledger & repairs to the cloud and sync across multiple phones or computers.'}
+                Sign in to automatically back up your ledger & repairs to the cloud and sync across multiple phones or computers.
               </p>
 
               <button
@@ -637,7 +609,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-[12px] text-sm font-bold flex items-center justify-center gap-2 active:scale-98 transition-all shadow-md shadow-blue-500/20"
               >
                 <Store className="w-4 h-4" />
-                <span>{language === 'ml' ? 'ലോഗിൻ / അക്കൗണ്ട് തുറക്കുക' : 'Sign In / Cloud Account'}</span>
+                <span>Sign In / Cloud Account</span>
               </button>
             </div>
           )}
@@ -773,7 +745,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             className="w-full py-3.5 px-4 flex items-center justify-center space-x-2 text-iosRed font-semibold text-[15px] rounded-[10px] hover:bg-red-50/60 active:bg-red-100/50 transition-colors"
           >
             <LogOut className="w-4 h-4 text-iosRed" />
-            <span>{language === 'ml' ? 'ലോഗ് ഔട്ട് ചെയ്യുക' : 'Log Out'}</span>
+            <span>Log Out</span>
           </button>
         </div>
       </div>
@@ -793,13 +765,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       {/* Sign Out Confirmation Modal */}
       <ConfirmModal
         isOpen={isSignOutModalOpen}
-        title={language === 'ml' ? 'ലോഗ് ഔട്ട് ചെയ്യണോ?' : 'Sign Out?'}
-        message={
-          language === 'ml'
-            ? 'ലോഗ് ഔട്ട് ചെയ്താലും നിങ്ങളുടെ ഫോണിലെ വിവരങ്ങൾ സുരക്ഷിതമായിരിക്കും.'
-            : 'Your local shop records will remain safely saved on this device after signing out.'
-        }
-        confirmLabel={language === 'ml' ? 'ലോഗ് ഔട്ട്' : 'Sign Out'}
+        title="Sign Out?"
+        message="Your local shop records will remain safely saved on this device after signing out."
+        confirmLabel="Sign Out"
         cancelLabel={t('cancel_action', language)}
         isDestructive={false}
         onConfirm={handleSignOutConfirm}

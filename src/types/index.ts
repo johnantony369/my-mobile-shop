@@ -1,6 +1,6 @@
 export type EntryType = 'in' | 'out';
 export type PaymentMethod = 'cash' | 'upi' | 'card';
-export type Language = 'ml' | 'en';
+export type Language = 'en';
 
 export type SyncStatus = 'synced' | 'pending' | 'deleted';
 

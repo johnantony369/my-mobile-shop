@@ -93,7 +93,7 @@ export async function importBackup(file: File): Promise<{ count: number }> {
   if (data.settings?.shopName) {
     await updateAppSettings({
       shopName: data.settings.shopName,
-      language: data.settings.language || 'ml',
+      language: 'en',
       showRepairs: data.settings.showRepairs ?? false,
     });
   }

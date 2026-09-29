@@ -1,5 +1,5 @@
 import Dexie, { Table } from 'dexie';
-import { Entry, AppSettings, DaySummary, Job } from '../types';
+import { Entry, AppSettings, DaySummary, Job, Language } from '../types';
 import { getLocalDateString } from '../utils/date';
 
 export function generateCloudId(): string {
@@ -95,7 +95,7 @@ export async function getAppSettings(): Promise<AppSettings | undefined> {
 
 export async function initAppSettings(
   shopName: string,
-  language: 'ml' | 'en' = 'en',
+  language: Language = 'en',
   showRepairs: boolean = false
 ): Promise<AppSettings> {
   const existing = await getAppSettings();

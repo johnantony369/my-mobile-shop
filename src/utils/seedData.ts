@@ -27,13 +27,13 @@ export async function seedDevEntries(): Promise<number> {
   ] as const;
 
   const sampleExpensesOut = [
-    { item: 'കടയിലെ ചായ & പലഹാരം', amount: 90, note: 'Tea & Snacks' },
-    { item: 'സ്റ്റോക്ക് പാക്കിംഗ് കവർ', amount: 350, note: 'Packaging covers' },
-    { item: 'കട ക്ലീനിംഗ് സാധനങ്ങൾ', amount: 180, note: 'Cleaning liquids' },
-    { item: 'കട വൈദ്യുതി ബിൽ', amount: 680, note: 'KSEB Bill' },
-    { item: 'കുടിവെള്ള കാൻ (2 Nos)', amount: 120, note: 'Water cans' },
-    { item: 'കട വാടക അഡ്വാൻസ്', amount: 2500, note: 'Rent partial' },
-    { item: 'ലോക്കൽ കൊറിയർ ചാർജ്', amount: 150, note: 'Stock courier' },
+    { item: 'Tea & Snacks', amount: 90, note: 'Tea & Snacks' },
+    { item: 'Packaging Covers', amount: 350, note: 'Packaging covers' },
+    { item: 'Shop Cleaning Supplies', amount: 180, note: 'Cleaning liquids' },
+    { item: 'Electricity Bill', amount: 680, note: 'Power Bill' },
+    { item: 'Drinking Water Cans (2 Nos)', amount: 120, note: 'Water cans' },
+    { item: 'Shop Rent Advance', amount: 2500, note: 'Rent partial' },
+    { item: 'Courier Delivery Charge', amount: 150, note: 'Stock courier' },
   ] as const;
 
   const sampleCustomers = [
@@ -97,10 +97,10 @@ export async function seedDevJobs(): Promise<number> {
   const sampleJobs: Job[] = [
     // 2 Received (Active)
     {
-      customerName: 'മുഹമ്മദ് ഷാഫി',
+      customerName: 'Muhammed Shafi',
       phone: '9847123456',
       model: 'Samsung Galaxy M31',
-      complaint: 'ചാർജിംഗ് ആകുന്നില്ല, പിൻ ലൂസ് ആണ്',
+      complaint: 'Charging issue, pin loose',
       estimate: 450,
       advance: 100,
       status: 'received',
@@ -108,10 +108,10 @@ export async function seedDevJobs(): Promise<number> {
       receivedAt: now - oneDayMs * 2,
     },
     {
-      customerName: 'അരുൺ കുമാർ',
+      customerName: 'Arun Kumar',
       phone: '9447556677',
       model: 'Redmi Note 9',
-      complaint: 'മൈക്ക് വർക്ക് ചെയ്യുന്നില്ല, സംസാരിക്കുന്നത് കേൾക്കുന്നില്ല',
+      complaint: 'Microphone not working, caller cannot hear',
       estimate: 350,
       advance: 0,
       status: 'received',
@@ -120,10 +120,10 @@ export async function seedDevJobs(): Promise<number> {
 
     // 1 Waiting for parts (Active)
     {
-      customerName: 'വിഷ്ണു പ്രസാദ്',
+      customerName: 'Vishnu Prasad',
       phone: '9745889900',
       model: 'Realme 7 Pro',
-      complaint: 'ഡിസ്‌പ്ലേ തകർന്നു, ഫോൾഡർ ഓർഡർ ചെയ്തിട്ടുണ്ട്',
+      complaint: 'Display broken, folder ordered',
       estimate: 2200,
       advance: 500,
       status: 'waiting',
@@ -133,10 +133,10 @@ export async function seedDevJobs(): Promise<number> {
 
     // 2 Ready
     {
-      customerName: 'സുരേഷ് ബാബു',
+      customerName: 'Suresh Babu',
       phone: '9496112233',
       model: 'Vivo Y20',
-      complaint: 'ഡിസ്‌പ്ലേ മാറ്റി, ഫിറ്റിംഗ് പൂർത്തിയായി',
+      complaint: 'Display replaced, fitting completed',
       estimate: 1800,
       advance: 500,
       status: 'ready',
@@ -144,10 +144,10 @@ export async function seedDevJobs(): Promise<number> {
       readyAt: now - 3600000 * 2, // 2 hours ago
     },
     {
-      customerName: 'അനീഷ് റഹ്മാൻ',
+      customerName: 'Aneesh Rahman',
       phone: '9895443322',
       model: 'OnePlus Nord CE',
-      complaint: 'ബാറ്ററി ബാക്കപ്പ് ഇല്ലായിരുന്നു, പുതിയ ബാറ്ററി ഇട്ടു',
+      complaint: 'Poor battery backup, new battery installed',
       estimate: 1400,
       advance: 0,
       status: 'ready',
@@ -157,10 +157,10 @@ export async function seedDevJobs(): Promise<number> {
 
     // 5 In History (4 Delivered, 1 Returned)
     {
-      customerName: 'രാഹുൽ കൃഷ്ണൻ',
+      customerName: 'Rahul Krishnan',
       phone: '9633114455',
       model: 'iPhone 11',
-      complaint: 'ബാക്ക് ഗ്ലാസ് തകർന്നു, മാറ്റി നൽകി',
+      complaint: 'Back glass broken, replaced',
       estimate: 2200,
       advance: 1000,
       finalAmount: 2200,
@@ -170,10 +170,10 @@ export async function seedDevJobs(): Promise<number> {
       deliveredAt: now - oneDayMs * 6,
     },
     {
-      customerName: 'ഫാത്തിമ',
+      customerName: 'Fathima',
       phone: '9567881122',
       model: 'Redmi Note 8',
-      complaint: 'ലൗഡ് സ്പീക്കർ സൗണ്ട് കുറവ്',
+      complaint: 'Loudspeaker low volume',
       estimate: 350,
       advance: 0,
       finalAmount: 350,
@@ -183,10 +183,10 @@ export async function seedDevJobs(): Promise<number> {
       deliveredAt: now - oneDayMs * 9,
     },
     {
-      customerName: 'ദിനേശ്',
+      customerName: 'Dinesh',
       phone: '9446223344',
       model: 'Oppo A53',
-      complaint: 'ഫുൾ കോംബോ ചേഞ്ച്',
+      complaint: 'Full combo replacement',
       estimate: 1900,
       advance: 500,
       finalAmount: 1900,
@@ -196,10 +196,10 @@ export async function seedDevJobs(): Promise<number> {
       deliveredAt: now - oneDayMs * 10,
     },
     {
-      customerName: 'ജോസഫ് തോമസ്',
+      customerName: 'Joseph Thomas',
       phone: '9846337788',
       model: 'Poco X3',
-      complaint: 'ഹെഡ്‌ഫോൺ ജാക്ക് പ്രശ്നം',
+      complaint: 'Headphone jack faulty',
       estimate: 400,
       advance: 0,
       finalAmount: 400,
@@ -209,10 +209,10 @@ export async function seedDevJobs(): Promise<number> {
       deliveredAt: now - oneDayMs * 13,
     },
     {
-      customerName: 'മനോജ് കുമാർ',
+      customerName: 'Manoj Kumar',
       phone: '9744119900',
       model: 'Samsung Galaxy A50',
-      complaint: 'മദർബോർഡ് ഡെഡ്, റീബൂട്ട് ആകുന്നില്ല',
+      complaint: 'Motherboard dead, not rebooting',
       estimate: 2500,
       advance: 0,
       status: 'returned',

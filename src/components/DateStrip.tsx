@@ -11,7 +11,7 @@ interface DateStripProps {
 export const DateStrip: React.FC<DateStripProps> = ({
   selectedDate,
   onSelectDate,
-  language,
+  language: _language,
 }) => {
   const days = getLast14Days();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -30,7 +30,7 @@ export const DateStrip: React.FC<DateStripProps> = ({
     >
       {days.map((item) => {
         const isSelected = item.dateStr === selectedDate;
-        const dayLabel = language === 'ml' ? item.dayNameMl : item.dayNameEn;
+        const dayLabel = item.dayNameEn;
 
         return (
           <button
@@ -48,7 +48,7 @@ export const DateStrip: React.FC<DateStripProps> = ({
                 isSelected ? 'text-white/90' : 'text-[#8E8E93]'
               }`}
             >
-              {item.isToday ? (language === 'ml' ? 'ഇന്ന്' : 'Today') : dayLabel}
+              {item.isToday ? 'Today' : dayLabel}
             </span>
             <span className={`text-[19px] mt-0.5 leading-none font-bold`}>
               {item.dayNum}

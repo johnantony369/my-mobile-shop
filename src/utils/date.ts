@@ -18,13 +18,11 @@ export function getLast14Days(): {
   dayNum: number;
   dayName: string;
   dayNameEn: string;
-  dayNameMl: string;
   isToday: boolean;
 }[] {
   const days = [];
   const todayStr = getLocalDateString();
   const dayNamesEn = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const dayNamesMl = ['ഞായർ', 'തിങ്കൾ', 'ചൊവ്വ', 'ബുധൻ', 'വ്യാഴം', 'വെള്ളി', 'ശനി'];
 
   // From 13 days ago to today (14 days)
   for (let i = 13; i >= 0; i--) {
@@ -35,42 +33,36 @@ export function getLast14Days(): {
       dateStr,
       dayNum: d.getDate(),
       dayNameEn: dayNamesEn[d.getDay()],
-      dayNameMl: dayNamesMl[d.getDay()],
-      dayName: dayNamesMl[d.getDay()],
+      dayName: dayNamesEn[d.getDay()],
       isToday: dateStr === todayStr,
     });
   }
   return days;
 }
 
-export const ML_MONTHS = [
-  'ജനുവരി', 'ഫെബ്രുവരി', 'മാർച്ച്', 'ഏപ്രിൽ', 'മേയ്', 'ജൂൺ',
-  'ജൂലൈ', 'ആഗസ്റ്റ്', 'സെപ്റ്റംബർ', 'ഒക്ടോബർ', 'നവംബർ', 'ഡിസംബർ'
-];
-
 export const EN_MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'
 ];
 
-export function formatHeaderDate(dateStr: string, lang: Language): string {
+export function formatHeaderDate(dateStr: string, _lang?: Language): string {
   const todayStr = getLocalDateString();
   const yesterdayStr = getYesterdayLocalDateString();
 
   if (dateStr === todayStr) {
-    return lang === 'ml' ? 'ഇന്ന്' : 'Today';
+    return 'Today';
   }
   if (dateStr === yesterdayStr) {
-    return lang === 'ml' ? 'ഇന്നലെ' : 'Yesterday';
+    return 'Yesterday';
   }
 
   const [year, month, day] = dateStr.split('-').map(Number);
-  const monthName = lang === 'ml' ? ML_MONTHS[month - 1] : EN_MONTHS[month - 1];
+  const monthName = EN_MONTHS[month - 1];
   return `${day} ${monthName} ${year}`;
 }
 
-export function formatMonthName(year: number, month: number, lang: Language): string {
-  const monthName = lang === 'ml' ? ML_MONTHS[month - 1] : EN_MONTHS[month - 1];
+export function formatMonthName(year: number, month: number, _lang?: Language): string {
+  const monthName = EN_MONTHS[month - 1];
   return `${monthName} ${year}`;
 }
 

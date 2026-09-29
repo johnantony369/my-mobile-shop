@@ -69,14 +69,14 @@ export default function App() {
         {loadingTimeout && (
           <div className="mt-4 space-y-3 animate-fade-in">
             <p className="text-xs text-[#8E8E93]">
-              ഡാറ്റ ലോഡ് ആകാൻ സമയമെടുക്കുന്നു...
+              Taking longer than usual to load...
             </p>
             <button
               type="button"
               onClick={() => window.location.reload()}
               className="px-4 py-2 bg-iosBlue text-white text-xs font-semibold rounded-full shadow-sm"
             >
-              റീലോഡ് ചെയ്യുക (Reload)
+              Reload App
             </button>
           </div>
         )}
@@ -113,7 +113,7 @@ export default function App() {
   }
 
   const settings = settingsList[0];
-  const language: Language = settings.language || 'en';
+  const language: Language = 'en';
   const showRepairs = !!settings.showRepairs;
   const trialDays = getTrialDaysRemaining(settings.firstLaunchDate);
   const isReadOnly = !settings.activated && trialDays <= 0;

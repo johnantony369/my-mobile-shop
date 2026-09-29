@@ -115,16 +115,16 @@ export const RepairsScreen: React.FC<RepairsScreenProps> = ({
       <div className="max-w-lg mx-auto px-4">
         {/* Header Title with Big Shop Name */}
         <div className="pt-2 pb-1 mb-2">
-          <div className="flex items-center justify-between">
-            <h1 className="text-[30px] font-black text-black tracking-tight leading-tight">
+          <div className="flex items-center justify-between gap-3">
+            <h1 className="text-[28px] sm:text-[30px] font-black text-black tracking-tight leading-tight truncate flex-1 min-w-0">
               {shopName || 'My Mobile Shop'}
             </h1>
-            <div className="flex items-center space-x-1.5">
+            <div className="shrink-0 flex items-center space-x-1.5">
               {!isActivated && onOpenPaywall && (
                 <button
                   type="button"
                   onClick={onOpenPaywall}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold active:scale-95 transition-all shadow-xs border ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold active:scale-95 transition-all shadow-xs border ${
                     isReadOnly
                       ? 'bg-red-50 text-iosRed border-red-200 animate-pulse'
                       : 'bg-gradient-to-r from-amber-50 to-yellow-50 text-amber-900 border-amber-200/90 hover:from-amber-100 hover:to-yellow-100'
@@ -133,8 +133,8 @@ export const RepairsScreen: React.FC<RepairsScreenProps> = ({
                   <Crown className={`w-3.5 h-3.5 ${isReadOnly ? 'text-iosRed' : 'text-amber-600'}`} />
                   <span>
                     {isReadOnly
-                      ? (language === 'ml' ? 'അൺലോക്ക് പ്രോ' : 'Unlock Pro')
-                      : (language === 'ml' ? `പ്രോ: ${trialDays ?? 0}d` : `Pro: ${trialDays ?? 0}d left`)}
+                      ? 'Unlock Pro'
+                      : `Pro: ${trialDays ?? 0}d left`}
                   </span>
                 </button>
               )}
@@ -226,7 +226,7 @@ export const RepairsScreen: React.FC<RepairsScreenProps> = ({
                 }`}
               >
                 {isReadOnly ? <Crown className="w-4 h-4 text-yellow-200" /> : <Plus className="w-4 h-4" />}
-                <span>{isReadOnly ? (language === 'ml' ? 'പ്രോ അൺലോക്ക് ചെയ്യുക' : 'Unlock Pro') : t('new_job_btn', language)}</span>
+                <span>{isReadOnly ? 'Unlock Pro' : t('new_job_btn', language)}</span>
               </button>
             )}
           </div>
@@ -301,7 +301,7 @@ export const RepairsScreen: React.FC<RepairsScreenProps> = ({
         )}
       </div>
 
-      {/* Floating "+ പുതിയ ജോലി" Button */}
+      {/* Floating New Job Button */}
       <div className="fixed bottom-[calc(env(safe-area-inset-bottom)+66px)] right-5 z-30">
         <button
           type="button"
@@ -322,7 +322,7 @@ export const RepairsScreen: React.FC<RepairsScreenProps> = ({
           {isReadOnly ? (
             <>
               <Crown className="w-5 h-5 text-yellow-200" />
-              <span>{language === 'ml' ? 'പ്രോ അൺലോക്ക് ചെയ്യുക' : 'Unlock Pro'}</span>
+              <span>Unlock Pro</span>
             </>
           ) : (
             <>

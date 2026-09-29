@@ -39,7 +39,7 @@ export class ErrorBoundary extends Component<Props, State> {
           <div className="w-16 h-16 bg-red-100 text-[#FF3B30] rounded-2xl flex items-center justify-center mb-4 text-2xl font-bold shadow-sm">
             !
           </div>
-          <h2 className="text-xl font-bold text-black mb-2">ആപ്പിൽ ഒരു തകരാറുണ്ടായി</h2>
+          <h2 className="text-xl font-bold text-black mb-2">Something went wrong</h2>
           <p className="text-sm text-[#8E8E93] max-w-xs mb-4">
             An unexpected error occurred while loading the app.
           </p>
@@ -51,13 +51,13 @@ export class ErrorBoundary extends Component<Props, State> {
               onClick={() => window.location.reload()}
               className="w-full py-3 bg-[#007AFF] text-white rounded-xl font-semibold text-sm shadow-md active:opacity-85"
             >
-              വീണ്ടും ശ്രമിക്കുക (Reload)
+              Reload App
             </button>
             <button
               onClick={this.handleReset}
               className="w-full py-2.5 bg-white text-[#8E8E93] rounded-xl font-medium text-xs border border-black/5 active:bg-gray-50"
             >
-              ക്യാഷ് മായ്ക്കുക (Reset Local Cache)
+              Reset Local Cache
             </button>
           </div>
         </div>

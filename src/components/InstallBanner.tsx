@@ -8,8 +8,7 @@ interface InstallBannerProps {
 }
 
 /** iOS-specific step-by-step install guide shown as an overlay */
-const IOSInstructions: React.FC<{ language: Language; onClose: () => void }> = ({
-  language,
+const IOSInstructions: React.FC<{ onClose: () => void }> = ({
   onClose,
 }) => (
   <div
@@ -22,7 +21,7 @@ const IOSInstructions: React.FC<{ language: Language; onClose: () => void }> = (
     >
       <div className="flex items-center justify-between">
         <h3 className="text-[17px] font-bold text-black">
-          {language === 'ml' ? 'ഫോണിൽ ഇൻസ്റ്റാൾ ചെയ്യുക' : 'Install to Home Screen'}
+          Install to Home Screen
         </h3>
         <button
           type="button"
@@ -40,23 +39,11 @@ const IOSInstructions: React.FC<{ language: Language; onClose: () => void }> = (
             1
           </span>
           <span>
-            {language === 'ml' ? (
-              <>
-                Safari-ൽ താഴെ കാണുന്ന{' '}
-                <span className="inline-flex items-center gap-0.5 font-semibold text-iosBlue">
-                  <Share className="w-3.5 h-3.5" /> Share
-                </span>{' '}
-                ബട്ടൺ അമർത്തുക
-              </>
-            ) : (
-              <>
-                In Safari, tap the{' '}
-                <span className="inline-flex items-center gap-0.5 font-semibold text-iosBlue">
-                  <Share className="w-3.5 h-3.5" /> Share
-                </span>{' '}
-                button at the bottom of the screen
-              </>
-            )}
+            In Safari, tap the{' '}
+            <span className="inline-flex items-center gap-0.5 font-semibold text-iosBlue">
+              <Share className="w-3.5 h-3.5" /> Share
+            </span>{' '}
+            button at the bottom of the screen
           </span>
         </li>
         <li className="flex items-start gap-3">
@@ -64,9 +51,7 @@ const IOSInstructions: React.FC<{ language: Language; onClose: () => void }> = (
             2
           </span>
           <span>
-            {language === 'ml'
-              ? 'ലിസ്റ്റ് താഴേക്ക് സ്ക്രോൾ ചെയ്ത് "Add to Home Screen" / "ഹോം സ്ക്രീനിൽ ചേർക്കുക" തിരഞ്ഞെടുക്കുക'
-              : 'Scroll down and tap "Add to Home Screen"'}
+            Scroll down and tap "Add to Home Screen"
           </span>
         </li>
         <li className="flex items-start gap-3">
@@ -74,9 +59,7 @@ const IOSInstructions: React.FC<{ language: Language; onClose: () => void }> = (
             3
           </span>
           <span>
-            {language === 'ml'
-              ? 'മുകളിൽ വലത്ത് "Add" / "ചേർക്കുക" ബട്ടൺ ടാപ്പ് ചെയ്യുക'
-              : 'Tap "Add" in the top right corner'}
+            Tap "Add" in the top right corner
           </span>
         </li>
       </ol>
@@ -90,7 +73,7 @@ const IOSInstructions: React.FC<{ language: Language; onClose: () => void }> = (
  * - iOS: shows step-by-step guide sheet
  * - Hidden once dismissed (stored in localStorage) or when already installed
  */
-export const InstallBanner: React.FC<InstallBannerProps> = ({ language }) => {
+export const InstallBanner: React.FC<InstallBannerProps> = ({ language: _language }) => {
   const { showBanner, canInstall, platform, triggerInstall, dismissBanner } = usePWAInstall();
   const [showIOSGuide, setShowIOSGuide] = useState(false);
 
@@ -118,12 +101,10 @@ export const InstallBanner: React.FC<InstallBannerProps> = ({ language }) => {
             {/* Text */}
             <div className="flex-1 min-w-0">
               <p className="text-[13px] font-bold text-black leading-tight">
-                {language === 'ml' ? 'ആപ്പ് ഇൻസ്റ്റാൾ ചെയ്യുക' : 'Install My Mobile Shop'}
+                Install My Mobile Shop
               </p>
               <p className="text-[11px] text-[#8E8E93] leading-tight mt-0.5">
-                {language === 'ml'
-                  ? 'ഫോൺ ഹോം സ്ക്രീനിൽ ആപ്പ് ആക്കാൻ'
-                  : 'Add to home screen for quick access'}
+                Add to home screen for quick access
               </p>
             </div>
 
@@ -133,7 +114,7 @@ export const InstallBanner: React.FC<InstallBannerProps> = ({ language }) => {
               onClick={handleInstallClick}
               className="px-3.5 py-1.5 bg-iosBlue text-white text-xs font-bold rounded-full flex-shrink-0 active:opacity-80 transition-opacity"
             >
-              {language === 'ml' ? 'ഇൻസ്റ്റാൾ' : (canInstall ? 'Install' : 'How to')}
+              {canInstall ? 'Install' : 'How to'}
             </button>
 
             {/* Dismiss */}
@@ -151,7 +132,7 @@ export const InstallBanner: React.FC<InstallBannerProps> = ({ language }) => {
 
       {/* iOS guide overlay */}
       {showIOSGuide && (
-        <IOSInstructions language={language} onClose={() => setShowIOSGuide(false)} />
+        <IOSInstructions onClose={() => setShowIOSGuide(false)} />
       )}
     </>
   );

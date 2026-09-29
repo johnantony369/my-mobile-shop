@@ -109,16 +109,16 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
     <div className="min-h-screen pb-24 pt-2">
       <div className="max-w-lg mx-auto px-4">
         {/* Header with Big Shop Name */}
-        <div className="pt-2 mb-2 flex items-center justify-between">
-          <h1 className="text-[30px] font-black text-black tracking-tight leading-tight">
+        <div className="pt-2 mb-2 flex items-center justify-between gap-3">
+          <h1 className="text-[28px] sm:text-[30px] font-black text-black tracking-tight leading-tight truncate flex-1 min-w-0">
             {shopName || 'My Mobile Shop'}
           </h1>
-          <div className="flex items-center space-x-1.5">
+          <div className="shrink-0 flex items-center space-x-1.5">
             {!isActivated && onOpenPaywall && (
               <button
                 type="button"
                 onClick={onOpenPaywall}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-xs border border-amber-600 active:scale-95 transition-all"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-xs border border-amber-600 active:scale-95 transition-all"
               >
                 <Crown className="w-3.5 h-3.5 text-yellow-200" />
                 <span>PRO</span>
