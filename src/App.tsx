@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from './db/db';
 import { TabBar, TabType } from './components/TabBar';
 import { BookScreen } from './screens/BookScreen';
+import { RepairsScreen } from './screens/RepairsScreen';
 import { ReportsScreen } from './screens/ReportsScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { OnboardingScreen } from './screens/OnboardingScreen';
@@ -15,6 +16,12 @@ export default function App() {
 
   // Live query for settings
   const settingsList = useLiveQuery(() => db.settings.toArray(), [refreshTrigger]);
+
+  // Live query for ready jobs count
+  const readyJobsCount = useLiveQuery(
+    () => db.jobs.where('status').equals('ready').count(),
+    []
+  ) ?? 0;
 
   // Loading state
   if (settingsList === undefined) {
@@ -36,8 +43,16 @@ export default function App() {
 
   const settings = settingsList[0];
   const language: Language = settings.language || 'ml';
+  const showRepairs = !!settings.showRepairs;
   const trialDays = getTrialDaysRemaining(settings.firstLaunchDate);
   const isReadOnly = !settings.activated && trialDays <= 0;
+
+  // If user disables repairs while on repairs tab, switch to book
+  useEffect(() => {
+    if (!showRepairs && currentTab === 'repairs') {
+      setCurrentTab('book');
+    }
+  }, [showRepairs, currentTab]);
 
   return (
     <div className="min-h-screen bg-iosBg text-iosLabel font-sans flex flex-col justify-between selection:bg-iosBlue/20">
@@ -50,10 +65,18 @@ export default function App() {
             isReadOnly={isReadOnly}
           />
         )}
+        {showRepairs && currentTab === 'repairs' && (
+          <RepairsScreen
+            language={language}
+            shopName={settings.shopName}
+            isReadOnly={isReadOnly}
+          />
+        )}
         {currentTab === 'reports' && (
           <ReportsScreen
             language={language}
             shopName={settings.shopName}
+            showRepairs={showRepairs}
           />
         )}
         {currentTab === 'settings' && (
@@ -71,6 +94,8 @@ export default function App() {
         currentTab={currentTab}
         onTabChange={(tab) => setCurrentTab(tab)}
         language={language}
+        showRepairs={showRepairs}
+        readyCount={readyJobsCount}
       />
     </div>
   );

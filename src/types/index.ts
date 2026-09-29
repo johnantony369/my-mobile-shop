@@ -12,6 +12,27 @@ export interface Entry {
   paymentMethod?: PaymentMethod;
   date: string; // 'YYYY-MM-DD'
   createdAt: number; // timestamp ms
+  repairId?: number; // link to job if created from repair delivery
+}
+
+export type JobStatus = 'received' | 'waiting' | 'ready' | 'delivered' | 'returned';
+
+export interface Job {
+  id?: number;
+  customerName: string;
+  phone: string; // 10-digit Indian mobile
+  model: string;
+  complaint: string;
+  imei?: string;
+  estimate?: number;
+  advance: number;
+  finalAmount?: number | null;
+  status: JobStatus;
+  expectedDate?: string; // 'YYYY-MM-DD'
+  receivedAt: number; // timestamp ms
+  readyAt?: number | null; // timestamp ms
+  deliveredAt?: number | null; // timestamp ms
+  bookEntryId?: number | null; // link to entries table
 }
 
 export interface AppSettings {
@@ -21,6 +42,7 @@ export interface AppSettings {
   firstLaunchDate: string; // 'YYYY-MM-DD' or ISO
   activated: boolean;
   lastBackupAt: string | null;
+  showRepairs: boolean; // toggle for repairs module
 }
 
 export interface DaySummary {

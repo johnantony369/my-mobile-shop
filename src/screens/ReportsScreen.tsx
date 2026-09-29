@@ -7,16 +7,18 @@ import { formatMonthName } from '../utils/date';
 import { DailyBarChart } from '../components/DailyBarChart';
 import { buildShareSummaryText, shareSummary } from '../utils/share';
 import { exportEntriesToCSV } from '../utils/csv';
-import { ChevronLeft, ChevronRight, Share2, Download, ArrowDownLeft, ArrowUpRight, TrendingUp } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Share2, Download, ArrowDownLeft, ArrowUpRight, TrendingUp, Wrench } from 'lucide-react';
 
 interface ReportsScreenProps {
   language: Language;
   shopName: string;
+  showRepairs?: boolean;
 }
 
 export const ReportsScreen: React.FC<ReportsScreenProps> = ({
   language,
   shopName,
+  showRepairs = false,
 }) => {
   const today = new Date();
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
@@ -33,6 +35,14 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
         .toArray(),
     [monthStr]
   ) ?? [];
+
+  // Query delivered repairs in current month
+  const allJobs = useLiveQuery(() => db.jobs.toArray()) ?? [];
+  const deliveredRepairsThisMonth = allJobs.filter((j) => {
+    if (j.status !== 'delivered' || !j.deliveredAt) return false;
+    const d = new Date(j.deliveredAt);
+    return d.getFullYear() === currentYear && d.getMonth() + 1 === currentMonth;
+  }).length;
 
   const summary = computeSummary(entries);
 
@@ -177,6 +187,28 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
             </span>
           </div>
         </div>
+
+        {/* Repairs Delivered Stat Row (if showRepairs is enabled) */}
+        {showRepairs && (
+          <div className="bg-white rounded-[14px] p-3.5 shadow-sm border border-black/[0.04] mb-3 flex items-center justify-between">
+            <div className="flex items-center space-x-2.5">
+              <div className="w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                <Wrench className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="text-[14px] font-semibold text-black block">
+                  {t('stat_repairs_delivered', language)}
+                </span>
+                <span className="text-xs text-[#8E8E93]">
+                  {t('stat_repairs_delivered_desc', language)}
+                </span>
+              </div>
+            </div>
+            <span className="text-[20px] font-bold text-black tracking-tight">
+              {deliveredRepairsThisMonth}
+            </span>
+          </div>
+        )}
 
         {/* Payment Breakdown Card */}
         <div className="bg-white rounded-[14px] p-4 shadow-sm border border-black/[0.04] mb-3">

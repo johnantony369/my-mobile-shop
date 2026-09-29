@@ -82,19 +82,26 @@ export const EntryList: React.FC<EntryListProps> = ({
                     <span className="text-[15px] font-medium text-black truncate">
                       {title}
                     </span>
-                    {/* Method Badge */}
+                    {/* Method Badge & Repair Badge */}
                     {!isExpense ? (
-                      <span
-                        className={`text-[10px] font-semibold px-1.5 py-0.5 rounded uppercase tracking-wider ${
-                          entry.paymentMethod === 'upi'
-                            ? 'bg-blue-50 text-iosBlue'
-                            : entry.paymentMethod === 'card'
-                            ? 'bg-purple-50 text-purple-600'
-                            : 'bg-gray-100 text-[#8E8E93]'
-                        }`}
-                      >
-                        {entry.paymentMethod || 'cash'}
-                      </span>
+                      <div className="flex items-center space-x-1">
+                        {entry.repairId && (
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-600">
+                            {t('repair_badge', language)}
+                          </span>
+                        )}
+                        <span
+                          className={`text-[10px] font-semibold px-1.5 py-0.5 rounded uppercase tracking-wider ${
+                            entry.paymentMethod === 'upi'
+                              ? 'bg-blue-50 text-iosBlue'
+                              : entry.paymentMethod === 'card'
+                              ? 'bg-purple-50 text-purple-600'
+                              : 'bg-gray-100 text-[#8E8E93]'
+                          }`}
+                        >
+                          {entry.paymentMethod || 'cash'}
+                        </span>
+                      </div>
                     ) : (
                       <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-red-50 text-iosRed flex items-center">
                         <ArrowUpRight className="w-2.5 h-2.5 mr-0.5" />

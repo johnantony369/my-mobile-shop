@@ -5,7 +5,7 @@ import { updateAppSettings } from '../db/db';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { checkCode, formatActivationCode, getTrialDaysRemaining } from '../utils/activation';
 import { exportBackup, importBackup, isBackupNeeded } from '../utils/backup';
-import { seedDevEntries, clearAllEntries } from '../utils/seedData';
+import { seedDevEntries, seedDevJobs, clearAllEntries } from '../utils/seedData';
 import { ConfirmModal } from '../components/ConfirmModal';
 import {
   ShieldCheck,
@@ -18,6 +18,7 @@ import {
   CheckCircle2,
   Store,
   Info,
+  Wrench,
 } from 'lucide-react';
 
 interface SettingsScreenProps {
@@ -113,9 +114,20 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     }
   };
 
+  const handleToggleRepairs = async (val: 'off' | 'on') => {
+    await updateAppSettings({ showRepairs: val === 'on' });
+    onRefreshSettings();
+  };
+
   const handleSeedDev = async () => {
     const count = await seedDevEntries();
     setDevNotice(`${t('dev_seed_success', language)} (+${count})`);
+    setTimeout(() => setDevNotice(null), 3000);
+  };
+
+  const handleSeedJobs = async () => {
+    const count = await seedDevJobs();
+    setDevNotice(`${t('dev_seed_jobs_success', language)} (+${count})`);
     setTimeout(() => setDevNotice(null), 3000);
   };
 
@@ -194,6 +206,35 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               { value: 'en', label: t('lang_english', language) },
             ]}
           />
+        </div>
+
+        {/* Section: Repairs Service Module Toggle */}
+        <div className="bg-white rounded-[14px] p-4 shadow-sm border border-black/[0.04]">
+          <div className="flex items-center space-x-2 text-xs font-semibold text-[#8E8E93] uppercase tracking-wider mb-2">
+            <Wrench className="w-4 h-4 text-iosBlue" />
+            <span>{t('section_repairs', language)}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="pr-4">
+              <span className="text-[15px] font-semibold text-black block">
+                {t('enable_repairs', language)}
+              </span>
+              <span className="text-xs text-[#8E8E93] block mt-0.5">
+                {t('enable_repairs_desc', language)}
+              </span>
+            </div>
+            <div className="w-24 flex-shrink-0">
+              <SegmentedControl<'off' | 'on'>
+                value={settings.showRepairs ? 'on' : 'off'}
+                onChange={handleToggleRepairs}
+                size="sm"
+                options={[
+                  { value: 'off', label: 'Off' },
+                  { value: 'on', label: 'On' },
+                ]}
+              />
+            </div>
+          </div>
         </div>
 
         {/* Section 3: Activation */}
@@ -334,6 +375,17 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               <Sparkles className="w-3.5 h-3.5" />
               <span>{t('dev_seed_btn', language)}</span>
             </button>
+
+            {settings.showRepairs && (
+              <button
+                type="button"
+                onClick={handleSeedJobs}
+                className="py-2 px-3 bg-indigo-50 hover:bg-indigo-100 rounded-[10px] text-xs font-semibold text-indigo-600 flex items-center justify-center space-x-1.5 active:opacity-80 transition-colors"
+              >
+                <Wrench className="w-3.5 h-3.5" />
+                <span>{t('dev_seed_jobs_btn', language)}</span>
+              </button>
+            )}
 
             <button
               type="button"

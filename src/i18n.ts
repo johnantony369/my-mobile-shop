@@ -406,6 +406,280 @@ export const translations = {
     ml: 'ഡാറ്റ മായ്ച്ചു',
     en: 'All entries cleared',
   },
+
+  // Repairs Module
+  tab_repairs: {
+    ml: 'റിപ്പയർ',
+    en: 'Repairs',
+  },
+  new_job_btn: {
+    ml: 'പുതിയ ജോലി',
+    en: 'New Job',
+  },
+  status_received: {
+    ml: 'ലഭിച്ചു',
+    en: 'Received',
+  },
+  status_waiting: {
+    ml: 'പാർട്സ് വേണം',
+    en: 'Waiting for Parts',
+  },
+  status_ready: {
+    ml: 'റെഡി',
+    en: 'Ready',
+  },
+  status_delivered: {
+    ml: 'കൈമാറി',
+    en: 'Delivered',
+  },
+  status_returned: {
+    ml: 'തിരിച്ച് നൽകി',
+    en: 'Returned',
+  },
+  segment_active: {
+    ml: 'ആക്ടീവ്',
+    en: 'Active',
+  },
+  segment_ready: {
+    ml: 'റെഡി',
+    en: 'Ready',
+  },
+  segment_history: {
+    ml: 'ഹിസ്റ്ററി',
+    en: 'History',
+  },
+  field_customer_name: {
+    ml: 'കസ്റ്റമർ പേര്',
+    en: 'Customer Name',
+  },
+  field_phone: {
+    ml: 'ഫോൺ നമ്പർ',
+    en: 'Phone Number',
+  },
+  field_model: {
+    ml: 'മോഡൽ',
+    en: 'Model',
+  },
+  field_complaint: {
+    ml: 'പ്രശ്നം',
+    en: 'Complaint',
+  },
+  field_estimate: {
+    ml: 'കണക്കാക്കിയ തുക',
+    en: 'Estimated Amount',
+  },
+  field_advance: {
+    ml: 'അഡ്വാൻസ്',
+    en: 'Advance Paid',
+  },
+  field_balance: {
+    ml: 'ബാക്കി',
+    en: 'Balance Due',
+  },
+  field_final_amount: {
+    ml: 'ആകെ തുക',
+    en: 'Final Amount',
+  },
+  field_expected_date: {
+    ml: 'റെഡിയാകുന്ന തീയതി',
+    en: 'Ready By Date',
+  },
+  field_imei: {
+    ml: 'IMEI (ഓപ്ഷണൽ)',
+    en: 'IMEI (Optional)',
+  },
+  notify_customer: {
+    ml: 'കസ്റ്റമറിനെ അറിയിക്കുക',
+    en: 'Notify Customer',
+  },
+  copy_message: {
+    ml: 'മെസേജ് കോപ്പി ചെയ്യുക',
+    en: 'Copy Message',
+  },
+  add_to_book_checkbox: {
+    ml: 'ഇന്നത്തെ ബുക്കിൽ ചേർക്കുക',
+    en: "Add to today's Book",
+  },
+  empty_active_jobs: {
+    ml: 'ഇതുവരെ ജോലികൾ ഇല്ല',
+    en: 'No active jobs',
+  },
+  empty_ready_jobs: {
+    ml: 'റെഡിയായ ജോലികൾ ഇല്ല',
+    en: 'No ready jobs',
+  },
+  empty_history_jobs: {
+    ml: 'ഹിസ്റ്ററി ശൂന്യമാണ്',
+    en: 'History is empty',
+  },
+  invalid_phone_error: {
+    ml: '10 അക്ക ഫോൺ നമ്പർ നൽകുക',
+    en: 'Enter a valid 10-digit phone number',
+  },
+  days_in_shop: {
+    ml: '{n} ദിവസം',
+    en: '{n} days',
+  },
+  search_jobs_placeholder: {
+    ml: 'പേര്, ഫോൺ, മോഡൽ തിരയുക',
+    en: 'Search name, phone, model',
+  },
+  onboarding_repairs_question: {
+    ml: 'നിങ്ങൾ ഫോൺ റിപ്പയർ ചെയ്യുന്നുണ്ടോ?',
+    en: 'Do you offer phone repairs?',
+  },
+  onboarding_repairs_yes: {
+    ml: 'ഉണ്ട്',
+    en: 'Yes',
+  },
+  onboarding_repairs_no: {
+    ml: 'ഇല്ല',
+    en: 'No',
+  },
+  section_repairs: {
+    ml: 'റിപ്പയർ സർവീസ്',
+    en: 'Repairs Service',
+  },
+  enable_repairs: {
+    ml: 'റിപ്പയർ മൊഡ്യൂൾ ഓണാക്കുക',
+    en: 'Enable Repairs Module',
+  },
+  enable_repairs_desc: {
+    ml: 'ഫോൺ സർവീസിംഗ്, റെഡി അറിയിപ്പുകൾ, ഡെലിവറി എന്നിവ ട്രാക്ക് ചെയ്യുക',
+    en: 'Track phone servicing, ready alerts, and deliveries',
+  },
+  repair_badge: {
+    ml: 'റിപ്പയർ',
+    en: 'Repair',
+  },
+  stat_repairs_delivered: {
+    ml: 'കൈമാറിയ റിപ്പയറുകൾ',
+    en: 'Repairs Delivered',
+  },
+  stat_repairs_delivered_desc: {
+    ml: 'ഈ മാസം പൂർത്തിയാക്കിയവ',
+    en: 'Completed this month',
+  },
+  call_btn: {
+    ml: 'വിളിക്കുക',
+    en: 'Call',
+  },
+  whatsapp_btn: {
+    ml: 'വാട്സ്ആപ്പ്',
+    en: 'WhatsApp',
+  },
+  message_copied_toast: {
+    ml: 'മെസേജ് കോപ്പി ചെയ്തു!',
+    en: 'Message copied to clipboard!',
+  },
+  advance_status_action: {
+    ml: 'അടുത്ത ഘട്ടം: {next}',
+    en: 'Advance to: {next}',
+  },
+  other_status_action: {
+    ml: 'മറ്റ് സ്റ്റാറ്റസ്',
+    en: 'Other Status',
+  },
+  mark_delivered_action: {
+    ml: 'കൈമാറുക (ഡെലിവറി)',
+    en: 'Mark as Delivered',
+  },
+  return_without_repair_action: {
+    ml: 'റിപ്പയർ ചെയ്യാതെ മടക്കുക',
+    en: 'Return without repair',
+  },
+  return_confirm_title: {
+    ml: 'റിപ്പയർ ചെയ്യാതെ മടക്കണോ?',
+    en: 'Return without repair?',
+  },
+  return_confirm_message: {
+    ml: 'ഈ ജോലി "തിരിച്ച് നൽകി" എന്ന സ്റ്റാറ്റസിലേക്ക് മാറ്റും. പണം ഒന്നും ചേർക്കില്ല.',
+    en: 'This job will be marked as returned without any charge.',
+  },
+  delete_job_title: {
+    ml: 'ജോലി ഒഴിവാക്കണോ?',
+    en: 'Delete Repair Job?',
+  },
+  delete_job_message: {
+    ml: 'ഈ റിപ്പയർ ജോലി സ്ഥിരമായി ഒഴിവാക്കപ്പെടും. ഉറപ്പാണോ?',
+    en: 'This repair job will be permanently deleted. Are you sure?',
+  },
+  delivery_sheet_title: {
+    ml: 'ഫോൺ കൈമാറൽ (ഡെലിവറി)',
+    en: 'Phone Delivery',
+  },
+  delivery_confirm_btn: {
+    ml: 'ഡെലിവറി സ്ഥിരീകരിക്കുക',
+    en: 'Confirm Delivery',
+  },
+  negative_balance_warning: {
+    ml: 'ശ്രദ്ധിക്കുക: അഡ്വാൻസ് തുക ആകെ തുകയേക്കാൾ കൂടുതലാണ്!',
+    en: 'Notice: Advance exceeds the final amount!',
+  },
+  ready_suggestion_title: {
+    ml: 'ഫോൺ റെഡിയായി!',
+    en: 'Phone is Ready!',
+  },
+  ready_suggestion_desc: {
+    ml: 'കസ്റ്റമറെ വാട്സ്ആപ്പിൽ അറിയിക്കൂ',
+    en: 'Notify customer on WhatsApp',
+  },
+  job_detail_title: {
+    ml: 'ജോലി വിവരങ്ങൾ',
+    en: 'Job Details',
+  },
+  customer_section_title: {
+    ml: 'കസ്റ്റമർ',
+    en: 'Customer',
+  },
+  device_section_title: {
+    ml: 'ഫോൺ വിവരങ്ങൾ',
+    en: 'Device Details',
+  },
+  money_section_title: {
+    ml: 'തുക',
+    en: 'Charges',
+  },
+  dates_section_title: {
+    ml: 'തീയതികൾ',
+    en: 'Dates',
+  },
+  received_date_label: {
+    ml: 'സ്വീകരിച്ച തീയതി',
+    en: 'Received Date',
+  },
+  ready_date_label: {
+    ml: 'റെഡിയായ തീയതി',
+    en: 'Ready Date',
+  },
+  delivered_date_label: {
+    ml: 'കൈമാറിയ തീയതി',
+    en: 'Delivered Date',
+  },
+  days_in_shop_label: {
+    ml: 'കടയിലുള്ള സമയം',
+    en: 'Time in Shop',
+  },
+  dev_seed_jobs_btn: {
+    ml: '10 റിപ്പയർ ജോലികൾ ചേർക്കുക',
+    en: 'Insert ~10 Sample Repair Jobs',
+  },
+  dev_seed_jobs_success: {
+    ml: 'ഡെമോ റിപ്പയർ ജോലികൾ ചേർത്തു',
+    en: 'Sample repair jobs inserted successfully',
+  },
+  edit_job: {
+    ml: 'ജോലി തിരുത്തുക',
+    en: 'Edit Job',
+  },
+  save_job: {
+    ml: 'ജോലി സേവ് ചെയ്യുക',
+    en: 'Save Job',
+  },
+  update_job: {
+    ml: 'അപ്ഡേറ്റ് ചെയ്യുക',
+    en: 'Update Job',
+  },
 };
 
 export type TranslationKey = keyof typeof translations;

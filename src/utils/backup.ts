@@ -1,23 +1,26 @@
 import { db, updateAppSettings } from '../db/db';
-import { Entry, AppSettings } from '../types';
+import { Entry, AppSettings, Job } from '../types';
 
 export interface BackupData {
   version: number;
   exportedAt: string;
   settings: AppSettings | null;
   entries: Entry[];
+  jobs?: Job[];
 }
 
 export async function exportBackup(): Promise<void> {
   const entries = await db.entries.toArray();
+  const jobs = await db.jobs.toArray();
   const settingsList = await db.settings.toArray();
   const settings = settingsList[0] || null;
 
   const backupData: BackupData = {
-    version: 1,
+    version: 2,
     exportedAt: new Date().toISOString(),
     settings,
     entries,
+    jobs,
   };
 
   const jsonStr = JSON.stringify(backupData, null, 2);
@@ -75,14 +78,27 @@ export async function importBackup(file: File): Promise<{ count: number }> {
     await db.entries.bulkAdd(entriesToImport);
   }
 
+  // Bulk add jobs if present
+  let jobsCount = 0;
+  if (Array.isArray(data.jobs) && data.jobs.length > 0) {
+    const jobsToImport = data.jobs.map(j => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { id, ...rest } = j;
+      return rest as Job;
+    });
+    await db.jobs.bulkAdd(jobsToImport);
+    jobsCount = jobsToImport.length;
+  }
+
   if (data.settings?.shopName) {
     await updateAppSettings({
       shopName: data.settings.shopName,
       language: data.settings.language || 'ml',
+      showRepairs: data.settings.showRepairs ?? false,
     });
   }
 
-  return { count: entriesToImport.length };
+  return { count: entriesToImport.length + jobsCount };
 }
 
 export function isBackupNeeded(lastBackupAt: string | null): boolean {

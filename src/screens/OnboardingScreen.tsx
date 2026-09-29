@@ -12,6 +12,7 @@ interface OnboardingScreenProps {
 export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
   const [language, setLanguage] = useState<Language>('ml');
   const [shopName, setShopName] = useState('');
+  const [repairsChoice, setRepairsChoice] = useState<'no' | 'yes'>('no');
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -23,7 +24,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
     }
 
     try {
-      await initAppSettings(trimmed, language);
+      await initAppSettings(trimmed, language, repairsChoice === 'yes');
       onComplete();
     } catch (err) {
       console.error('Error saving initial settings:', err);
@@ -33,8 +34,8 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
   return (
     <div className="min-h-screen bg-iosBg flex flex-col justify-between p-6 max-w-md mx-auto select-none">
       {/* Top Section */}
-      <div className="pt-10 flex flex-col items-center text-center">
-        <div className="w-20 h-20 bg-white rounded-[22px] shadow-md flex items-center justify-center mb-5 border border-black/[0.04]">
+      <div className="pt-8 flex flex-col items-center text-center">
+        <div className="w-20 h-20 bg-white rounded-[22px] shadow-md flex items-center justify-center mb-4 border border-black/[0.04]">
           <div className="w-14 h-14 bg-blue-50 text-iosBlue rounded-[16px] flex items-center justify-center">
             <Smartphone className="w-8 h-8" />
           </div>
@@ -46,13 +47,13 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
         <p className="text-[17px] font-medium text-iosBlue mt-1">
           {t('onboarding_welcome', language)}
         </p>
-        <p className="text-[14px] text-[#8E8E93] mt-2 max-w-[280px] leading-relaxed">
+        <p className="text-[14px] text-[#8E8E93] mt-1.5 max-w-[280px] leading-relaxed">
           {t('onboarding_subtitle', language)}
         </p>
       </div>
 
       {/* Form Section */}
-      <form onSubmit={handleSubmit} className="my-auto py-6 space-y-5">
+      <form onSubmit={handleSubmit} className="my-auto py-4 space-y-4">
         {/* Language Selection */}
         <div className="bg-white rounded-[14px] p-4 shadow-sm border border-black/[0.04]">
           <label className="text-xs font-semibold text-[#8E8E93] uppercase tracking-wider block mb-2">
@@ -86,6 +87,22 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
             className="w-full bg-[#F2F2F7] rounded-[10px] px-3.5 py-3 text-[16px] font-medium text-black focus:outline-none focus:ring-2 focus:ring-iosBlue/40 border border-black/[0.04]"
           />
           {error && <p className="text-xs text-iosRed font-medium mt-1.5">{error}</p>}
+        </div>
+
+        {/* Repairs Question: നിങ്ങൾ ഫോൺ റിപ്പയർ ചെയ്യുന്നുണ്ടോ? (ഉണ്ട് / ഇല്ല) */}
+        <div className="bg-white rounded-[14px] p-4 shadow-sm border border-black/[0.04]">
+          <label className="text-xs font-semibold text-[#8E8E93] uppercase tracking-wider block mb-2">
+            {t('onboarding_repairs_question', language)}
+          </label>
+          <SegmentedControl<'no' | 'yes'>
+            value={repairsChoice}
+            onChange={(val) => setRepairsChoice(val)}
+            size="md"
+            options={[
+              { value: 'no', label: t('onboarding_repairs_no', language) },
+              { value: 'yes', label: t('onboarding_repairs_yes', language) },
+            ]}
+          />
         </div>
       </form>
 
