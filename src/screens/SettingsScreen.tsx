@@ -8,8 +8,7 @@ import { exportBackup, importBackup, isBackupNeeded } from '../utils/backup';
 import { seedDevEntries, seedDevJobs, clearAllEntries } from '../utils/seedData';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { useAuth } from '../firebase/useAuth';
-import { loginWithGoogle } from '../firebase/auth';
-import { PhoneAuthModal } from '../components/PhoneAuthModal';
+import { LoginModal } from '../components/LoginModal';
 import {
   ShieldCheck,
   Clock,
@@ -25,7 +24,6 @@ import {
   Cloud,
   RefreshCw,
   LogOut,
-  Phone,
 } from 'lucide-react';
 
 interface SettingsScreenProps {
@@ -51,10 +49,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
   // Cloud Sync state
   const { user, isConfigured, syncState, lastSyncTime, syncError, triggerSync, signOut } = useAuth();
-  const [isPhoneModalOpen, setIsPhoneModalOpen] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isSignOutModalOpen, setIsSignOutModalOpen] = useState(false);
-  const [authError, setAuthError] = useState<string | null>(null);
-  const [googleLoading, setGoogleLoading] = useState(false);
 
   // Backup state
   const [backupMsg, setBackupMsg] = useState<string | null>(null);
@@ -67,22 +63,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const trialDays = getTrialDaysRemaining(settings.firstLaunchDate);
   const isExpired = trialDays <= 0 && !settings.activated;
   const backupWarning = isBackupNeeded(settings.lastBackupAt);
-
-  const handleGoogleSignIn = async () => {
-    try {
-      setAuthError(null);
-      setGoogleLoading(true);
-      await loginWithGoogle();
-      onRefreshSettings();
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      if (!msg.includes('popup-closed-by-user')) {
-        setAuthError(msg || 'Google Sign-in failed');
-      }
-    } finally {
-      setGoogleLoading(false);
-    }
-  };
 
   const handleSignOutConfirm = async () => {
     if (user) {
@@ -451,50 +431,14 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   : 'Sign in to automatically back up your ledger & repairs to the cloud and sync across multiple phones or computers.'}
               </p>
 
-              {authError && (
-                <div className="p-2.5 bg-red-50 text-iosRed text-xs rounded-lg flex items-center gap-1.5">
-                  <AlertTriangle className="w-4 h-4 shrink-0" />
-                  <span>{authError}</span>
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={handleGoogleSignIn}
-                  disabled={googleLoading}
-                  className="py-2.5 px-3 bg-white border border-slate-300 hover:bg-slate-50 text-slate-800 rounded-[10px] text-xs font-semibold flex items-center justify-center gap-2 active:scale-98 transition-all shadow-sm"
-                >
-                  <svg className="w-4 h-4" viewBox="0 0 24 24">
-                    <path
-                      fill="#4285F4"
-                      d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.66v3.04h3.88c2.27-2.09 3.66-5.17 3.66-9.14z"
-                    />
-                    <path
-                      fill="#34A853"
-                      d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.04c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.13C3.26 21.36 7.33 24 12 24z"
-                    />
-                    <path
-                      fill="#FBBC05"
-                      d="M5.28 14.28c-.25-.72-.38-1.49-.38-2.28s.13-1.56.38-2.28V6.59H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.41l4.03-3.13z"
-                    />
-                    <path
-                      fill="#EA4335"
-                      d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.59l4.03 3.13c.95-2.83 3.6-4.97 6.72-4.97z"
-                    />
-                  </svg>
-                  <span>{googleLoading ? (language === 'ml' ? 'ലോഗിൻ ചെയ്യുന്നു...' : 'Signing in...') : 'Google'}</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setIsPhoneModalOpen(true)}
-                  className="py-2.5 px-3 bg-[#F2F2F7] hover:bg-slate-200 text-slate-800 rounded-[10px] text-xs font-semibold flex items-center justify-center gap-2 active:scale-98 transition-all"
-                >
-                  <Phone className="w-3.5 h-3.5 text-iosBlue" />
-                  <span>{language === 'ml' ? 'മൊബൈൽ നമ്പർ' : 'Phone OTP'}</span>
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => setIsLoginModalOpen(true)}
+                className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-[12px] text-sm font-bold flex items-center justify-center gap-2 active:scale-98 transition-all shadow-md shadow-blue-500/20"
+              >
+                <Store className="w-4 h-4" />
+                <span>{language === 'ml' ? 'ലോഗിൻ / അക്കൗണ്ട് തുറക്കുക' : 'Sign In / Cloud Account'}</span>
+              </button>
             </div>
           )}
         </div>
@@ -658,10 +602,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         onCancel={() => setIsSignOutModalOpen(false)}
       />
 
-      {/* Phone OTP Authentication Modal */}
-      <PhoneAuthModal
-        isOpen={isPhoneModalOpen}
-        onClose={() => setIsPhoneModalOpen(false)}
+      {/* Unified Login Modal */}
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
         onSuccess={() => onRefreshSettings()}
         language={language}
       />

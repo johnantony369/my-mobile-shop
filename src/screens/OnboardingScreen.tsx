@@ -3,11 +3,10 @@ import { Language } from '../types';
 import { t } from '../i18n';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { initAppSettings } from '../db/db';
-import { isFirebaseConfigured } from '../firebase/config';
-import { loginWithGoogle } from '../firebase/auth';
+import { isFirebaseConfigured, auth } from '../firebase/config';
 import { pullCloudChanges } from '../firebase/sync';
-import { PhoneAuthModal } from '../components/PhoneAuthModal';
-import { Smartphone, ArrowRight, Cloud, Phone } from 'lucide-react';
+import { LoginModal } from '../components/LoginModal';
+import { Smartphone, ArrowRight, Store } from 'lucide-react';
 
 interface OnboardingScreenProps {
   onComplete: () => void;
@@ -18,30 +17,13 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
   const [shopName, setShopName] = useState('');
   const [repairsChoice, setRepairsChoice] = useState<'no' | 'yes'>('no');
   const [error, setError] = useState<string | null>(null);
-  const [isPhoneModalOpen, setIsPhoneModalOpen] = useState(false);
-  const [restoreLoading, setRestoreLoading] = useState(false);
-  const [restoreError, setRestoreError] = useState<string | null>(null);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
-  const handleGoogleRestore = async () => {
-    try {
-      setRestoreError(null);
-      setRestoreLoading(true);
-      const user = await loginWithGoogle();
-      if (user) {
-        await pullCloudChanges(user.uid);
-        onComplete();
-      }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      if (!msg.includes('popup-closed-by-user')) {
-        setRestoreError(msg || 'Google Sign-in failed');
-      }
-    } finally {
-      setRestoreLoading(false);
+  const handleLoginSuccess = async () => {
+    const uid = auth?.currentUser?.uid;
+    if (uid) {
+      await pullCloudChanges(uid);
     }
-  };
-
-  const handlePhoneRestoreSuccess = async () => {
     onComplete();
   };
 
@@ -158,42 +140,30 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
 
             <p className="text-xs text-[#8E8E93] mb-2 font-medium">
               {language === 'ml'
-                ? 'മുമ്പ് സേവ് ചെയ്ത ഷോപ്പ് ബാക്കപ്പ് ഉണ്ടോ?'
-                : 'Already have a cloud backup?'}
+                ? 'മുമ്പ് സേവ് ചെയ്ത ഷോപ്പ് അക്കൗണ്ട് ഉണ്ടോ?'
+                : 'Already have a shop account?'}
             </p>
 
-            {restoreError && (
-              <p className="text-xs text-iosRed font-medium mb-2">{restoreError}</p>
-            )}
-
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={handleGoogleRestore}
-                disabled={restoreLoading}
-                className="flex-1 py-2.5 px-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 rounded-[10px] text-xs font-semibold flex items-center justify-center gap-1.5 active:scale-98 transition-all shadow-sm"
-              >
-                <Cloud className="w-3.5 h-3.5 text-blue-500" />
-                <span>{restoreLoading ? 'Loading...' : 'Google Restore'}</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsPhoneModalOpen(true)}
-                disabled={restoreLoading}
-                className="flex-1 py-2.5 px-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 rounded-[10px] text-xs font-semibold flex items-center justify-center gap-1.5 active:scale-98 transition-all shadow-sm"
-              >
-                <Phone className="w-3.5 h-3.5 text-blue-500" />
-                <span>Phone OTP</span>
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => setIsLoginModalOpen(true)}
+              className="w-full py-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 rounded-[12px] text-xs font-bold flex items-center justify-center gap-2 active:scale-98 transition-all shadow-sm"
+            >
+              <Store className="w-4 h-4 text-blue-600" />
+              <span>
+                {language === 'ml'
+                  ? 'ലോഗിൻ ചെയ്ത് ഡാറ്റ റീസ്റ്റോർ ചെയ്യുക'
+                  : 'Sign In to Restore Your Shop'}
+              </span>
+            </button>
           </div>
         )}
       </div>
 
-      <PhoneAuthModal
-        isOpen={isPhoneModalOpen}
-        onClose={() => setIsPhoneModalOpen(false)}
-        onSuccess={handlePhoneRestoreSuccess}
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        onSuccess={handleLoginSuccess}
         language={language}
       />
     </div>

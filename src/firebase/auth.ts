@@ -5,9 +5,38 @@ import {
   User,
   RecaptchaVerifier,
   signInWithPhoneNumber,
-  ConfirmationResult
+  ConfirmationResult,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword
 } from 'firebase/auth';
 import { auth, googleProvider } from './config';
+
+export function formatLoginIdToEmail(loginId: string): string {
+  const trimmed = loginId.trim().toLowerCase();
+  if (trimmed.includes('@')) {
+    return trimmed;
+  }
+  const sanitized = trimmed.replace(/[^a-z0-9_.-]/g, '_');
+  return `${sanitized}@mymobileshop.app`;
+}
+
+export async function loginWithPassword(loginId: string, password: string): Promise<User> {
+  if (!auth) {
+    throw new Error('Firebase Auth not configured');
+  }
+  const email = formatLoginIdToEmail(loginId);
+  const result = await signInWithEmailAndPassword(auth, email, password);
+  return result.user;
+}
+
+export async function registerWithPassword(loginId: string, password: string): Promise<User> {
+  if (!auth) {
+    throw new Error('Firebase Auth not configured');
+  }
+  const email = formatLoginIdToEmail(loginId);
+  const result = await createUserWithEmailAndPassword(auth, email, password);
+  return result.user;
+}
 
 export async function loginWithGoogle(): Promise<User> {
   if (!auth || !googleProvider) {
