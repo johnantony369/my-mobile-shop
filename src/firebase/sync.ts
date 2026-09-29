@@ -9,6 +9,7 @@ import {
 import { db, getAppSettings } from '../db/db';
 import { dbFirestore, auth, isFirebaseConfigured } from './config';
 import { Entry, Job, AppSettings } from '../types';
+import { upsertAccountSummary, calculateDataSize } from './admin';
 
 export type SyncState = 'idle' | 'syncing' | 'synced' | 'offline' | 'error';
 
@@ -180,6 +181,29 @@ export async function pushPendingChanges(uid: string): Promise<number> {
 
   if (batchOps > 0) {
     await currentBatch.commit();
+  }
+
+  // 4. Update centralized account summary for admin monitoring
+  try {
+    const totalEntries = allEntries.filter(e => !e.deletedAt);
+    const totalJobs = allJobs.filter(j => !j.deletedAt);
+    const estimatedBytes = calculateDataSize(totalEntries, totalJobs, localSettings);
+    const currentUser = auth?.currentUser;
+
+    await upsertAccountSummary(uid, {
+      uid,
+      email: currentUser?.email || null,
+      phoneNumber: currentUser?.phoneNumber || null,
+      shopName: localSettings?.shopName || 'My Mobile Shop',
+      activated: !!localSettings?.activated,
+      entryCount: totalEntries.length,
+      jobCount: totalJobs.length,
+      estimatedBytes,
+      createdAt: localSettings?.firstLaunchDate || new Date().toISOString(),
+      lastActiveAt: new Date().toISOString(),
+    });
+  } catch (summaryErr) {
+    console.warn('Failed to update account directory summary during push:', summaryErr);
   }
 
   return pushedCount;
