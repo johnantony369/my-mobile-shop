@@ -39,10 +39,10 @@ export function SegmentedControl<T extends string>({
             role="tab"
             aria-selected={isSelected}
             onClick={() => onChange(opt.value)}
-            className={`flex-1 flex items-center justify-center font-medium rounded-[7px] transition-all duration-150 py-1 px-2 z-10 ${
+            className={`flex-1 flex items-center justify-center font-medium rounded-[7px] transition-all duration-200 ease-out py-1 px-2 z-10 active:scale-97 ${
               isSelected
                 ? 'bg-white text-black shadow-[0_1px_3px_rgba(0,0,0,0.12),0_1px_2px_rgba(0,0,0,0.06)] font-semibold'
-                : 'text-[#8E8E93] hover:text-black'
+                : 'text-[#8E8E93] hover:text-black/80'
             }`}
           >
             {opt.label}

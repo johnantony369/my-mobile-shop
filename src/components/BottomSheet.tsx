@@ -43,17 +43,17 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end">
-      {/* Backdrop */}
+      {/* Backdrop with subtle blur */}
       <div
-        className={`fixed inset-0 bg-black/40 transition-opacity duration-200 ease-out ${
-          animate ? 'opacity-100' : 'opacity-0'
+        className={`fixed inset-0 bg-black/40 backdrop-blur-[3px] transition-opacity duration-250 ease-out ${
+          animate ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
         onClick={onClose}
       />
 
-      {/* Sheet Content */}
+      {/* Sheet Content with iOS spring curve */}
       <div
-        className={`relative z-10 w-full max-h-[92vh] bg-white rounded-t-[20px] shadow-2xl flex flex-col transition-transform duration-200 ease-out transform ${
+        className={`relative z-10 w-full max-h-[92vh] bg-white rounded-t-[20px] shadow-2xl flex flex-col transition-transform duration-250 ease-[cubic-bezier(0.32,0.72,0,1)] transform ${
           animate ? 'translate-y-0' : 'translate-y-full'
         } pb-[calc(env(safe-area-inset-bottom)+16px)]`}
       >

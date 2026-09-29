@@ -142,7 +142,7 @@ export default function App() {
       )}
 
       {/* Active Screen View */}
-      <main className="flex-1 w-full max-w-lg mx-auto">
+      <main key={currentTab} className="flex-1 w-full max-w-lg mx-auto animate-fade-slide-in">
         {currentTab === 'book' && (
           <BookScreen
             language={language}

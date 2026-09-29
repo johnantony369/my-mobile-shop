@@ -95,7 +95,7 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
           <button
             type="button"
             onClick={handleShare}
-            className="p-1.5 text-iosBlue hover:bg-iosBlue/10 rounded-full active:opacity-70 transition-colors"
+            className="p-1.5 text-iosBlue hover:bg-iosBlue/10 rounded-full active:scale-90 transition-all duration-150"
             title={t('share_btn', language)}
             aria-label={t('share_btn', language)}
           >

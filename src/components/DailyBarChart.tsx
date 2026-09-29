@@ -135,7 +135,7 @@ export const DailyBarChart: React.FC<DailyBarChartProps> = ({
                     height={barH}
                     rx={barWidth / 2}
                     fill={isSelected ? '#007AFF' : '#34C759'}
-                    className="transition-colors duration-150"
+                    className="transition-all duration-300 ease-out"
                   />
                 )}
 

@@ -37,10 +37,10 @@ export const DateStrip: React.FC<DateStripProps> = ({
             key={item.dateStr}
             type="button"
             onClick={() => onSelectDate(item.dateStr)}
-            className={`flex-shrink-0 flex flex-col items-center justify-center w-[52px] h-[66px] rounded-[12px] transition-all duration-150 ${
+            className={`flex-shrink-0 flex flex-col items-center justify-center w-[52px] h-[66px] rounded-[12px] transition-all duration-200 ease-[cubic-bezier(0.25,1,0.5,1)] active:scale-95 ${
               isSelected
                 ? 'bg-iosBlue text-white shadow-md font-semibold scale-105'
-                : 'bg-white text-iosLabel shadow-sm border border-black/[0.04] active:bg-[#E5E5EA]'
+                : 'bg-white text-iosLabel shadow-sm border border-black/[0.04] active:bg-[#E5E5EA] hover:border-black/[0.08]'
             }`}
           >
             <span

@@ -74,7 +74,7 @@ export const DailyRitualCard: React.FC<DailyRitualCardProps> = ({
   const hasEntries = summary.inCount > 0 || summary.outTotal > 0;
 
   return (
-    <div className="mx-4 mb-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/80 rounded-[14px] p-3.5 shadow-sm relative transition-all duration-200">
+    <div className="mx-4 mb-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/80 rounded-[14px] p-3.5 shadow-sm relative transition-all duration-200 animate-fade-slide-in">
       <div className="flex items-center justify-between pb-2 border-b border-blue-100">
         <div className="flex items-center space-x-2">
           <span className="w-2 h-2 rounded-full bg-iosBlue animate-pulse" />

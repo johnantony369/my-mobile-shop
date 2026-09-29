@@ -63,24 +63,24 @@ export const TabBar: React.FC<TabBarProps> = ({
               key={tab.id}
               type="button"
               onClick={() => onTabChange(tab.id)}
-              className={`flex-1 flex flex-col items-center justify-center h-full active:opacity-70 transition-colors relative ${
-                isActive ? 'text-iosBlue' : 'text-[#8E8E93]'
+              className={`flex-1 flex flex-col items-center justify-center h-full active:scale-95 transition-all duration-150 relative select-none ${
+                isActive ? 'text-iosBlue' : 'text-[#8E8E93] hover:text-black/70'
               }`}
             >
               <div className="relative">
                 <Icon
-                  className={`w-[22px] h-[22px] ${
-                    isActive ? 'stroke-[2.2px]' : 'stroke-[1.8px]'
+                  className={`w-[22px] h-[22px] transition-transform duration-200 ease-out ${
+                    isActive ? 'stroke-[2.2px] scale-105' : 'stroke-[1.8px] scale-100'
                   }`}
                 />
                 {tab.badge > 0 && (
-                  <span className="absolute -top-1 -right-2 bg-iosGreen text-white text-[10px] font-bold min-w-[16px] h-4 rounded-full px-1 flex items-center justify-center shadow-xs">
+                  <span className="absolute -top-1 -right-2 bg-iosGreen text-white text-[10px] font-bold min-w-[16px] h-4 rounded-full px-1 flex items-center justify-center shadow-xs animate-pulse">
                     {tab.badge}
                   </span>
                 )}
               </div>
               <span
-                className={`text-[10px] mt-0.5 tracking-tight font-medium ${
+                className={`text-[10px] mt-0.5 tracking-tight font-medium transition-colors duration-150 ${
                   isActive ? 'font-semibold text-iosBlue' : 'text-[#8E8E93]'
                 }`}
               >

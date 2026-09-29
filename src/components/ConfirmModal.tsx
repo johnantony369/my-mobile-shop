@@ -27,12 +27,12 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/45 backdrop-blur-[2px] transition-opacity"
+        className="fixed inset-0 bg-black/45 backdrop-blur-[3px] transition-opacity"
         onClick={onCancel}
       />
 
       {/* iOS Dialog Card */}
-      <div className="relative z-10 w-full max-w-[290px] bg-white/95 rounded-[14px] shadow-2xl overflow-hidden text-center transform transition-all">
+      <div className="relative z-10 w-full max-w-[290px] bg-white/95 rounded-[14px] shadow-2xl overflow-hidden text-center transform transition-all animate-dialog-pop">
         <div className="pt-5 pb-4 px-4">
           <h4 className="text-[17px] font-semibold text-black tracking-tight">{title}</h4>
           <p className="mt-1 text-[13px] text-[#3C3C43]/70 leading-relaxed">{message}</p>
