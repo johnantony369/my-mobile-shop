@@ -7,7 +7,7 @@ import { formatMonthName } from '../utils/date';
 import { DailyBarChart } from '../components/DailyBarChart';
 import { buildShareSummaryText, shareSummary } from '../utils/share';
 import { exportEntriesToCSV } from '../utils/csv';
-import { ChevronLeft, ChevronRight, Share2, Download, ArrowDownLeft, ArrowUpRight, TrendingUp, Wrench, Crown } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Share2, Download, ArrowDownLeft, ArrowUpRight, TrendingUp, Wrench } from 'lucide-react';
 
 interface ReportsScreenProps {
   language: Language;
@@ -120,7 +120,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
                 onClick={onOpenPaywall}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-xs border border-amber-600 active:scale-95 transition-all"
               >
-                <Crown className="w-3.5 h-3.5 text-yellow-200" />
+                <img src="/icon-192.png" alt="Pro" className="w-3.5 h-3.5 rounded-xs object-cover" />
                 <span>PRO</span>
               </button>
             )}

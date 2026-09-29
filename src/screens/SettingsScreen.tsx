@@ -27,10 +27,12 @@ import {
   LogOut,
   Smartphone,
   ArrowDownToLine,
-  Crown,
   ChevronRight,
+  Crown,
 } from 'lucide-react';
 import { PaywallModal } from '../components/PaywallModal';
+import { isSuperAdmin } from '../utils/admin';
+import { AdminDashboardModal } from '../components/AdminDashboardModal';
 
 /** Standalone sub-component so it has its own state without polluting SettingsScreen */
 const AppUpdatesSection: React.FC<{ language: Language }> = ({ language }) => {
@@ -182,6 +184,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const { user, isConfigured, syncState, lastSyncTime, syncError, triggerSync, signOut } = useAuth();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isSignOutModalOpen, setIsSignOutModalOpen] = useState(false);
+  const [isAdminDashboardOpen, setIsAdminDashboardOpen] = useState(false);
 
   // Backup state
   const [backupMsg, setBackupMsg] = useState<string | null>(null);
@@ -309,13 +312,11 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             <div className="absolute -right-4 -bottom-4 w-28 h-28 bg-white/10 rounded-full blur-xl pointer-events-none" />
             <div className="flex items-center justify-between mb-2">
               <span className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wider bg-black/20 backdrop-blur-md px-2.5 py-0.5 rounded-full border border-white/20">
-                <Crown className="w-3.5 h-3.5 text-yellow-300" />
-                <span>{t('paywall_pricing_badge', language)}</span>
+                <img src="/icon-192.png" alt="Pro" className="w-3.5 h-3.5 rounded-xs object-cover" />
+                <span>Pro Plan</span>
               </span>
-              <span className="text-[11px] font-bold text-amber-100 bg-white/20 px-2 py-0.5 rounded-full">
-                {isExpired
-                  ? t('trial_expired', language)
-                  : t('trial_days_remaining', language, { days: trialDays })}
+              <span className="text-[11px] font-bold text-amber-100 bg-white/20 px-2.5 py-0.5 rounded-full">
+                ₹99/mo • ₹999/yr
               </span>
             </div>
 
@@ -323,7 +324,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               {t('upgrade_to_pro', language)}
             </h3>
             <p className="text-xs text-amber-100 font-medium mt-1 leading-relaxed">
-              {t('paywall_subtitle', language)}
+              Unlimited day book transactions, automatic cloud sync, and mobile repairs
             </p>
 
             <button
@@ -339,8 +340,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         ) : (
           <div className="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-[16px] p-4 text-white shadow-sm flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shadow-xs">
-                <Crown className="w-5 h-5 text-yellow-300" />
+              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shadow-xs overflow-hidden">
+                <img src="/icon-192.png" alt="Pro" className="w-8 h-8 rounded-lg object-cover" />
               </div>
               <div>
                 <h3 className="text-[15px] font-bold tracking-tight">
@@ -390,6 +391,38 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             </div>
           </form>
         </div>
+
+        {/* Superadmin Control Center (Visible only to superadmin) */}
+        {isSuperAdmin(user) && (
+          <div className="bg-gradient-to-br from-purple-900 via-slate-900 to-indigo-950 rounded-[16px] p-4 text-white shadow-lg shadow-purple-950/20 border border-purple-500/30 relative overflow-hidden">
+            <div className="flex items-center justify-between mb-2">
+              <span className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider bg-purple-500/20 border border-purple-400/30 text-purple-200 px-2.5 py-1 rounded-full">
+                <Crown className="w-3.5 h-3.5 text-amber-400" />
+                <span>Superadmin Access</span>
+              </span>
+              <span className="text-[11px] font-mono text-purple-300">
+                {user?.email}
+              </span>
+            </div>
+
+            <h3 className="text-base font-bold text-white mt-1">
+              Central Master Admin
+            </h3>
+            <p className="text-xs text-purple-200/80 mt-0.5 leading-relaxed">
+              Inspect all registered shop accounts, manage cloud data usage quotas, toggle Pro activations, and contact owners.
+            </p>
+
+            <button
+              type="button"
+              onClick={() => setIsAdminDashboardOpen(true)}
+              className="mt-3.5 w-full py-2.5 px-4 bg-purple-600 hover:bg-purple-500 text-white rounded-[12px] font-bold text-xs flex items-center justify-center gap-2 shadow-md shadow-purple-600/30 active:scale-[0.98] transition-all"
+            >
+              <Crown className="w-4 h-4 text-amber-300" />
+              <span>Open Admin Dashboard</span>
+              <ChevronRight className="w-4 h-4 text-purple-300 ml-auto" />
+            </button>
+          </div>
+        )}
 
 
         {/* Section: Repairs Service Module Toggle */}
@@ -489,9 +522,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   onClick={handleOpenPaywall}
                   className="text-xs font-semibold text-iosBlue hover:opacity-80 inline-flex items-center gap-1 active:scale-95 transition-all"
                 >
-                  <Crown className="w-3.5 h-3.5 text-amber-500" />
+                  <img src="/icon-192.png" alt="Pro" className="w-3.5 h-3.5 rounded-xs object-cover" />
                   <span>
-                    Don't have a code? Buy Lifetime Access
+                    Don't have a code? Get Pro (₹99/mo or ₹999/yr)
                   </span>
                 </button>
               </div>
@@ -666,50 +699,52 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           />
         </div>
 
-        {/* Section 5: Developer / Testing tools */}
-        <div className="bg-white rounded-[14px] p-4 shadow-sm border border-black/[0.04]">
-          <div className="flex items-center space-x-2 text-xs font-semibold text-[#8E8E93] uppercase tracking-wider mb-2">
-            <Sparkles className="w-4 h-4 text-amber-500" />
-            <span>{t('dev_section', language)}</span>
-          </div>
-
-          {devNotice && (
-            <div className="mb-2.5 p-2 bg-green-50 text-iosGreen text-xs rounded-lg text-center font-medium">
-              {devNotice}
+        {/* Section 5: Developer / Testing tools (Superadmin only) */}
+        {isSuperAdmin(user) && (
+          <div className="bg-white rounded-[14px] p-4 shadow-sm border border-black/[0.04]">
+            <div className="flex items-center space-x-2 text-xs font-semibold text-[#8E8E93] uppercase tracking-wider mb-2">
+              <Sparkles className="w-4 h-4 text-amber-500" />
+              <span>{t('dev_section', language)}</span>
             </div>
-          )}
 
-          <div className="flex flex-col space-y-2">
-            <button
-              type="button"
-              onClick={handleSeedDev}
-              className="py-2 px-3 bg-blue-50 hover:bg-blue-100 rounded-[10px] text-xs font-semibold text-iosBlue flex items-center justify-center space-x-1.5 active:opacity-80 transition-colors"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>{t('dev_seed_btn', language)}</span>
-            </button>
-
-            {settings.showRepairs && (
-              <button
-                type="button"
-                onClick={handleSeedJobs}
-                className="py-2 px-3 bg-indigo-50 hover:bg-indigo-100 rounded-[10px] text-xs font-semibold text-indigo-600 flex items-center justify-center space-x-1.5 active:opacity-80 transition-colors"
-              >
-                <Wrench className="w-3.5 h-3.5" />
-                <span>{t('dev_seed_jobs_btn', language)}</span>
-              </button>
+            {devNotice && (
+              <div className="mb-2.5 p-2 bg-green-50 text-iosGreen text-xs rounded-lg text-center font-medium">
+                {devNotice}
+              </div>
             )}
 
-            <button
-              type="button"
-              onClick={() => setIsClearModalOpen(true)}
-              className="py-2 px-3 bg-red-50 hover:bg-red-100 rounded-[10px] text-xs font-semibold text-iosRed flex items-center justify-center space-x-1.5 active:opacity-80 transition-colors"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              <span>{t('dev_clear_btn', language)}</span>
-            </button>
+            <div className="flex flex-col space-y-2">
+              <button
+                type="button"
+                onClick={handleSeedDev}
+                className="py-2 px-3 bg-blue-50 hover:bg-blue-100 rounded-[10px] text-xs font-semibold text-iosBlue flex items-center justify-center space-x-1.5 active:opacity-80 transition-colors"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>{t('dev_seed_btn', language)}</span>
+              </button>
+
+              {settings.showRepairs && (
+                <button
+                  type="button"
+                  onClick={handleSeedJobs}
+                  className="py-2 px-3 bg-indigo-50 hover:bg-indigo-100 rounded-[10px] text-xs font-semibold text-indigo-600 flex items-center justify-center space-x-1.5 active:opacity-80 transition-colors"
+                >
+                  <Wrench className="w-3.5 h-3.5" />
+                  <span>{t('dev_seed_jobs_btn', language)}</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setIsClearModalOpen(true)}
+                className="py-2 px-3 bg-red-50 hover:bg-red-100 rounded-[10px] text-xs font-semibold text-iosRed flex items-center justify-center space-x-1.5 active:opacity-80 transition-colors"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>{t('dev_clear_btn', language)}</span>
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Section: App & Updates */}
         <AppUpdatesSection language={language} />
@@ -789,6 +824,12 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         language={language}
         onActivated={onRefreshSettings}
         trialDaysRemaining={trialDays}
+      />
+
+      {/* Superadmin Dashboard Modal */}
+      <AdminDashboardModal
+        isOpen={isAdminDashboardOpen}
+        onClose={() => setIsAdminDashboardOpen(false)}
       />
     </div>
   );

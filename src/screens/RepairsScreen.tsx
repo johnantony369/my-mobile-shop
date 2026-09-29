@@ -16,7 +16,6 @@ import {
   Clock,
   MessageSquare,
   X,
-  Crown,
 } from 'lucide-react';
 
 interface RepairsScreenProps {
@@ -35,7 +34,7 @@ export const RepairsScreen: React.FC<RepairsScreenProps> = ({
   shopName,
   isReadOnly,
   isActivated,
-  trialDays,
+  trialDays: _trialDays,
   onOpenPaywall,
 }) => {
   const [currentSegment, setCurrentSegment] = useState<RepairSegment>('active');
@@ -130,11 +129,11 @@ export const RepairsScreen: React.FC<RepairsScreenProps> = ({
                       : 'bg-gradient-to-r from-amber-50 to-yellow-50 text-amber-900 border-amber-200/90 hover:from-amber-100 hover:to-yellow-100'
                   }`}
                 >
-                  <Crown className={`w-3.5 h-3.5 ${isReadOnly ? 'text-iosRed' : 'text-amber-600'}`} />
+                  <img src="/icon-192.png" alt="Pro" className="w-3.5 h-3.5 rounded-xs object-cover" />
                   <span>
                     {isReadOnly
                       ? 'Unlock Pro'
-                      : `Pro: ${trialDays ?? 0}d left`}
+                      : 'Upgrade to Pro'}
                   </span>
                 </button>
               )}
@@ -225,7 +224,7 @@ export const RepairsScreen: React.FC<RepairsScreenProps> = ({
                     : 'bg-iosBlue text-white'
                 }`}
               >
-                {isReadOnly ? <Crown className="w-4 h-4 text-yellow-200" /> : <Plus className="w-4 h-4" />}
+                {isReadOnly ? <img src="/icon-192.png" alt="Pro" className="w-4 h-4 rounded-xs object-cover" /> : <Plus className="w-4 h-4" />}
                 <span>{isReadOnly ? 'Unlock Pro' : t('new_job_btn', language)}</span>
               </button>
             )}
@@ -321,7 +320,7 @@ export const RepairsScreen: React.FC<RepairsScreenProps> = ({
         >
           {isReadOnly ? (
             <>
-              <Crown className="w-5 h-5 text-yellow-200" />
+              <img src="/icon-192.png" alt="Pro" className="w-5 h-5 rounded-md object-cover" />
               <span>Unlock Pro</span>
             </>
           ) : (

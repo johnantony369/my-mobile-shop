@@ -10,7 +10,7 @@ import { DailyRitualCard } from '../components/DailyRitualCard';
 import { EntryList } from '../components/EntryList';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { AddEditSheet } from './AddEditSheet';
-import { Plus, Crown } from 'lucide-react';
+import { Plus } from 'lucide-react';
 
 interface BookScreenProps {
   language: Language;
@@ -26,7 +26,7 @@ export const BookScreen: React.FC<BookScreenProps> = ({
   shopName,
   isReadOnly,
   isActivated,
-  trialDays,
+  trialDays: _trialDays,
   onOpenPaywall,
 }) => {
   const [selectedDate, setSelectedDate] = useState<string>(getLocalDateString());
@@ -98,9 +98,9 @@ export const BookScreen: React.FC<BookScreenProps> = ({
                 <button
                   type="button"
                   onClick={onOpenPaywall}
-                  className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-xs active:scale-95 transition-all"
+                  className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-xs active:scale-95 transition-all"
                 >
-                  <Crown className="w-3 h-3 text-yellow-200" />
+                  <img src="/icon-192.png" alt="Pro" className="w-3.5 h-3.5 rounded-xs object-cover" />
                   <span>PRO</span>
                 </button>
               )}
@@ -129,11 +129,9 @@ export const BookScreen: React.FC<BookScreenProps> = ({
                     : 'bg-gradient-to-r from-amber-50 to-yellow-50 text-amber-900 border-amber-200/90 hover:from-amber-100 hover:to-yellow-100'
                 }`}
               >
-                <Crown className={`w-3.5 h-3.5 ${isReadOnly ? 'text-iosRed' : 'text-amber-600'}`} />
+                <img src="/icon-192.png" alt="Pro" className="w-3.5 h-3.5 rounded-xs object-cover" />
                 <span>
-                  {isReadOnly
-                    ? 'Unlock Pro'
-                    : `Pro: ${trialDays ?? 0}d left`}
+                  {isReadOnly ? 'Unlock Pro' : 'Upgrade to Pro'}
                 </span>
               </button>
             )}
@@ -194,7 +192,7 @@ export const BookScreen: React.FC<BookScreenProps> = ({
         >
           {isReadOnly ? (
             <>
-              <Crown className="w-5 h-5 text-yellow-200" />
+              <img src="/icon-192.png" alt="Pro" className="w-5 h-5 rounded-md object-cover" />
               <span>Unlock Pro to Add</span>
             </>
           ) : (

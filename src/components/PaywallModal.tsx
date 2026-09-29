@@ -4,16 +4,10 @@ import { t } from '../i18n';
 import { checkCode, formatActivationCode } from '../utils/activation';
 import { updateAppSettings } from '../db/db';
 import {
-  Crown,
+  Check,
   CheckCircle2,
-  Sparkles,
   ExternalLink,
   ShieldCheck,
-  Cloud,
-  Wrench,
-  FileSpreadsheet,
-  Zap,
-  Lock,
   ChevronDown,
   ChevronUp,
   X,
@@ -34,10 +28,10 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
   onClose,
   language,
   onActivated,
-  trialDaysRemaining,
 }) => {
   const [rendered, setRendered] = useState(isOpen);
   const [animate, setAnimate] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('yearly');
   const [showCodeInput, setShowCodeInput] = useState(false);
   const [code, setCode] = useState('');
   const [codeError, setCodeError] = useState<string | null>(null);
@@ -109,33 +103,6 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
     setIsActivating(false);
   };
 
-  const features = [
-    {
-      icon: <Zap className="w-4 h-4 text-amber-500" />,
-      title: t('paywall_feature_1', language),
-    },
-    {
-      icon: <Cloud className="w-4 h-4 text-iosBlue" />,
-      title: t('paywall_feature_2', language),
-    },
-    {
-      icon: <Wrench className="w-4 h-4 text-indigo-500" />,
-      title: t('paywall_feature_3', language),
-    },
-    {
-      icon: <FileSpreadsheet className="w-4 h-4 text-emerald-500" />,
-      title: t('paywall_feature_4', language),
-    },
-    {
-      icon: <Sparkles className="w-4 h-4 text-purple-500" />,
-      title: t('paywall_feature_5', language),
-    },
-    {
-      icon: <Lock className="w-4 h-4 text-slate-500" />,
-      title: t('paywall_feature_6', language),
-    },
-  ];
-
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end">
       {/* Backdrop */}
@@ -148,12 +115,12 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
 
       {/* Sheet Content */}
       <div
-        className={`relative z-10 w-full max-w-lg mx-auto max-h-[92vh] bg-white rounded-t-[22px] shadow-2xl flex flex-col transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] transform ${
+        className={`relative z-10 w-full max-w-lg mx-auto bg-white rounded-t-[24px] shadow-2xl flex flex-col transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] transform ${
           animate ? 'translate-y-0' : 'translate-y-full'
-        } pb-[calc(env(safe-area-inset-bottom)+12px)]`}
+        } pb-[calc(env(safe-area-inset-bottom)+14px)]`}
       >
         {/* Grab Handle & Close button */}
-        <div className="relative pt-3 pb-2 flex items-center justify-center">
+        <div className="relative pt-3 pb-1 flex items-center justify-center">
           <div className="w-10 h-1.5 bg-[#C7C7CC] rounded-full" />
           <button
             type="button"
@@ -165,111 +132,140 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
           </button>
         </div>
 
-        {/* Scrollable Container */}
-        <div className="overflow-y-auto px-5 pt-1 pb-4 space-y-4">
-          {/* Header Crown & Title */}
+        {/* Modal Body */}
+        <div className="px-5 pt-1 pb-3 space-y-4">
+          {/* App Logo & Title */}
           <div className="text-center pt-1">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-300 shadow-md shadow-amber-500/20 text-white mb-2.5">
-              <Crown className="w-8 h-8 drop-shadow-sm" />
-            </div>
-
-            <div className="inline-block mb-1">
-              <span className="px-2.5 py-0.5 text-[11px] font-extrabold uppercase tracking-wider rounded-full bg-amber-100 text-amber-900 border border-amber-200">
-                {t('paywall_tagline', language)}
-              </span>
-            </div>
-
-            <h2 className="text-[22px] font-extrabold text-black tracking-tight leading-tight">
-              {t('paywall_title', language)}
+            <img
+              src="/icon-192.png"
+              alt="My Mobile Shop"
+              className="w-16 h-16 rounded-2xl mx-auto shadow-md border border-black/5 object-cover mb-2.5"
+            />
+            <h2 className="text-[22px] font-black text-black tracking-tight leading-tight">
+              My Mobile Shop Pro
             </h2>
-
             <p className="text-xs text-[#8E8E93] font-medium mt-1 max-w-xs mx-auto">
-              {t('paywall_subtitle', language)}
+              Unlimited transactions, automatic cloud sync, and repair tracking
             </p>
+          </div>
 
-            {typeof trialDaysRemaining === 'number' && (
-              <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-iosBlue border border-blue-100">
-                <ShieldCheck className="w-3.5 h-3.5" />
-                <span>
-                  {trialDaysRemaining > 0
-                    ? t('trial_days_remaining', language, { days: trialDaysRemaining })
-                    : t('trial_expired', language)}
+          {/* Pricing Plans Selection */}
+          <div className="grid grid-cols-2 gap-3 pt-1">
+            {/* Monthly Card */}
+            <button
+              type="button"
+              onClick={() => setSelectedPlan('monthly')}
+              className={`relative rounded-[16px] p-3.5 text-left border-2 transition-all flex flex-col justify-between ${
+                selectedPlan === 'monthly'
+                  ? 'border-iosBlue bg-blue-50/60 shadow-sm'
+                  : 'border-black/[0.08] bg-[#F2F2F7]/70 hover:bg-[#F2F2F7]'
+              }`}
+            >
+              <div>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  Monthly
+                </span>
+                <div className="mt-1 flex items-baseline gap-0.5">
+                  <span className="text-2xl font-black text-black">₹99</span>
+                  <span className="text-xs text-slate-500 font-semibold">/mo</span>
+                </div>
+              </div>
+              <p className="text-[11px] text-slate-500 mt-2 font-medium">
+                Billed monthly
+              </p>
+              <div
+                className={`mt-2 flex items-center gap-1.5 text-xs font-semibold ${
+                  selectedPlan === 'monthly' ? 'text-iosBlue' : 'text-slate-400'
+                }`}
+              >
+                <div
+                  className={`w-4 h-4 rounded-full border flex items-center justify-center transition-colors ${
+                    selectedPlan === 'monthly'
+                      ? 'border-iosBlue bg-iosBlue text-white'
+                      : 'border-slate-300'
+                  }`}
+                >
+                  {selectedPlan === 'monthly' && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                </div>
+                <span>{selectedPlan === 'monthly' ? 'Selected' : 'Select'}</span>
+              </div>
+            </button>
+
+            {/* Yearly Card */}
+            <button
+              type="button"
+              onClick={() => setSelectedPlan('yearly')}
+              className={`relative rounded-[16px] p-3.5 text-left border-2 transition-all flex flex-col justify-between ${
+                selectedPlan === 'yearly'
+                  ? 'border-iosBlue bg-blue-50/60 shadow-sm ring-1 ring-iosBlue/20'
+                  : 'border-black/[0.08] bg-[#F2F2F7]/70 hover:bg-[#F2F2F7]'
+              }`}
+            >
+              {/* Savings badge */}
+              <div className="absolute -top-2.5 right-3">
+                <span className="bg-gradient-to-r from-emerald-500 to-iosGreen text-white text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full shadow-xs">
+                  Save 16%
                 </span>
               </div>
-            )}
-          </div>
-
-          {/* Value Pillars List */}
-          <div className="bg-[#F2F2F7] rounded-[16px] p-3.5 space-y-2.5 border border-black/[0.04]">
-            {features.map((feat, idx) => (
-              <div key={idx} className="flex items-start space-x-2.5">
-                <div className="p-1 rounded-lg bg-white shadow-xs shrink-0 mt-0.5">
-                  {feat.icon}
-                </div>
-                <div className="flex-1 flex items-start justify-between">
-                  <span className="text-[13px] font-semibold text-slate-800 leading-snug">
-                    {feat.title}
-                  </span>
-                  <CheckCircle2 className="w-4 h-4 text-iosGreen shrink-0 ml-2 mt-0.5" />
+              <div>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  Yearly
+                </span>
+                <div className="mt-1 flex items-baseline gap-0.5">
+                  <span className="text-2xl font-black text-black">₹999</span>
+                  <span className="text-xs text-slate-500 font-semibold">/yr</span>
                 </div>
               </div>
-            ))}
+              <p className="text-[11px] text-iosGreen font-bold mt-2">
+                ₹83/mo • Best Value
+              </p>
+              <div
+                className={`mt-2 flex items-center gap-1.5 text-xs font-semibold ${
+                  selectedPlan === 'yearly' ? 'text-iosBlue' : 'text-slate-400'
+                }`}
+              >
+                <div
+                  className={`w-4 h-4 rounded-full border flex items-center justify-center transition-colors ${
+                    selectedPlan === 'yearly'
+                      ? 'border-iosBlue bg-iosBlue text-white'
+                      : 'border-slate-300'
+                  }`}
+                >
+                  {selectedPlan === 'yearly' && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                </div>
+                <span>{selectedPlan === 'yearly' ? 'Selected' : 'Select'}</span>
+              </div>
+            </button>
           </div>
 
-          {/* Pricing Highlight Card */}
-          <div className="rounded-[16px] p-4 bg-gradient-to-br from-blue-50 via-indigo-50/50 to-blue-50 border border-blue-200/80 shadow-xs relative overflow-hidden">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-bold text-iosBlue uppercase tracking-wider">
-                {t('paywall_pricing_badge', language)}
-              </span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-iosGreen text-white uppercase tracking-wider">
-                Lifetime
-              </span>
-            </div>
-
-            <div className="flex items-baseline gap-2 mt-1">
-              <span className="text-2xl font-black text-slate-900 tracking-tight">
-                One-Time Payment
-              </span>
-            </div>
-
-            <p className="text-[12px] text-slate-600 mt-1 leading-snug">
-              No monthly or annual subscription fees. Pay once and use forever.
-            </p>
-
-            {/* Direct Razorpay Checkout Button */}
+          {/* Action Button */}
+          <div className="pt-1">
             <button
               type="button"
               onClick={handleOpenRazorpay}
-              className="w-full mt-3 py-3.5 px-4 bg-gradient-to-r from-iosBlue via-blue-600 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-[12px] font-bold text-[15px] flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25 active:scale-[0.98] transition-all"
+              className="w-full py-3.5 px-4 bg-gradient-to-r from-iosBlue via-blue-600 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-[14px] font-bold text-[15px] flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25 active:scale-[0.98] transition-all"
             >
-              <Sparkles className="w-4 h-4 text-amber-300" />
-              <span>{t('paywall_cta', language)}</span>
+              <span>
+                {selectedPlan === 'yearly' ? 'Subscribe • ₹999 / year' : 'Subscribe • ₹99 / month'}
+              </span>
               <ExternalLink className="w-4 h-4 ml-0.5 opacity-80" />
             </button>
           </div>
 
-          {/* Trust & Payment Methods */}
-          <div className="text-center space-y-1.5 pt-1">
+          {/* Trust note */}
+          <div className="text-center pt-0.5">
             <div className="flex items-center justify-center gap-1.5 text-[11px] font-medium text-[#8E8E93]">
               <ShieldCheck className="w-3.5 h-3.5 text-iosGreen" />
-              <span>{t('paywall_secure_note', language)}</span>
-            </div>
-            <div className="flex items-center justify-center gap-2 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
-              <span className="px-2 py-0.5 bg-gray-100 rounded-md">UPI</span>
-              <span className="px-2 py-0.5 bg-gray-100 rounded-md">GPay</span>
-              <span className="px-2 py-0.5 bg-gray-100 rounded-md">PhonePe</span>
-              <span className="px-2 py-0.5 bg-gray-100 rounded-md">Cards</span>
-              <span className="px-2 py-0.5 bg-gray-100 rounded-md">NetBanking</span>
+              <span>100% Secure via Razorpay (UPI, GPay, Cards)</span>
             </div>
           </div>
 
           {/* Collapsible: Already paid? Enter Activation Code */}
-          <div className="border-t border-[#E5E5EA] pt-3">
+          <div className="border-t border-[#E5E5EA] pt-2.5">
             <button
               type="button"
               onClick={() => setShowCodeInput(!showCodeInput)}
-              className="w-full flex items-center justify-between text-xs font-semibold text-iosBlue py-1.5 px-1 hover:opacity-80 transition-opacity"
+              className="w-full flex items-center justify-between text-xs font-semibold text-iosBlue py-1 px-1 hover:opacity-80 transition-opacity"
             >
               <span>{t('paywall_have_code', language)}</span>
               {showCodeInput ? (
@@ -317,11 +313,11 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
           </div>
 
           {/* Dismiss button */}
-          <div className="pt-1 pb-1">
+          <div className="pt-0 pb-1">
             <button
               type="button"
               onClick={onClose}
-              className="w-full py-2 text-xs font-medium text-[#8E8E93] hover:text-black transition-colors text-center"
+              className="w-full py-1.5 text-xs font-medium text-[#8E8E93] hover:text-black transition-colors text-center"
             >
               {t('paywall_close', language)}
             </button>
