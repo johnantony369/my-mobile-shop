@@ -611,6 +611,20 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Section 7: Log Out Button (iOS Grouped Style) */}
+        {user && (
+          <div className="bg-white rounded-[14px] p-2 shadow-sm border border-black/[0.04]">
+            <button
+              type="button"
+              onClick={() => setIsSignOutModalOpen(true)}
+              className="w-full py-3 px-4 flex items-center justify-center space-x-2 text-iosRed font-semibold text-[15px] rounded-[10px] hover:bg-red-50/60 active:bg-red-100/50 transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>{language === 'ml' ? 'ലോഗ് ഔട്ട് ചെയ്യുക' : 'Log Out'}</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Clear Confirmation Modal */}
