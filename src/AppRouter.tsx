@@ -1,7 +1,9 @@
+import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from './db/db';
 import { useAuth } from './firebase/useAuth';
+import { pullCloudChanges } from './firebase/sync';
 import { LandingPage } from './screens/LandingPage';
 import { LoginScreen } from './screens/LoginScreen';
 import { OnboardingScreen } from './screens/OnboardingScreen';
@@ -10,6 +12,8 @@ import App from './App';
 /** Component handling protected app entry */
 function AppRouteWrapper() {
   const { user, loading: authLoading } = useAuth();
+  const [checkingCloud, setCheckingCloud] = useState(false);
+  const [checkedCloudUid, setCheckedCloudUid] = useState<string | null>(null);
 
   const settingsList = useLiveQuery(async () => {
     try {
@@ -20,7 +24,19 @@ function AppRouteWrapper() {
     }
   }, []);
 
-  if (authLoading || settingsList === undefined) {
+  useEffect(() => {
+    if (user && settingsList !== undefined && settingsList.length === 0 && checkedCloudUid !== user.uid) {
+      setCheckingCloud(true);
+      pullCloudChanges(user.uid)
+        .catch(err => console.warn('Could not pull cloud changes on app route:', err))
+        .finally(() => {
+          setCheckedCloudUid(user.uid);
+          setCheckingCloud(false);
+        });
+    }
+  }, [user, settingsList, checkedCloudUid]);
+
+  if (authLoading || settingsList === undefined || (user && settingsList.length === 0 && (checkingCloud || checkedCloudUid !== user.uid))) {
     return (
       <div className="min-h-screen bg-iosBg flex items-center justify-center p-6 text-center select-none">
         <div className="w-9 h-9 border-3 border-iosBlue border-t-transparent rounded-full animate-spin" />
@@ -45,6 +61,8 @@ function AppRouteWrapper() {
 function LoginRouteWrapper() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const [checkingCloud, setCheckingCloud] = useState(false);
+  const [checkedCloudUid, setCheckedCloudUid] = useState<string | null>(null);
 
   const settingsList = useLiveQuery(async () => {
     try {
@@ -55,7 +73,19 @@ function LoginRouteWrapper() {
     }
   }, []);
 
-  if (authLoading || settingsList === undefined) {
+  useEffect(() => {
+    if (user && settingsList !== undefined && settingsList.length === 0 && checkedCloudUid !== user.uid) {
+      setCheckingCloud(true);
+      pullCloudChanges(user.uid)
+        .catch(err => console.warn('Could not pull cloud changes on login route:', err))
+        .finally(() => {
+          setCheckedCloudUid(user.uid);
+          setCheckingCloud(false);
+        });
+    }
+  }, [user, settingsList, checkedCloudUid]);
+
+  if (authLoading || settingsList === undefined || (user && settingsList.length === 0 && (checkingCloud || checkedCloudUid !== user.uid))) {
     return (
       <div className="min-h-screen bg-iosBg flex items-center justify-center p-6 text-center select-none">
         <div className="w-9 h-9 border-3 border-iosBlue border-t-transparent rounded-full animate-spin" />
@@ -63,7 +93,7 @@ function LoginRouteWrapper() {
     );
   }
 
-  // If already authenticated: route to onboarding (if new) or app (if configured)
+  // If already authenticated: route to onboarding (if truly new) or app (if configured)
   if (user) {
     if (settingsList.length === 0) {
       return <Navigate to="/onboarding" replace />;
@@ -87,6 +117,8 @@ function LoginRouteWrapper() {
 function OnboardingRouteWrapper() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const [checkingCloud, setCheckingCloud] = useState(false);
+  const [checkedCloudUid, setCheckedCloudUid] = useState<string | null>(null);
 
   const settingsList = useLiveQuery(async () => {
     try {
@@ -97,7 +129,19 @@ function OnboardingRouteWrapper() {
     }
   }, []);
 
-  if (authLoading || settingsList === undefined) {
+  useEffect(() => {
+    if (user && settingsList !== undefined && settingsList.length === 0 && checkedCloudUid !== user.uid) {
+      setCheckingCloud(true);
+      pullCloudChanges(user.uid)
+        .catch(err => console.warn('Could not pull cloud changes on onboarding route:', err))
+        .finally(() => {
+          setCheckedCloudUid(user.uid);
+          setCheckingCloud(false);
+        });
+    }
+  }, [user, settingsList, checkedCloudUid]);
+
+  if (authLoading || settingsList === undefined || (user && settingsList.length === 0 && (checkingCloud || checkedCloudUid !== user.uid))) {
     return (
       <div className="min-h-screen bg-iosBg flex items-center justify-center p-6 text-center select-none">
         <div className="w-9 h-9 border-3 border-iosBlue border-t-transparent rounded-full animate-spin" />
@@ -110,7 +154,7 @@ function OnboardingRouteWrapper() {
     return <Navigate to="/login" replace />;
   }
 
-  // Already onboarded: send directly to app
+  // Already onboarded (or restored from cloud): send directly to app
   if (settingsList.length > 0) {
     return <Navigate to="/app" replace />;
   }

@@ -8,6 +8,7 @@ import {
   sendOtp,
   confirmOtp
 } from '../firebase/auth';
+import { pullCloudChanges } from '../firebase/sync';
 import { ConfirmationResult, RecaptchaVerifier } from 'firebase/auth';
 import {
   Store,
@@ -72,20 +73,26 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
 
     try {
       setLoading(true);
+      let userObj;
       if (mode === 'register') {
-        const u = await registerWithPassword(cleanId, password);
+        userObj = await registerWithPassword(cleanId, password);
         localStorage.setItem('mms_authenticated', 'true');
-        localStorage.setItem('mms_user_id', u.uid);
+        localStorage.setItem('mms_user_id', userObj.uid);
         setSuccessMsg('Account created successfully!');
       } else {
-        const u = await loginWithPassword(cleanId, password);
+        userObj = await loginWithPassword(cleanId, password);
         localStorage.setItem('mms_authenticated', 'true');
-        localStorage.setItem('mms_user_id', u.uid);
+        localStorage.setItem('mms_user_id', userObj.uid);
         setSuccessMsg('Logged in successfully!');
+      }
+      try {
+        await pullCloudChanges(userObj.uid);
+      } catch (syncErr) {
+        console.warn('Initial cloud pull failed or partial:', syncErr);
       }
       setTimeout(() => {
         onSuccess();
-      }, 400);
+      }, 300);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       if (msg.includes('user-not-found') || msg.includes('wrong-password') || msg.includes('invalid-credential')) {
@@ -111,9 +118,14 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
       localStorage.setItem('mms_authenticated', 'true');
       localStorage.setItem('mms_user_id', u.uid);
       setSuccessMsg('Logged in successfully!');
+      try {
+        await pullCloudChanges(u.uid);
+      } catch (syncErr) {
+        console.warn('Initial cloud pull failed or partial:', syncErr);
+      }
       setTimeout(() => {
         onSuccess();
-      }, 400);
+      }, 300);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       if (!msg.includes('popup-closed-by-user')) {
@@ -173,9 +185,14 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
       localStorage.setItem('mms_authenticated', 'true');
       localStorage.setItem('mms_user_id', u.uid);
       setSuccessMsg('Logged in successfully!');
+      try {
+        await pullCloudChanges(u.uid);
+      } catch (syncErr) {
+        console.warn('Initial cloud pull failed or partial:', syncErr);
+      }
       setTimeout(() => {
         onSuccess();
-      }, 400);
+      }, 300);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       if (msg.includes('invalid-verification-code')) {

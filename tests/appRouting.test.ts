@@ -21,4 +21,18 @@ describe('App Router Structure', () => {
     const routerContent = fs.existsSync(routerPath) ? fs.readFileSync(routerPath, 'utf-8') : '';
     expect(mainContent + routerContent).toContain('BrowserRouter');
   });
+
+  it('pulls cloud changes to restore existing accounts before deciding route', () => {
+    const routerPath = path.resolve(__dirname, '../src/AppRouter.tsx');
+    const content = fs.readFileSync(routerPath, 'utf-8');
+    expect(content).toContain('pullCloudChanges');
+    expect(content).toContain('checkedCloudUid');
+  });
+
+  it('LoginScreen pulls cloud changes on authentication before routing', () => {
+    const loginPath = path.resolve(__dirname, '../src/screens/LoginScreen.tsx');
+    const content = fs.readFileSync(loginPath, 'utf-8');
+    expect(content).toContain('pullCloudChanges');
+    expect(content).toContain('await pullCloudChanges(u.uid)');
+  });
 });
