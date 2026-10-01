@@ -1,9 +1,9 @@
 import React from 'react';
-import { BookOpen, Wrench, BarChart3, Settings } from 'lucide-react';
+import { BookOpen, Package, Wrench, BarChart3, Settings } from 'lucide-react';
 import { Language } from '../types';
 import { t } from '../i18n';
 
-export type TabType = 'book' | 'repairs' | 'reports' | 'settings';
+export type TabType = 'book' | 'stock' | 'repairs' | 'reports' | 'settings';
 
 interface TabBarProps {
   currentTab: TabType;
@@ -11,6 +11,7 @@ interface TabBarProps {
   language: Language;
   showRepairs?: boolean;
   readyCount?: number;
+  lowStockCount?: number;
 }
 
 export const TabBar: React.FC<TabBarProps> = ({
@@ -19,6 +20,7 @@ export const TabBar: React.FC<TabBarProps> = ({
   language,
   showRepairs = false,
   readyCount = 0,
+  lowStockCount = 0,
 }) => {
   const tabs = [
     {
@@ -26,6 +28,14 @@ export const TabBar: React.FC<TabBarProps> = ({
       label: t('tab_book', language),
       icon: BookOpen,
       badge: 0,
+      badgeColor: 'bg-iosGreen',
+    },
+    {
+      id: 'stock' as TabType,
+      label: t('tab_stock', language),
+      icon: Package,
+      badge: lowStockCount,
+      badgeColor: 'bg-amber-500',
     },
     ...(showRepairs
       ? [
@@ -34,6 +44,7 @@ export const TabBar: React.FC<TabBarProps> = ({
             label: t('tab_repairs', language),
             icon: Wrench,
             badge: readyCount,
+            badgeColor: 'bg-iosGreen',
           },
         ]
       : []),
@@ -42,12 +53,14 @@ export const TabBar: React.FC<TabBarProps> = ({
       label: t('tab_reports', language),
       icon: BarChart3,
       badge: 0,
+      badgeColor: 'bg-iosGreen',
     },
     {
       id: 'settings' as TabType,
       label: t('tab_settings', language),
       icon: Settings,
       badge: 0,
+      badgeColor: 'bg-iosGreen',
     },
   ];
 
@@ -74,7 +87,7 @@ export const TabBar: React.FC<TabBarProps> = ({
                   }`}
                 />
                 {tab.badge > 0 && (
-                  <span className="absolute -top-1 -right-2 bg-iosGreen text-white text-[10px] font-bold min-w-[16px] h-4 rounded-full px-1 flex items-center justify-center shadow-xs animate-pulse">
+                  <span className={`absolute -top-1 -right-2 ${tab.badgeColor || 'bg-iosGreen'} text-white text-[10px] font-bold min-w-[16px] h-4 rounded-full px-1 flex items-center justify-center shadow-xs animate-pulse`}>
                     {tab.badge}
                   </span>
                 )}

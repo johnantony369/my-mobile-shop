@@ -3,6 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from './db/db';
 import { TabBar, TabType } from './components/TabBar';
 import { BookScreen } from './screens/BookScreen';
+import { StockScreen } from './screens/StockScreen';
 import { RepairsScreen } from './screens/RepairsScreen';
 import { ReportsScreen } from './screens/ReportsScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
@@ -57,6 +58,27 @@ export default function App() {
         return await db.jobs.where('status').equals('ready').count();
       } catch (err) {
         console.warn('Error querying ready jobs count:', err);
+        return 0;
+      }
+    },
+    []
+  ) ?? 0;
+
+  // Safe live query for low stock products count
+  const lowStockCount = useLiveQuery(
+    async () => {
+      try {
+        if (!db.stock) return 0;
+        const items = await db.stock.toArray();
+        return items.filter(
+          (i) =>
+            !i.deletedAt &&
+            i.syncStatus !== 'deleted' &&
+            i.category === 'product' &&
+            (i.quantity ?? 0) <= (i.lowStockThreshold || 5)
+        ).length;
+      } catch (err) {
+        console.warn('Error querying low stock count:', err);
         return 0;
       }
     },
@@ -174,6 +196,15 @@ export default function App() {
             onOpenPaywall={() => setIsPaywallOpen(true)}
           />
         )}
+        {currentTab === 'stock' && (
+          <StockScreen
+            language={language}
+            shopName={settings.shopName}
+            isReadOnly={isReadOnly}
+            isActivated={isActivated}
+            onOpenPaywall={() => setIsPaywallOpen(true)}
+          />
+        )}
         {showRepairs && currentTab === 'repairs' && (
           <RepairsScreen
             language={language}
@@ -214,6 +245,7 @@ export default function App() {
         language={language}
         showRepairs={showRepairs}
         readyCount={readyJobsCount}
+        lowStockCount={lowStockCount}
       />
 
       {/* Premium Paywall Modal */}

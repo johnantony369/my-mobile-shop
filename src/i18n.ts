@@ -8,6 +8,9 @@ export const translations = {
   tab_book: {
     en: 'Day Book',
   },
+  tab_stock: {
+    en: 'Stock',
+  },
   tab_reports: {
     en: 'Reports',
   },

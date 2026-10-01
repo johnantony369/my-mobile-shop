@@ -3,7 +3,7 @@ import { BottomSheet } from '../components/BottomSheet';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { StockItem, StockCategory, Language } from '../types';
 import { db } from '../db/db';
-import { Package, Wrench, Sparkles, Plus, Minus, Tag } from 'lucide-react';
+import { Package, Wrench, Sparkles, Plus, Minus } from 'lucide-react';
 
 interface AddEditStockSheetProps {
   isOpen: boolean;

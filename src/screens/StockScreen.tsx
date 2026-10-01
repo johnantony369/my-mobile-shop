@@ -17,7 +17,6 @@ import {
   Trash2,
   Sparkles,
   Boxes,
-  ArrowUpDown,
   X,
   TrendingUp,
 } from 'lucide-react';
@@ -587,8 +586,8 @@ export const StockScreen: React.FC<StockScreenProps> = ({
         isOpen={!!itemToDelete}
         title="Delete Stock Item?"
         message={`Are you sure you want to delete "${itemToDelete?.name}"? You can re-add it anytime.`}
-        confirmText="Delete"
-        cancelText="Cancel"
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
         isDestructive={true}
         onConfirm={handleConfirmDelete}
         onCancel={() => setItemToDelete(null)}

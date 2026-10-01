@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { BottomSheet } from '../components/BottomSheet';
-import { Job, Language } from '../types';
+import { Job, Language, StockItem } from '../types';
 import { t } from '../i18n';
 import { db, cleanIndianPhone, isValidIndianPhone } from '../db/db';
+import { StockPickerSheet } from '../components/StockPickerSheet';
+import { Wrench, X, Check } from 'lucide-react';
 
 interface AddEditJobSheetProps {
   isOpen: boolean;
@@ -30,6 +33,24 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
   const [phoneError, setPhoneError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
+  // Stock picker state
+  const [isStockPickerOpen, setIsStockPickerOpen] = useState(false);
+  const [selectedStockItem, setSelectedStockItem] = useState<StockItem | null>(null);
+
+  // Live query for active stock items
+  const stockItems = useLiveQuery(
+    async () => {
+      try {
+        if (!db.stock) return [];
+        const items = await db.stock.toArray();
+        return items.filter((i) => !i.deletedAt && i.syncStatus !== 'deleted');
+      } catch {
+        return [];
+      }
+    },
+    []
+  ) ?? [];
+
   const nameInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -53,6 +74,7 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
         setExpectedDate('');
         setImei('');
       }
+      setSelectedStockItem(null);
       setPhoneError(null);
       setFormError(null);
 
@@ -67,6 +89,19 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
     const val = e.target.value;
     setPhone(val);
     if (phoneError) setPhoneError(null);
+  };
+
+  const handleSelectStockItem = (item: StockItem) => {
+    setSelectedStockItem(item);
+    // If complaint is empty, set it directly, otherwise if not already present, append
+    if (!complaint.trim()) {
+      setComplaint(item.name);
+    } else if (!complaint.includes(item.name)) {
+      setComplaint(`${complaint}, ${item.name}`);
+    }
+    // Set estimate price if not entered or if user wants default
+    setEstimateStr(item.sellingPrice.toString());
+    if (formError) setFormError(null);
   };
 
   const handleSave = async (e?: React.FormEvent) => {
@@ -211,19 +246,94 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
           />
         </div>
 
-        {/* Complaint */}
-        <div className="space-y-1">
-          <label className="text-xs font-semibold text-[#8E8E93] ml-1">
-            {t('field_complaint', language)} *
-          </label>
-          <input
-            type="text"
-            required
-            value={complaint}
-            onChange={(e) => setComplaint(e.target.value)}
-            placeholder="e.g. Screen broken, not charging"
-            className="w-full bg-[#F2F2F7] rounded-[10px] px-3.5 py-2.5 text-[15px] text-black focus:outline-none focus:ring-2 focus:ring-iosBlue/40 border border-black/[0.04]"
-          />
+        {/* Complaint with Stock Quick-Picker */}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between ml-1">
+            <label className="text-xs font-semibold text-[#8E8E93]">
+              {t('field_complaint', language)} *
+            </label>
+            <button
+              type="button"
+              onClick={() => setIsStockPickerOpen(true)}
+              className="text-xs font-semibold text-iosBlue hover:underline flex items-center space-x-1 active:opacity-75"
+            >
+              <Wrench className="w-3.5 h-3.5" />
+              <span>⚡ Pick from Stock ({stockItems.length})</span>
+            </button>
+          </div>
+
+          {/* Quick chips of services & repair parts */}
+          {stockItems.length > 0 && (
+            <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
+              {stockItems.slice(0, 8).map((si) => {
+                const isSelected = selectedStockItem?.id === si.id;
+                return (
+                  <button
+                    key={si.id}
+                    type="button"
+                    onClick={() => handleSelectStockItem(si)}
+                    className={`shrink-0 px-2.5 py-1 rounded-full text-[11px] font-medium transition-all active:scale-95 flex items-center space-x-1 border ${
+                      isSelected
+                        ? 'bg-purple-600 text-white border-purple-600 shadow-xs'
+                        : 'bg-white text-gray-700 border-gray-200/80 hover:border-purple-500'
+                    }`}
+                  >
+                    <span>{si.category === 'service' ? '🛠️' : '📦'}</span>
+                    <span className="font-semibold">{si.name}</span>
+                    <span className={isSelected ? 'text-purple-100' : 'text-gray-400'}>
+                      (₹{si.sellingPrice})
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          <div className="relative">
+            <input
+              type="text"
+              required
+              value={complaint}
+              onChange={(e) => {
+                setComplaint(e.target.value);
+                if (selectedStockItem && selectedStockItem.name !== e.target.value) {
+                  setSelectedStockItem(null);
+                }
+              }}
+              placeholder="e.g. Screen broken, not charging"
+              className="w-full bg-[#F2F2F7] rounded-[10px] px-3.5 py-2.5 text-[15px] text-black focus:outline-none focus:ring-2 focus:ring-iosBlue/40 border border-black/[0.04]"
+            />
+            {complaint && (
+              <button
+                type="button"
+                onClick={() => {
+                  setComplaint('');
+                  setSelectedStockItem(null);
+                }}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 rounded-full"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          {/* Selected Stock / Service Indicator */}
+          {selectedStockItem && (
+            <div className="bg-purple-50/80 border border-purple-200 rounded-[10px] p-2 flex items-center justify-between text-xs animate-fade-in text-purple-900">
+              <div className="flex items-center space-x-1.5 truncate">
+                <Check className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+                <span className="font-semibold truncate">
+                  Linked: {selectedStockItem.name}
+                </span>
+                <span className="text-gray-500 shrink-0">
+                  (₹{selectedStockItem.sellingPrice})
+                </span>
+              </div>
+              <span className="text-[10px] text-purple-700 bg-white px-1.5 py-0.5 rounded border border-purple-200 shrink-0">
+                Estimate auto-filled
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Money Row: Estimate & Advance */}
@@ -293,6 +403,16 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
           </button>
         </div>
       </form>
+
+      {/* Stock Picker Sheet */}
+      <StockPickerSheet
+        isOpen={isStockPickerOpen}
+        onClose={() => setIsStockPickerOpen(false)}
+        onSelect={handleSelectStockItem}
+        language={language}
+        title="Select Service or Part"
+        defaultFilter="service"
+      />
     </BottomSheet>
   );
 };

@@ -1,10 +1,10 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { BottomSheet } from './BottomSheet';
-import { StockItem, StockCategory, Language } from '../types';
+import { StockItem, Language } from '../types';
 import { db } from '../db/db';
 import { formatINR } from '../i18n';
-import { Search, Package, Wrench, Plus, Check, AlertCircle, X } from 'lucide-react';
+import { Search, Package, Wrench, Plus, AlertCircle, X } from 'lucide-react';
 import { AddEditStockSheet } from '../screens/AddEditStockSheet';
 
 interface StockPickerSheetProps {
