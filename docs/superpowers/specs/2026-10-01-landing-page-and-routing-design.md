@@ -62,8 +62,10 @@ The landing page must focus strictly on **concrete owner benefits and daily outc
 - **Night Closing:** Compare cash drawer with digital total, close the book, and go home relaxed.
 
 ### 3.5 Transparent Pricing Section
-- **14-Day Free Trial:** No credit card needed. Full access to day book and repair tracker.
-- **Shop Pro (₹99 / month or ₹999 / year):** Unlimited daily transactions, unlimited customer repair cards, priority support.
+- **Affordable Plans for Every Shop:**
+  - **Monthly:** ₹99 / month — cancel anytime.
+  - **Yearly:** ₹999 / year — save 16% (best value for busy shops).
+- **Everything Included:** Unlimited daily transactions, unlimited customer repair cards, WhatsApp receipts, and secure cloud backup.
 - Trust guarantee: No ads, no selling customer data, cancel anytime.
 
 ### 3.6 Footer & Compliance
