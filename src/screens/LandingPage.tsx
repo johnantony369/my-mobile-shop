@@ -9,13 +9,9 @@ import {
   WifiOff,
   ShieldCheck,
   TrendingUp,
-  Clock,
   Wrench,
-  Smartphone,
-  ChevronRight,
   Receipt,
   Sparkles,
-  Lock,
   Mail
 } from 'lucide-react';
 import { LegalModal } from '../components/LegalModal';

@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   loginWithPassword,
   registerWithPassword,
@@ -27,9 +28,12 @@ interface LoginScreenProps {
 }
 
 export function LoginScreen({ onSuccess }: LoginScreenProps) {
+  const [searchParams] = useSearchParams();
   // View: 'password' | 'phone_number' | 'phone_otp'
   const [view, setView] = useState<'password' | 'phone_number' | 'phone_otp'>('password');
-  const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [mode, setMode] = useState<'login' | 'register'>(
+    searchParams.get('mode') === 'register' ? 'register' : 'login'
+  );
 
   // Legal Modal State
   const [isLegalOpen, setIsLegalOpen] = useState(false);

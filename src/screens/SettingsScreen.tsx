@@ -768,6 +768,15 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               <strong className="text-black font-semibold">1.0.0</strong>
             </div>
             <div className="flex justify-between items-center py-1.5 border-b border-[#E5E5EA]">
+              <span>Public Website</span>
+              <a
+                href="/"
+                className="text-xs font-semibold text-iosBlue hover:underline"
+              >
+                mymobileshop.online
+              </a>
+            </div>
+            <div className="flex justify-between items-center py-1.5 border-b border-[#E5E5EA]">
               <span>Legal & Policies</span>
               <button
                 type="button"
