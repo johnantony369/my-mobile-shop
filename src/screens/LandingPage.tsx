@@ -12,7 +12,9 @@ import {
   Wrench,
   Receipt,
   Sparkles,
-  Mail
+  Mail,
+  Menu,
+  X
 } from 'lucide-react';
 import { LegalModal } from '../components/LegalModal';
 
@@ -24,10 +26,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isAuthenticated = fals
   const navigate = useNavigate();
   const [isLegalOpen, setIsLegalOpen] = useState(false);
   const [legalTab, setLegalTab] = useState<'privacy' | 'terms'>('privacy');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleOpenLegal = (tab: 'privacy' | 'terms') => {
     setLegalTab(tab);
     setIsLegalOpen(true);
+    setMobileMenuOpen(false);
   };
 
   const handleGetStarted = () => {
@@ -47,23 +51,26 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isAuthenticated = fals
   };
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] text-slate-900 font-sans selection:bg-blue-500/20">
+    <div className="min-h-screen bg-[#F8F9FA] text-slate-900 font-sans selection:bg-blue-500/20 pb-20 sm:pb-0 overflow-x-hidden">
       {/* 1. Header / Navbar */}
-      <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/80">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 safe-top">
+        <div className="max-w-6xl mx-auto px-3.5 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
           {/* Brand */}
-          <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => navigate('/')}>
+          <div
+            className="flex items-center gap-2 cursor-pointer touch-manipulation active:opacity-80 transition-opacity"
+            onClick={() => navigate('/')}
+          >
             <img
               src="/icon-192.png"
               alt="My Mobile Shop"
-              className="w-9 h-9 rounded-xl shadow-xs border border-black/5 object-cover"
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl shadow-xs border border-black/5 object-cover"
             />
-            <span className="text-lg font-black tracking-tight text-slate-900">
+            <span className="text-base sm:text-lg font-black tracking-tight text-slate-900">
               My Mobile Shop
             </span>
           </div>
 
-          {/* Nav links (desktop) */}
+          {/* Desktop Nav links */}
           <nav className="hidden md:flex items-center gap-7 text-xs font-semibold text-slate-600">
             <a href="#benefits" className="hover:text-blue-600 transition-colors">Why It Works</a>
             <a href="#workflow" className="hover:text-blue-600 transition-colors">Daily Routine</a>
@@ -78,66 +85,115 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isAuthenticated = fals
           </nav>
 
           {/* Action CTAs */}
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-1.5 sm:gap-2.5">
             <button
               type="button"
               onClick={handleSignIn}
-              className="px-3.5 py-2 text-xs font-semibold text-slate-700 hover:text-blue-600 transition-colors"
+              className="px-2.5 sm:px-3.5 py-2 text-xs font-bold text-slate-700 hover:text-blue-600 active:bg-slate-100 rounded-lg transition-colors touch-manipulation"
             >
               {isAuthenticated ? 'Open Shop' : 'Sign In'}
             </button>
             <button
               type="button"
               onClick={handleGetStarted}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-sm hover:shadow-md transition-all flex items-center gap-1.5 active:scale-95"
+              className="hidden sm:inline-flex px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-sm hover:shadow-md transition-all items-center gap-1.5 active:scale-95"
             >
               <span>{isAuthenticated ? 'Go to App' : 'Get Started'}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden p-2 text-slate-600 hover:text-slate-900 rounded-xl hover:bg-slate-100 active:bg-slate-200 transition-colors"
+              aria-label="Toggle navigation menu"
+            >
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
           </div>
         </div>
+
+        {/* Mobile Dropdown Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden bg-white border-b border-slate-200 px-4 py-3 space-y-2 shadow-lg animate-in slide-in-from-top-2">
+            <a
+              href="#benefits"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block py-2 text-sm font-semibold text-slate-700 hover:text-blue-600 border-b border-slate-100"
+            >
+              Why It Works
+            </a>
+            <a
+              href="#workflow"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block py-2 text-sm font-semibold text-slate-700 hover:text-blue-600 border-b border-slate-100"
+            >
+              Daily Routine
+            </a>
+            <a
+              href="#pricing"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block py-2 text-sm font-semibold text-slate-700 hover:text-blue-600 border-b border-slate-100"
+            >
+              Pricing Plans
+            </a>
+            <button
+              type="button"
+              onClick={() => handleOpenLegal('privacy')}
+              className="w-full text-left py-2 text-sm font-semibold text-slate-700 hover:text-blue-600 border-b border-slate-100"
+            >
+              Privacy Policy
+            </button>
+            <button
+              type="button"
+              onClick={() => handleOpenLegal('terms')}
+              className="w-full text-left py-2 text-sm font-semibold text-slate-700 hover:text-blue-600"
+            >
+              Terms of Service
+            </button>
+          </div>
+        )}
       </header>
 
       {/* 2. Hero Section */}
-      <section className="relative overflow-hidden pt-12 pb-16 md:pt-20 md:pb-24 px-4 sm:px-6 max-w-5xl mx-auto text-center">
+      <section className="relative overflow-hidden pt-6 pb-12 sm:pt-16 sm:pb-20 md:pt-20 md:pb-24 px-4 sm:px-6 max-w-5xl mx-auto text-center">
         {/* Benefit Pill */}
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 border border-blue-200/60 text-blue-700 text-xs font-bold mb-6 animate-fade-in shadow-2xs">
-          <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+        <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1 sm:py-1.5 rounded-full bg-blue-50 border border-blue-200/60 text-blue-700 text-[11px] sm:text-xs font-bold mb-4 sm:mb-6 shadow-2xs">
+          <Sparkles className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-blue-600 shrink-0" />
           <span>Built Exclusively for Mobile Retail & Repair Shops</span>
         </div>
 
         {/* Hero Title */}
-        <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-slate-900 tracking-tight leading-[1.15] max-w-3xl mx-auto">
+        <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-[1.2] max-w-3xl mx-auto px-1">
           Run Your Mobile Shop Without the Daily Notebook Chaos
         </h1>
 
         {/* Hero Subtitle */}
-        <p className="mt-5 text-base sm:text-lg text-slate-600 max-w-2xl mx-auto font-medium leading-relaxed">
+        <p className="mt-3.5 sm:mt-5 text-sm sm:text-base md:text-lg text-slate-600 max-w-2xl mx-auto font-medium leading-relaxed px-2">
           Track daily cash & UPI in seconds, manage customer phone repairs without missed deadlines, and send professional WhatsApp repair receipts—all from your smartphone.
         </p>
 
         {/* Quick Proof Badges */}
-        <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 mt-6 text-xs font-semibold text-slate-500">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-6 mt-5 sm:mt-6 text-xs font-semibold text-slate-600 bg-slate-100/70 sm:bg-transparent py-2.5 px-4 rounded-2xl max-w-md sm:max-w-none mx-auto">
           <div className="flex items-center gap-1.5">
-            <Zap className="w-4 h-4 text-amber-500" />
+            <Zap className="w-4 h-4 text-amber-500 shrink-0" />
             <span>5-second entry speed</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <MessageSquare className="w-4 h-4 text-emerald-500" />
+            <MessageSquare className="w-4 h-4 text-emerald-500 shrink-0" />
             <span>1-tap WhatsApp repair receipts</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <WifiOff className="w-4 h-4 text-blue-500" />
+            <WifiOff className="w-4 h-4 text-blue-500 shrink-0" />
             <span>Opens instantly without internet</span>
           </div>
         </div>
 
         {/* Hero Action Buttons */}
-        <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 max-w-md mx-auto">
+        <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2.5 sm:gap-3 max-w-md mx-auto">
           <button
             type="button"
             onClick={handleGetStarted}
-            className="w-full sm:w-auto px-7 py-3.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-2xl shadow-lg shadow-blue-500/25 transition-all flex items-center justify-center gap-2 active:scale-95"
+            className="w-full sm:w-auto px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-2xl shadow-lg shadow-blue-500/25 transition-all flex items-center justify-center gap-2 active:scale-98 touch-manipulation min-h-[48px]"
           >
             <span>{isAuthenticated ? 'Open Your Day Book' : 'Start Your Shop Ledger'}</span>
             <ArrowRight className="w-4 h-4" />
@@ -145,60 +201,60 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isAuthenticated = fals
           <button
             type="button"
             onClick={handleSignIn}
-            className="w-full sm:w-auto px-6 py-3.5 bg-white hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-2xl border border-slate-200 transition-all active:scale-95 shadow-2xs"
+            className="w-full sm:w-auto px-5 py-3.5 bg-white hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-2xl border border-slate-200 transition-all active:scale-98 shadow-2xs touch-manipulation min-h-[48px]"
           >
             {isAuthenticated ? 'Dashboard' : 'Sign In to Existing Shop'}
           </button>
         </div>
 
         {/* Interactive App Preview Mockup */}
-        <div className="mt-12 max-w-lg mx-auto bg-white rounded-3xl p-5 sm:p-6 shadow-2xl border border-slate-200 text-left">
+        <div className="mt-8 sm:mt-12 max-w-md sm:max-w-lg mx-auto bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xl sm:shadow-2xl border border-slate-200 text-left">
           {/* Mock Header */}
-          <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+          <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-slate-100">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs">
+              <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0">
                 <Store className="w-4 h-4" />
               </div>
-              <div>
-                <h4 className="text-xs font-bold text-slate-900">Kerala Mobile Care</h4>
+              <div className="min-w-0">
+                <h4 className="text-xs font-bold text-slate-900 truncate">Kerala Mobile Care</h4>
                 <p className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   Today's Day Book Open
                 </p>
               </div>
             </div>
-            <span className="text-[11px] font-bold bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full">
+            <span className="text-[11px] font-bold bg-blue-50 text-blue-700 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full whitespace-nowrap">
               ₹Net: +₹18,300
             </span>
           </div>
 
           {/* Mock Financial Summary Cards */}
-          <div className="grid grid-cols-2 gap-3 mt-4">
-            <div className="p-3 bg-emerald-50/70 border border-emerald-100 rounded-2xl">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Cash IN</span>
-              <p className="text-lg font-black text-emerald-900 mt-0.5">₹24,500</p>
-              <span className="text-[10px] text-emerald-600 font-medium">14 customer sales</span>
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-3 mt-3 sm:mt-4">
+            <div className="p-2.5 sm:p-3 bg-emerald-50/70 border border-emerald-100 rounded-xl sm:rounded-2xl">
+              <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-emerald-700">Cash IN</span>
+              <p className="text-base sm:text-lg font-black text-emerald-900 mt-0.5">₹24,500</p>
+              <span className="text-[9px] sm:text-[10px] text-emerald-600 font-medium">14 sales</span>
             </div>
-            <div className="p-3 bg-rose-50/70 border border-rose-100 rounded-2xl">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-rose-700">Cash OUT</span>
-              <p className="text-lg font-black text-rose-900 mt-0.5">₹6,200</p>
-              <span className="text-[10px] text-rose-600 font-medium">Spare parts & tea</span>
+            <div className="p-2.5 sm:p-3 bg-rose-50/70 border border-rose-100 rounded-xl sm:rounded-2xl">
+              <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-rose-700">Cash OUT</span>
+              <p className="text-base sm:text-lg font-black text-rose-900 mt-0.5">₹6,200</p>
+              <span className="text-[9px] sm:text-[10px] text-rose-600 font-medium">Spares & tea</span>
             </div>
           </div>
 
           {/* Mock Repair Card with WhatsApp action */}
-          <div className="mt-4 p-3 bg-slate-50 border border-slate-150 rounded-2xl flex items-center justify-between">
-            <div className="min-w-0 pr-2">
+          <div className="mt-3 sm:mt-4 p-2.5 sm:p-3 bg-slate-50 border border-slate-150 rounded-xl sm:rounded-2xl flex items-center justify-between gap-2">
+            <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
-                <span className="text-xs font-bold text-slate-900 truncate">iPhone 13 - Rahul K.</span>
-                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 uppercase">
+                <span className="text-xs font-bold text-slate-900 truncate">iPhone 13 - Rahul</span>
+                <span className="text-[8px] sm:text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 uppercase shrink-0">
                   Ready
                 </span>
               </div>
-              <p className="text-[11px] text-slate-500 truncate mt-0.5">Display Replacement • ₹3,800</p>
+              <p className="text-[10px] sm:text-[11px] text-slate-500 truncate mt-0.5">Display Replacement • ₹3,800</p>
             </div>
-            <div className="flex-shrink-0">
-              <span className="px-2.5 py-1 bg-emerald-600 text-white rounded-lg text-[10px] font-bold flex items-center gap-1 shadow-2xs">
+            <div className="shrink-0">
+              <span className="px-2 sm:px-2.5 py-1 bg-emerald-600 text-white rounded-lg text-[10px] font-bold flex items-center gap-1 shadow-2xs">
                 <MessageSquare className="w-3 h-3" />
                 WhatsApp
               </span>
@@ -208,27 +264,27 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isAuthenticated = fals
       </section>
 
       {/* 3. The "6 Daily Headaches Solved" Grid */}
-      <section id="benefits" className="py-16 bg-white border-y border-slate-200/80 px-4 sm:px-6">
+      <section id="benefits" className="py-12 sm:py-16 bg-white border-y border-slate-200/80 px-4 sm:px-6">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center max-w-2xl mx-auto mb-12">
-            <h2 className="text-xs font-bold uppercase tracking-widest text-blue-600 mb-2">
+          <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-12">
+            <h2 className="text-[11px] sm:text-xs font-bold uppercase tracking-widest text-blue-600 mb-1.5 sm:mb-2">
               Practical Shop Benefits
             </h2>
-            <h3 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">
+            <h3 className="text-xl sm:text-3xl md:text-4xl font-black text-slate-900 tracking-tight">
               Designed For The Way Mobile Shops Actually Work
             </h3>
-            <p className="mt-3 text-sm text-slate-600">
+            <p className="mt-2.5 text-xs sm:text-sm text-slate-600">
               Say goodbye to messy registers, forgotten customer parts, and endless telephone follow-ups.
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-5">
             {/* Benefit 1 */}
-            <div className="p-5 rounded-2xl bg-slate-50/80 border border-slate-200 hover:border-blue-300 transition-colors">
-              <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center mb-3.5">
-                <TrendingUp className="w-5 h-5" />
+            <div className="p-4 sm:p-5 rounded-2xl bg-slate-50/80 border border-slate-200 hover:border-blue-300 transition-colors">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center mb-2.5 sm:mb-3.5">
+                <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
-              <h4 className="text-base font-bold text-slate-900 mb-1.5">
+              <h4 className="text-sm sm:text-base font-bold text-slate-900 mb-1">
                 Zero Closing Time Confusion
               </h4>
               <p className="text-xs text-slate-600 leading-relaxed">
@@ -237,11 +293,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isAuthenticated = fals
             </div>
 
             {/* Benefit 2 */}
-            <div className="p-5 rounded-2xl bg-slate-50/80 border border-slate-200 hover:border-blue-300 transition-colors">
-              <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center mb-3.5">
-                <Wrench className="w-5 h-5" />
+            <div className="p-4 sm:p-5 rounded-2xl bg-slate-50/80 border border-slate-200 hover:border-blue-300 transition-colors">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center mb-2.5 sm:mb-3.5">
+                <Wrench className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
-              <h4 className="text-base font-bold text-slate-900 mb-1.5">
+              <h4 className="text-sm sm:text-base font-bold text-slate-900 mb-1">
                 Never Miss a Repair Deadline
               </h4>
               <p className="text-xs text-slate-600 leading-relaxed">
@@ -250,11 +306,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isAuthenticated = fals
             </div>
 
             {/* Benefit 3 */}
-            <div className="p-5 rounded-2xl bg-slate-50/80 border border-slate-200 hover:border-blue-300 transition-colors">
-              <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center mb-3.5">
-                <MessageSquare className="w-5 h-5" />
+            <div className="p-4 sm:p-5 rounded-2xl bg-slate-50/80 border border-slate-200 hover:border-blue-300 transition-colors">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center mb-2.5 sm:mb-3.5">
+                <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
-              <h4 className="text-base font-bold text-slate-900 mb-1.5">
+              <h4 className="text-sm sm:text-base font-bold text-slate-900 mb-1">
                 1-Tap WhatsApp Receipts
               </h4>
               <p className="text-xs text-slate-600 leading-relaxed">
@@ -263,11 +319,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isAuthenticated = fals
             </div>
 
             {/* Benefit 4 */}
-            <div className="p-5 rounded-2xl bg-slate-50/80 border border-slate-200 hover:border-blue-300 transition-colors">
-              <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center mb-3.5">
-                <Zap className="w-5 h-5" />
+            <div className="p-4 sm:p-5 rounded-2xl bg-slate-50/80 border border-slate-200 hover:border-blue-300 transition-colors">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center mb-2.5 sm:mb-3.5">
+                <Zap className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
-              <h4 className="text-base font-bold text-slate-900 mb-1.5">
+              <h4 className="text-sm sm:text-base font-bold text-slate-900 mb-1">
                 Never Freezes on Slow Wi-Fi
               </h4>
               <p className="text-xs text-slate-600 leading-relaxed">
@@ -276,11 +332,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isAuthenticated = fals
             </div>
 
             {/* Benefit 5 */}
-            <div className="p-5 rounded-2xl bg-slate-50/80 border border-slate-200 hover:border-blue-300 transition-colors">
-              <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center mb-3.5">
-                <ShieldCheck className="w-5 h-5" />
+            <div className="p-4 sm:p-5 rounded-2xl bg-slate-50/80 border border-slate-200 hover:border-blue-300 transition-colors">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center mb-2.5 sm:mb-3.5">
+                <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
-              <h4 className="text-base font-bold text-slate-900 mb-1.5">
+              <h4 className="text-sm sm:text-base font-bold text-slate-900 mb-1">
                 Safe From Lost or Broken Phones
               </h4>
               <p className="text-xs text-slate-600 leading-relaxed">
@@ -289,11 +345,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isAuthenticated = fals
             </div>
 
             {/* Benefit 6 */}
-            <div className="p-5 rounded-2xl bg-slate-50/80 border border-slate-200 hover:border-blue-300 transition-colors">
-              <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center mb-3.5">
-                <Receipt className="w-5 h-5" />
+            <div className="p-4 sm:p-5 rounded-2xl bg-slate-50/80 border border-slate-200 hover:border-blue-300 transition-colors">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center mb-2.5 sm:mb-3.5">
+                <Receipt className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
-              <h4 className="text-base font-bold text-slate-900 mb-1.5">
+              <h4 className="text-sm sm:text-base font-bold text-slate-900 mb-1">
                 Month-End Reports in 1 Tap
               </h4>
               <p className="text-xs text-slate-600 leading-relaxed">
@@ -305,60 +361,60 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isAuthenticated = fals
       </section>
 
       {/* 4. "A Day with My Mobile Shop" Workflow */}
-      <section id="workflow" className="py-16 px-4 sm:px-6 max-w-4xl mx-auto">
-        <div className="text-center mb-12">
-          <h2 className="text-xs font-bold uppercase tracking-widest text-blue-600 mb-2">
+      <section id="workflow" className="py-12 sm:py-16 px-4 sm:px-6 max-w-4xl mx-auto">
+        <div className="text-center mb-8 sm:mb-12">
+          <h2 className="text-[11px] sm:text-xs font-bold uppercase tracking-widest text-blue-600 mb-1.5 sm:mb-2">
             Daily Simplicity
           </h2>
-          <h3 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+          <h3 className="text-xl sm:text-3xl font-black text-slate-900 tracking-tight">
             How It Fits Into Your Daily Shop Routine
           </h3>
         </div>
 
-        <div className="space-y-4">
-          <div className="p-4 sm:p-5 bg-white rounded-2xl border border-slate-200 shadow-2xs flex items-start gap-4">
-            <span className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 text-xs font-black flex items-center justify-center shrink-0 mt-0.5">
+        <div className="space-y-3 sm:space-y-4">
+          <div className="p-3.5 sm:p-5 bg-white rounded-2xl border border-slate-200 shadow-2xs flex items-start gap-3 sm:gap-4">
+            <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-blue-100 text-blue-700 text-xs font-black flex items-center justify-center shrink-0 mt-0.5">
               1
             </span>
             <div>
-              <h4 className="text-sm font-bold text-slate-900">Morning Shop Opening (9:00 AM)</h4>
-              <p className="text-xs text-slate-600 mt-1">
+              <h4 className="text-xs sm:text-sm font-bold text-slate-900">Morning Shop Opening (9:00 AM)</h4>
+              <p className="text-xs text-slate-600 mt-0.5 sm:mt-1 leading-relaxed">
                 Open the app on your phone. Yesterday's closing cash balance is already waiting. You're ready for the first customer.
               </p>
             </div>
           </div>
 
-          <div className="p-4 sm:p-5 bg-white rounded-2xl border border-slate-200 shadow-2xs flex items-start gap-4">
-            <span className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 text-xs font-black flex items-center justify-center shrink-0 mt-0.5">
+          <div className="p-3.5 sm:p-5 bg-white rounded-2xl border border-slate-200 shadow-2xs flex items-start gap-3 sm:gap-4">
+            <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-blue-100 text-blue-700 text-xs font-black flex items-center justify-center shrink-0 mt-0.5">
               2
             </span>
             <div>
-              <h4 className="text-sm font-bold text-slate-900">Busy Afternoon Sales & Repairs (2:00 PM)</h4>
-              <p className="text-xs text-slate-600 mt-1">
+              <h4 className="text-xs sm:text-sm font-bold text-slate-900">Busy Afternoon Sales & Repairs (2:00 PM)</h4>
+              <p className="text-xs text-slate-600 mt-0.5 sm:mt-1 leading-relaxed">
                 Take in a broken phone, log the model & passcode in 10 seconds, and tap WhatsApp to send the customer an immediate receipt.
               </p>
             </div>
           </div>
 
-          <div className="p-4 sm:p-5 bg-white rounded-2xl border border-slate-200 shadow-2xs flex items-start gap-4">
-            <span className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 text-xs font-black flex items-center justify-center shrink-0 mt-0.5">
+          <div className="p-3.5 sm:p-5 bg-white rounded-2xl border border-slate-200 shadow-2xs flex items-start gap-3 sm:gap-4">
+            <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-blue-100 text-blue-700 text-xs font-black flex items-center justify-center shrink-0 mt-0.5">
               3
             </span>
             <div>
-              <h4 className="text-sm font-bold text-slate-900">Repair Delivery & Collection (6:30 PM)</h4>
-              <p className="text-xs text-slate-600 mt-1">
+              <h4 className="text-xs sm:text-sm font-bold text-slate-900">Repair Delivery & Collection (6:30 PM)</h4>
+              <p className="text-xs text-slate-600 mt-0.5 sm:mt-1 leading-relaxed">
                 Screen replacement done? Mark "Ready" &rarr; customer gets notified on WhatsApp &rarr; comes back to pay and collect their device.
               </p>
             </div>
           </div>
 
-          <div className="p-4 sm:p-5 bg-white rounded-2xl border border-slate-200 shadow-2xs flex items-start gap-4">
-            <span className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 text-xs font-black flex items-center justify-center shrink-0 mt-0.5">
+          <div className="p-3.5 sm:p-5 bg-white rounded-2xl border border-slate-200 shadow-2xs flex items-start gap-3 sm:gap-4">
+            <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-blue-100 text-blue-700 text-xs font-black flex items-center justify-center shrink-0 mt-0.5">
               4
             </span>
             <div>
-              <h4 className="text-sm font-bold text-slate-900">Night Shutter Closing (9:30 PM)</h4>
-              <p className="text-xs text-slate-600 mt-1">
+              <h4 className="text-xs sm:text-sm font-bold text-slate-900">Night Shutter Closing (9:30 PM)</h4>
+              <p className="text-xs text-slate-600 mt-0.5 sm:mt-1 leading-relaxed">
                 Count the physical cash in your drawer, match it with the app total, see today's net profit, and close up feeling relaxed and organized.
               </p>
             </div>
@@ -367,30 +423,30 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isAuthenticated = fals
       </section>
 
       {/* 5. Transparent Pricing Section */}
-      <section id="pricing" className="py-16 bg-white border-t border-slate-200/80 px-4 sm:px-6">
+      <section id="pricing" className="py-12 sm:py-16 bg-white border-t border-slate-200/80 px-4 sm:px-6">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-xs font-bold uppercase tracking-widest text-blue-600 mb-2">
+          <h2 className="text-[11px] sm:text-xs font-bold uppercase tracking-widest text-blue-600 mb-1.5 sm:mb-2">
             Simple, Honest Pricing
           </h2>
-          <h3 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">
+          <h3 className="text-xl sm:text-3xl md:text-4xl font-black text-slate-900 tracking-tight">
             Plans That Pay For Themselves On Day One
           </h3>
-          <p className="mt-3 text-sm text-slate-600 max-w-xl mx-auto">
+          <p className="mt-2 text-xs sm:text-sm text-slate-600 max-w-xl mx-auto">
             No setup charges, no per-transaction cuts, and no lock-in contracts.
           </p>
 
-          <div className="grid sm:grid-cols-2 gap-6 mt-10 max-w-2xl mx-auto text-left">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mt-8 sm:mt-10 max-w-2xl mx-auto text-left">
             {/* Monthly Plan */}
-            <div className="p-6 rounded-3xl bg-slate-50 border border-slate-200 flex flex-col justify-between">
+            <div className="p-5 sm:p-6 rounded-2xl sm:rounded-3xl bg-slate-50 border border-slate-200 flex flex-col justify-between">
               <div>
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Monthly</span>
                 <div className="mt-2 flex items-baseline gap-1">
-                  <span className="text-4xl font-black text-slate-900">₹99</span>
-                  <span className="text-sm font-semibold text-slate-500">/ month</span>
+                  <span className="text-3xl sm:text-4xl font-black text-slate-900">₹99</span>
+                  <span className="text-xs sm:text-sm font-semibold text-slate-500">/ month</span>
                 </div>
-                <p className="text-xs text-slate-600 mt-2">Billed monthly • Cancel anytime</p>
+                <p className="text-xs text-slate-600 mt-1 sm:mt-2">Billed monthly • Cancel anytime</p>
 
-                <ul className="mt-6 space-y-2.5 text-xs text-slate-700 font-medium">
+                <ul className="mt-5 space-y-2 text-xs text-slate-700 font-medium">
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                     <span>Unlimited daily cash & UPI entries</span>
@@ -413,27 +469,27 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isAuthenticated = fals
               <button
                 type="button"
                 onClick={handleGetStarted}
-                className="mt-8 w-full py-3 bg-white hover:bg-slate-100 text-slate-900 border border-slate-300 rounded-xl text-xs font-bold transition-colors shadow-2xs"
+                className="mt-6 sm:mt-8 w-full py-3 bg-white hover:bg-slate-100 text-slate-900 border border-slate-300 rounded-xl text-xs font-bold transition-colors shadow-2xs min-h-[44px] touch-manipulation"
               >
                 Choose Monthly
               </button>
             </div>
 
             {/* Yearly Plan (Best Value) */}
-            <div className="p-6 rounded-3xl bg-blue-50/70 border-2 border-blue-500 flex flex-col justify-between relative shadow-md">
-              <div className="absolute -top-3 right-6 bg-emerald-500 text-white text-[10px] font-black uppercase px-3 py-1 rounded-full shadow-xs">
+            <div className="p-5 sm:p-6 rounded-2xl sm:rounded-3xl bg-blue-50/70 border-2 border-blue-500 flex flex-col justify-between relative shadow-md">
+              <div className="absolute -top-3 right-4 sm:right-6 bg-emerald-500 text-white text-[9px] sm:text-[10px] font-black uppercase px-2.5 sm:px-3 py-1 rounded-full shadow-xs">
                 Save 16% • Best Value
               </div>
 
               <div>
                 <span className="text-xs font-bold uppercase tracking-wider text-blue-700">Yearly</span>
                 <div className="mt-2 flex items-baseline gap-1">
-                  <span className="text-4xl font-black text-slate-900">₹999</span>
-                  <span className="text-sm font-semibold text-slate-500">/ year</span>
+                  <span className="text-3xl sm:text-4xl font-black text-slate-900">₹999</span>
+                  <span className="text-xs sm:text-sm font-semibold text-slate-500">/ year</span>
                 </div>
-                <p className="text-xs text-emerald-700 font-bold mt-2">Just ₹83/month • Peace of mind all year</p>
+                <p className="text-xs text-emerald-700 font-bold mt-1 sm:mt-2">Just ₹83/month • Peace of mind all year</p>
 
-                <ul className="mt-6 space-y-2.5 text-xs text-slate-700 font-medium">
+                <ul className="mt-5 space-y-2 text-xs text-slate-700 font-medium">
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
                     <span>Everything in Monthly plan</span>
@@ -456,24 +512,24 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isAuthenticated = fals
               <button
                 type="button"
                 onClick={handleGetStarted}
-                className="mt-8 w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/20 active:scale-95"
+                className="mt-6 sm:mt-8 w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/20 active:scale-95 min-h-[44px] touch-manipulation"
               >
                 Choose Yearly (Save 16%)
               </button>
             </div>
           </div>
 
-          <div className="mt-6 text-xs text-slate-500 font-medium flex items-center justify-center gap-1.5">
-            <ShieldCheck className="w-4 h-4 text-emerald-600" />
+          <div className="mt-5 sm:mt-6 text-[11px] sm:text-xs text-slate-500 font-medium flex items-center justify-center gap-1.5 px-2">
+            <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
             <span>100% Privacy Protected: We never sell your shop data or show annoying advertisements.</span>
           </div>
         </div>
       </section>
 
       {/* 6. Footer & Trust */}
-      <footer className="bg-slate-900 text-slate-400 py-12 px-4 sm:px-6 text-xs border-t border-slate-800">
-        <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-3">
+      <footer className="bg-slate-900 text-slate-400 py-8 sm:py-12 px-4 sm:px-6 text-xs border-t border-slate-800">
+        <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-5 sm:gap-6">
+          <div className="flex items-center gap-3 text-center sm:text-left">
             <img
               src="/icon-192.png"
               alt="My Mobile Shop"
@@ -485,7 +541,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isAuthenticated = fals
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-6 text-xs font-medium">
+          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs font-medium">
             <button
               type="button"
               onClick={() => handleOpenLegal('privacy')}
@@ -514,6 +570,25 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isAuthenticated = fals
           </p>
         </div>
       </footer>
+
+      {/* 7. Mobile Sticky Bottom Action Bar (visible on mobile only) */}
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200/90 p-2.5 px-3 flex items-center gap-2 shadow-2xl safe-bottom">
+        <button
+          type="button"
+          onClick={handleSignIn}
+          className="flex-1 py-2.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl border border-slate-200/80 active:scale-98 transition-all touch-manipulation text-center"
+        >
+          {isAuthenticated ? 'Open Shop' : 'Sign In'}
+        </button>
+        <button
+          type="button"
+          onClick={handleGetStarted}
+          className="flex-[1.5] py-2.5 px-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-md shadow-blue-500/25 active:scale-98 transition-all flex items-center justify-center gap-1.5 touch-manipulation text-center"
+        >
+          <span>{isAuthenticated ? 'Go to App' : 'Get Started'}</span>
+          <ArrowRight className="w-3.5 h-3.5" />
+        </button>
+      </div>
 
       {/* Legal Modal */}
       <LegalModal
