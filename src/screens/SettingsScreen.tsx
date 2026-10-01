@@ -33,6 +33,7 @@ import {
 import { PaywallModal } from '../components/PaywallModal';
 import { isSuperAdmin } from '../utils/admin';
 import { AdminDashboardModal } from '../components/AdminDashboardModal';
+import { LegalModal } from '../components/LegalModal';
 
 /** Standalone sub-component so it has its own state without polluting SettingsScreen */
 const AppUpdatesSection: React.FC<{ language: Language }> = ({ language }) => {
@@ -185,6 +186,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isSignOutModalOpen, setIsSignOutModalOpen] = useState(false);
   const [isAdminDashboardOpen, setIsAdminDashboardOpen] = useState(false);
+  const [isLegalModalOpen, setIsLegalModalOpen] = useState(false);
 
   // Backup state
   const [backupMsg, setBackupMsg] = useState<string | null>(null);
@@ -765,6 +767,16 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               <span>{t('app_version_label', language)}</span>
               <strong className="text-black font-semibold">1.0.0</strong>
             </div>
+            <div className="flex justify-between items-center py-1.5 border-b border-[#E5E5EA]">
+              <span>Legal & Policies</span>
+              <button
+                type="button"
+                onClick={() => setIsLegalModalOpen(true)}
+                className="text-xs font-semibold text-iosBlue hover:underline"
+              >
+                Privacy Policy & Terms
+              </button>
+            </div>
             <div className="py-1 text-center font-medium text-iosGreen">
               {t('offline_notice', language)}
             </div>
@@ -830,6 +842,12 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       <AdminDashboardModal
         isOpen={isAdminDashboardOpen}
         onClose={() => setIsAdminDashboardOpen(false)}
+      />
+
+      {/* Legal & Privacy Modal */}
+      <LegalModal
+        isOpen={isLegalModalOpen}
+        onClose={() => setIsLegalModalOpen(false)}
       />
     </div>
   );

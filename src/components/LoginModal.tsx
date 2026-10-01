@@ -19,6 +19,7 @@ import {
   AlertCircle,
   CheckCircle2
 } from 'lucide-react';
+import { LegalModal } from './LegalModal';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -35,6 +36,10 @@ export function LoginModal({
   // Auth Method View: 'password' | 'phone_number' | 'phone_otp'
   const [view, setView] = useState<'password' | 'phone_number' | 'phone_otp'>('password');
   const [mode, setMode] = useState<'login' | 'register'>('login');
+
+  // Legal Modal State
+  const [isLegalOpen, setIsLegalOpen] = useState(false);
+  const [legalTab, setLegalTab] = useState<'privacy' | 'terms'>('privacy');
 
   // Password Form State
   const [loginId, setLoginId] = useState('');
@@ -478,7 +483,42 @@ export function LoginModal({
             </div>
           </form>
         )}
+
+        {/* Legal & Trust Footer */}
+        <div className="mt-5 pt-3.5 border-t border-slate-100 dark:border-slate-800 text-center">
+          <p className="text-[11px] text-slate-400 dark:text-slate-500">
+            By continuing, you agree to our{' '}
+            <button
+              type="button"
+              onClick={() => {
+                setLegalTab('terms');
+                setIsLegalOpen(true);
+              }}
+              className="text-iosBlue hover:underline font-medium"
+            >
+              Terms of Service
+            </button>
+            {' & '}
+            <button
+              type="button"
+              onClick={() => {
+                setLegalTab('privacy');
+                setIsLegalOpen(true);
+              }}
+              className="text-iosBlue hover:underline font-medium"
+            >
+              Privacy Policy
+            </button>
+          </p>
+        </div>
       </div>
+
+      {/* Legal & Trust Modal */}
+      <LegalModal
+        isOpen={isLegalOpen}
+        onClose={() => setIsLegalOpen(false)}
+        initialTab={legalTab}
+      />
     </div>
   );
 }
