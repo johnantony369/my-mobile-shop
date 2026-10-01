@@ -85,6 +85,21 @@ export default function App() {
     []
   ) ?? 0;
 
+  const [checkingCloud, setCheckingCloud] = useState(false);
+  const [checkedCloudUid, setCheckedCloudUid] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (user && settingsList !== undefined && settingsList.length === 0 && checkedCloudUid !== user.uid) {
+      setCheckingCloud(true);
+      pullCloudChanges(user.uid)
+        .catch(err => console.warn('Could not pull cloud changes in App:', err))
+        .finally(() => {
+          setCheckedCloudUid(user.uid);
+          setCheckingCloud(false);
+        });
+    }
+  }, [user, settingsList, checkedCloudUid]);
+
   // Loading state with timeout fallback
   if (settingsList === undefined) {
     return (
@@ -107,21 +122,6 @@ export default function App() {
       </div>
     );
   }
-
-  const [checkingCloud, setCheckingCloud] = useState(false);
-  const [checkedCloudUid, setCheckedCloudUid] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (user && settingsList !== undefined && settingsList.length === 0 && checkedCloudUid !== user.uid) {
-      setCheckingCloud(true);
-      pullCloudChanges(user.uid)
-        .catch(err => console.warn('Could not pull cloud changes in App:', err))
-        .finally(() => {
-          setCheckedCloudUid(user.uid);
-          setCheckingCloud(false);
-        });
-    }
-  }, [user, settingsList, checkedCloudUid]);
 
   // Show loading spinner while determining auth state or pulling cloud data for existing user
   if (authLoading || (user && settingsList?.length === 0 && (checkingCloud || checkedCloudUid !== user.uid))) {
