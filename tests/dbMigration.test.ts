@@ -1,13 +1,14 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import 'fake-indexeddb/auto';
-import { db, generateCloudId, softDeleteEntry, softDeleteJob } from '../src/db/db';
-import { Entry, Job } from '../src/types';
+import { db, generateCloudId, softDeleteEntry, softDeleteJob, softDeleteStockItem, adjustStockQuantity } from '../src/db/db';
+import { Entry, Job, StockItem } from '../src/types';
 
-describe('Dexie v3 Schema and Sync Metadata', () => {
+describe('Dexie v4 Schema, Stock, and Sync Metadata', () => {
   beforeEach(async () => {
     await db.entries.clear();
     await db.jobs.clear();
     await db.settings.clear();
+    if (db.stock) await db.stock.clear();
   });
 
   it('generateCloudId returns a non-empty string', () => {
@@ -34,6 +35,56 @@ describe('Dexie v3 Schema and Sync Metadata', () => {
     expect(saved?.cloudId).toBeDefined();
     expect(saved?.syncStatus).toBe('pending');
     expect(saved?.updatedAt).toBeDefined();
+  });
+
+  it('populates cloudId, updatedAt, and syncStatus on new stock items via hook', async () => {
+    const stockData: Omit<StockItem, 'id'> = {
+      name: 'Screen Guard 11D',
+      category: 'product',
+      sellingPrice: 150,
+      costPrice: 40,
+      quantity: 20,
+      createdAt: Date.now(),
+    };
+
+    const id = await db.stock.add(stockData as StockItem);
+    const saved = await db.stock.get(id);
+
+    expect(saved).toBeDefined();
+    expect(saved?.cloudId).toBeDefined();
+    expect(saved?.syncStatus).toBe('pending');
+    expect(saved?.updatedAt).toBeDefined();
+  });
+
+  it('adjustStockQuantity modifies quantity properly', async () => {
+    const id = await db.stock.add({
+      name: 'Type-C Cable',
+      category: 'product',
+      sellingPrice: 200,
+      quantity: 10,
+      createdAt: Date.now(),
+    });
+
+    const newQty = await adjustStockQuantity(id, -1);
+    expect(newQty).toBe(9);
+
+    const saved = await db.stock.get(id);
+    expect(saved?.quantity).toBe(9);
+  });
+
+  it('softDeleteStockItem marks stock item with deleted syncStatus and deletedAt timestamp', async () => {
+    const id = await db.stock.add({
+      name: 'Old Battery',
+      category: 'product',
+      sellingPrice: 800,
+      quantity: 2,
+      createdAt: Date.now(),
+    });
+
+    await softDeleteStockItem(id);
+    const item = await db.stock.get(id);
+    expect(item?.syncStatus).toBe('deleted');
+    expect(item?.deletedAt).toBeDefined();
   });
 
   it('softDeleteEntry marks entry with deleted syncStatus and deletedAt timestamp', async () => {

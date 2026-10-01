@@ -1,5 +1,5 @@
 import Dexie, { Table } from 'dexie';
-import { Entry, AppSettings, DaySummary, Job, Language } from '../types';
+import { Entry, AppSettings, DaySummary, Job, Language, StockItem } from '../types';
 import { getLocalDateString } from '../utils/date';
 
 export function generateCloudId(): string {
@@ -13,6 +13,7 @@ export class ShopDatabase extends Dexie {
   entries!: Table<Entry, number>;
   settings!: Table<AppSettings, number>;
   jobs!: Table<Job, number>;
+  stock!: Table<StockItem, number>;
 
   constructor() {
     super('MyMobileShopDB');
@@ -47,6 +48,20 @@ export class ShopDatabase extends Dexie {
       });
     });
 
+    this.version(4).stores({
+      entries: '++id, cloudId, type, amount, date, createdAt, updatedAt, syncStatus, paymentMethod, repairId',
+      settings: '++id, cloudId, updatedAt, syncStatus',
+      jobs: '++id, cloudId, status, phone, customerName, model, receivedAt, readyAt, deliveredAt, bookEntryId, updatedAt, syncStatus',
+      stock: '++id, cloudId, name, category, sellingPrice, quantity, sku, createdAt, updatedAt, syncStatus',
+    }).upgrade(async tx => {
+      // Initialize stock table if needed
+      await tx.table('stock').toCollection().modify((item: StockItem) => {
+        if (!item.cloudId) item.cloudId = generateCloudId();
+        if (!item.updatedAt) item.updatedAt = item.createdAt ? new Date(item.createdAt).toISOString() : new Date().toISOString();
+        if (!item.syncStatus) item.syncStatus = 'pending';
+      });
+    });
+
     // Hooks to ensure new records receive sync fields automatically
     this.entries.hook('creating', (_primKey, obj) => {
       if (!obj.cloudId) obj.cloudId = generateCloudId();
@@ -78,6 +93,18 @@ export class ShopDatabase extends Dexie {
       if (!obj.syncStatus) obj.syncStatus = 'pending';
     });
     this.settings.hook('updating', (modifications: Partial<AppSettings>) => {
+      if (!modifications.updatedAt) {
+        return { ...modifications, updatedAt: new Date().toISOString(), syncStatus: modifications.syncStatus || 'pending' };
+      }
+      return undefined;
+    });
+
+    this.stock.hook('creating', (_primKey, obj) => {
+      if (!obj.cloudId) obj.cloudId = generateCloudId();
+      if (!obj.updatedAt) obj.updatedAt = new Date().toISOString();
+      if (!obj.syncStatus) obj.syncStatus = 'pending';
+    });
+    this.stock.hook('updating', (modifications: Partial<StockItem>) => {
       if (!modifications.updatedAt) {
         return { ...modifications, updatedAt: new Date().toISOString(), syncStatus: modifications.syncStatus || 'pending' };
       }
@@ -159,6 +186,28 @@ export async function softDeleteJob(id: number): Promise<void> {
     deletedAt: now,
     updatedAt: now,
   });
+}
+
+export async function softDeleteStockItem(id: number): Promise<void> {
+  const now = new Date().toISOString();
+  await db.stock.update(id, {
+    syncStatus: 'deleted',
+    deletedAt: now,
+    updatedAt: now,
+  });
+}
+
+export async function adjustStockQuantity(id: number, delta: number): Promise<number | undefined> {
+  const item = await db.stock.get(id);
+  if (!item || item.category !== 'product') return undefined;
+  const current = typeof item.quantity === 'number' ? item.quantity : 0;
+  const newQty = Math.max(0, current + delta);
+  await db.stock.update(id, {
+    quantity: newQty,
+    updatedAt: new Date().toISOString(),
+    syncStatus: 'pending',
+  });
+  return newQty;
 }
 
 export function computeSummary(entries: Entry[]): DaySummary {

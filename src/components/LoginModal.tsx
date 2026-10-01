@@ -8,6 +8,7 @@ import {
   confirmOtp
 } from '../firebase/auth';
 import { ConfirmationResult, RecaptchaVerifier } from 'firebase/auth';
+import { pullCloudChanges } from '../firebase/sync';
 import {
   X,
   Store,
@@ -100,21 +101,25 @@ export function LoginModal({
 
     try {
       setLoading(true);
+      let userObj;
       if (mode === 'register') {
-        const u = await registerWithPassword(cleanId, password);
+        userObj = await registerWithPassword(cleanId, password);
         localStorage.setItem('mms_authenticated', 'true');
-        localStorage.setItem('mms_user_id', u.uid);
+        localStorage.setItem('mms_user_id', userObj.uid);
         setSuccessMsg('Account created successfully!');
       } else {
-        const u = await loginWithPassword(cleanId, password);
+        userObj = await loginWithPassword(cleanId, password);
         localStorage.setItem('mms_authenticated', 'true');
-        localStorage.setItem('mms_user_id', u.uid);
+        localStorage.setItem('mms_user_id', userObj.uid);
         setSuccessMsg('Logged in successfully!');
       }
-      setTimeout(() => {
-        onSuccess();
-        onClose();
-      }, 500);
+      try {
+        await pullCloudChanges(userObj.uid);
+      } catch (syncErr) {
+        console.warn('Initial cloud pull failed or partial:', syncErr);
+      }
+      onSuccess();
+      onClose();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       if (msg.includes('user-not-found') || msg.includes('wrong-password') || msg.includes('invalid-credential')) {
@@ -141,10 +146,13 @@ export function LoginModal({
       localStorage.setItem('mms_authenticated', 'true');
       localStorage.setItem('mms_user_id', u.uid);
       setSuccessMsg('Logged in successfully!');
-      setTimeout(() => {
-        onSuccess();
-        onClose();
-      }, 500);
+      try {
+        await pullCloudChanges(u.uid);
+      } catch (syncErr) {
+        console.warn('Initial cloud pull failed or partial:', syncErr);
+      }
+      onSuccess();
+      onClose();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       if (!msg.includes('popup-closed-by-user')) {
@@ -206,10 +214,13 @@ export function LoginModal({
       localStorage.setItem('mms_authenticated', 'true');
       localStorage.setItem('mms_user_id', u.uid);
       setSuccessMsg('Logged in successfully!');
-      setTimeout(() => {
-        onSuccess();
-        onClose();
-      }, 500);
+      try {
+        await pullCloudChanges(u.uid);
+      } catch (syncErr) {
+        console.warn('Initial cloud pull failed or partial:', syncErr);
+      }
+      onSuccess();
+      onClose();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       if (msg.includes('invalid-verification-code')) {

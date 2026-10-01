@@ -14,6 +14,7 @@ import { LoginModal } from './components/LoginModal';
 import { InstallBanner } from './components/InstallBanner';
 import { PaywallModal } from './components/PaywallModal';
 import { Language } from './types';
+import { pullCloudChanges } from './firebase/sync';
 import { Cloud, CloudOff, RefreshCw, AlertTriangle, LogIn } from 'lucide-react';
 
 export default function App() {
@@ -85,8 +86,23 @@ export default function App() {
     );
   }
 
-  // Show loading spinner while determining auth state
-  if (authLoading) {
+  const [checkingCloud, setCheckingCloud] = useState(false);
+  const [checkedCloudUid, setCheckedCloudUid] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (user && settingsList !== undefined && settingsList.length === 0 && checkedCloudUid !== user.uid) {
+      setCheckingCloud(true);
+      pullCloudChanges(user.uid)
+        .catch(err => console.warn('Could not pull cloud changes in App:', err))
+        .finally(() => {
+          setCheckedCloudUid(user.uid);
+          setCheckingCloud(false);
+        });
+    }
+  }, [user, settingsList, checkedCloudUid]);
+
+  // Show loading spinner while determining auth state or pulling cloud data for existing user
+  if (authLoading || (user && settingsList?.length === 0 && (checkingCloud || checkedCloudUid !== user.uid))) {
     return (
       <div className="min-h-screen bg-iosBg flex flex-col items-center justify-center p-6 text-center select-none">
         <div className="w-9 h-9 border-3 border-iosBlue border-t-transparent rounded-full animate-spin mb-4" />

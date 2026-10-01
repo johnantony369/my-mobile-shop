@@ -90,9 +90,7 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
       } catch (syncErr) {
         console.warn('Initial cloud pull failed or partial:', syncErr);
       }
-      setTimeout(() => {
-        onSuccess();
-      }, 300);
+      onSuccess();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       if (msg.includes('user-not-found') || msg.includes('wrong-password') || msg.includes('invalid-credential')) {
@@ -123,9 +121,7 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
       } catch (syncErr) {
         console.warn('Initial cloud pull failed or partial:', syncErr);
       }
-      setTimeout(() => {
-        onSuccess();
-      }, 300);
+      onSuccess();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       if (!msg.includes('popup-closed-by-user')) {
@@ -190,9 +186,7 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
       } catch (syncErr) {
         console.warn('Initial cloud pull failed or partial:', syncErr);
       }
-      setTimeout(() => {
-        onSuccess();
-      }, 300);
+      onSuccess();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       if (msg.includes('invalid-verification-code')) {

@@ -63,3 +63,19 @@ export interface DaySummary {
   upiTotal: number;
   cardTotal: number;
 }
+
+export type StockCategory = 'product' | 'service';
+
+export interface StockItem extends SyncMetadata {
+  id?: number;
+  name: string;
+  category: StockCategory;
+  sellingPrice: number;
+  costPrice?: number;
+  quantity?: number; // Stock count for products; undefined/null for services
+  unit?: string; // e.g. 'pcs', 'unit', 'job', etc.
+  sku?: string; // Barcode or item code
+  lowStockThreshold?: number; // Alert threshold when quantity is low (default 5)
+  notes?: string;
+  createdAt: number;
+}

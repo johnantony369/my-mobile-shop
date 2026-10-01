@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-route
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from './db/db';
 import { useAuth } from './firebase/useAuth';
+import { auth } from './firebase/config';
 import { pullCloudChanges } from './firebase/sync';
 import { LandingPage } from './screens/LandingPage';
 import { LoginScreen } from './screens/LoginScreen';
@@ -102,7 +103,19 @@ function LoginRouteWrapper() {
   }
 
   const handleLoginSuccess = async () => {
-    const list = await db.settings.toArray();
+    let list = await db.settings.toArray();
+    if (list.length === 0) {
+      const currentUser = auth?.currentUser;
+      if (currentUser) {
+        try {
+          await pullCloudChanges(currentUser.uid);
+          list = await db.settings.toArray();
+        } catch (e) {
+          console.warn('Sync attempt in handleLoginSuccess failed:', e);
+        }
+      }
+    }
+
     if (list.length === 0) {
       navigate('/onboarding', { replace: true });
     } else {

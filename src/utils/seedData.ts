@@ -1,5 +1,5 @@
 import { db } from '../db/db';
-import { Entry, Job } from '../types';
+import { Entry, Job, StockItem } from '../types';
 import { getLocalDateString } from './date';
 
 export async function seedDevEntries(): Promise<number> {
@@ -228,4 +228,195 @@ export async function seedDevJobs(): Promise<number> {
 export async function clearAllEntries(): Promise<void> {
   await db.entries.clear();
   await db.jobs.clear();
+}
+
+export async function clearAllStock(): Promise<void> {
+  if (db.stock) {
+    await db.stock.clear();
+  }
+}
+
+export async function seedDefaultStockItems(): Promise<number> {
+  const sampleStock: Omit<StockItem, 'id' | 'cloudId' | 'updatedAt' | 'syncStatus'>[] = [
+    // Products
+    {
+      name: 'Tempered Glass 11D',
+      category: 'product',
+      sellingPrice: 150,
+      costPrice: 35,
+      quantity: 25,
+      unit: 'pcs',
+      lowStockThreshold: 5,
+      notes: 'Premium full glue edge-to-edge screen protector',
+      createdAt: Date.now(),
+    },
+    {
+      name: 'Curved UV Tempered Glass',
+      category: 'product',
+      sellingPrice: 350,
+      costPrice: 90,
+      quantity: 10,
+      unit: 'pcs',
+      lowStockThreshold: 3,
+      notes: 'For curved screen displays',
+      createdAt: Date.now(),
+    },
+    {
+      name: 'Type-C Fast Cable (65W)',
+      category: 'product',
+      sellingPrice: 250,
+      costPrice: 60,
+      quantity: 18,
+      unit: 'pcs',
+      lowStockThreshold: 4,
+      notes: 'Braided quick charge sync cable',
+      createdAt: Date.now(),
+    },
+    {
+      name: 'iPhone Lightning Cable',
+      category: 'product',
+      sellingPrice: 299,
+      costPrice: 80,
+      quantity: 12,
+      unit: 'pcs',
+      lowStockThreshold: 3,
+      notes: 'Fast sync & charge',
+      createdAt: Date.now(),
+    },
+    {
+      name: '20W PD Fast Charger Adapter',
+      category: 'product',
+      sellingPrice: 599,
+      costPrice: 210,
+      quantity: 8,
+      unit: 'pcs',
+      lowStockThreshold: 3,
+      notes: 'Dual port Type-C + USB power brick',
+      createdAt: Date.now(),
+    },
+    {
+      name: 'Smoke Matte Back Cover',
+      category: 'product',
+      sellingPrice: 180,
+      costPrice: 45,
+      quantity: 22,
+      unit: 'pcs',
+      lowStockThreshold: 5,
+      notes: 'Shockproof bumper case',
+      createdAt: Date.now(),
+    },
+    {
+      name: 'Transparent Silicon Case',
+      category: 'product',
+      sellingPrice: 99,
+      costPrice: 25,
+      quantity: 30,
+      unit: 'pcs',
+      lowStockThreshold: 5,
+      notes: 'Clear anti-yellow case',
+      createdAt: Date.now(),
+    },
+    {
+      name: 'Bluetooth Wireless Neckband',
+      category: 'product',
+      sellingPrice: 799,
+      costPrice: 340,
+      quantity: 6,
+      unit: 'pcs',
+      lowStockThreshold: 2,
+      notes: 'Magnetic earbuds, 30hr battery',
+      createdAt: Date.now(),
+    },
+    {
+      name: 'Wired 3.5mm Bass Earphones',
+      category: 'product',
+      sellingPrice: 250,
+      costPrice: 65,
+      quantity: 15,
+      unit: 'pcs',
+      lowStockThreshold: 3,
+      notes: 'Deep bass in-ear earphones with mic',
+      createdAt: Date.now(),
+    },
+    {
+      name: 'Camera Lens Protector',
+      category: 'product',
+      sellingPrice: 120,
+      costPrice: 25,
+      quantity: 14,
+      unit: 'pcs',
+      lowStockThreshold: 3,
+      notes: 'Scratch-proof metal ring lens guard',
+      createdAt: Date.now(),
+    },
+    {
+      name: 'OTG Adapter (Type-C to USB)',
+      category: 'product',
+      sellingPrice: 80,
+      costPrice: 20,
+      quantity: 16,
+      unit: 'pcs',
+      lowStockThreshold: 3,
+      notes: 'Plug & play flash drive adapter',
+      createdAt: Date.now(),
+    },
+    // Services
+    {
+      name: 'Display Combo Replacement',
+      category: 'service',
+      sellingPrice: 1800,
+      costPrice: 1100,
+      unit: 'service',
+      notes: 'Includes combo part & installation labour',
+      createdAt: Date.now(),
+    },
+    {
+      name: 'Battery Replacement Service',
+      category: 'service',
+      sellingPrice: 950,
+      costPrice: 450,
+      unit: 'service',
+      notes: 'New battery installation with warranty',
+      createdAt: Date.now(),
+    },
+    {
+      name: 'Charging Port / CC Board Repair',
+      category: 'service',
+      sellingPrice: 450,
+      costPrice: 120,
+      unit: 'service',
+      notes: 'Fixes loose pin or slow charging issue',
+      createdAt: Date.now(),
+    },
+    {
+      name: 'Speaker / Ear Receiver Replacement',
+      category: 'service',
+      sellingPrice: 350,
+      costPrice: 80,
+      unit: 'service',
+      notes: 'Fixes crackling or low sound during calls',
+      createdAt: Date.now(),
+    },
+    {
+      name: 'Software Flashing / FRP Unlock',
+      category: 'service',
+      sellingPrice: 500,
+      costPrice: 0,
+      unit: 'service',
+      notes: 'Software reset, OS reinstall or pattern unlock',
+      createdAt: Date.now(),
+    },
+    {
+      name: 'Water Damage Ultrasonic Cleaning',
+      category: 'service',
+      sellingPrice: 600,
+      costPrice: 50,
+      unit: 'service',
+      notes: 'Chemical wash and PCB drying service',
+      createdAt: Date.now(),
+    },
+  ];
+
+  await db.stock.bulkAdd(sampleStock as StockItem[]);
+  return sampleStock.length;
 }

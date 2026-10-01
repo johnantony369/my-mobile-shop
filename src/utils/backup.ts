@@ -1,5 +1,5 @@
 import { db, updateAppSettings } from '../db/db';
-import { Entry, AppSettings, Job } from '../types';
+import { Entry, AppSettings, Job, StockItem } from '../types';
 
 export interface BackupData {
   version: number;
@@ -7,20 +7,23 @@ export interface BackupData {
   settings: AppSettings | null;
   entries: Entry[];
   jobs?: Job[];
+  stock?: StockItem[];
 }
 
 export async function exportBackup(): Promise<void> {
   const entries = await db.entries.toArray();
   const jobs = await db.jobs.toArray();
+  const stock = db.stock ? await db.stock.toArray() : [];
   const settingsList = await db.settings.toArray();
   const settings = settingsList[0] || null;
 
   const backupData: BackupData = {
-    version: 2,
+    version: 3,
     exportedAt: new Date().toISOString(),
     settings,
     entries,
     jobs,
+    stock,
   };
 
   const jsonStr = JSON.stringify(backupData, null, 2);
@@ -90,6 +93,18 @@ export async function importBackup(file: File): Promise<{ count: number }> {
     jobsCount = jobsToImport.length;
   }
 
+  // Bulk add stock if present
+  let stockCount = 0;
+  if (Array.isArray(data.stock) && data.stock.length > 0 && db.stock) {
+    const stockToImport = data.stock.map(s => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { id, ...rest } = s;
+      return rest as StockItem;
+    });
+    await db.stock.bulkAdd(stockToImport);
+    stockCount = stockToImport.length;
+  }
+
   if (data.settings?.shopName) {
     await updateAppSettings({
       shopName: data.settings.shopName,
@@ -98,7 +113,7 @@ export async function importBackup(file: File): Promise<{ count: number }> {
     });
   }
 
-  return { count: entriesToImport.length + jobsCount };
+  return { count: entriesToImport.length + jobsCount + stockCount };
 }
 
 export function isBackupNeeded(lastBackupAt: string | null): boolean {
