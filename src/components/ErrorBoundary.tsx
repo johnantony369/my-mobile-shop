@@ -26,9 +26,41 @@ export class ErrorBoundary extends Component<Props, State> {
     this.setState({ error, errorInfo });
   }
 
-  private handleReset = () => {
-    localStorage.clear();
-    sessionStorage.clear();
+  private handleReload = async () => {
+    try {
+      if ('caches' in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+      }
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (const reg of registrations) {
+          await reg.update();
+        }
+      }
+    } catch {
+      // fallback
+    }
+    window.location.reload();
+  };
+
+  private handleReset = async () => {
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+      if ('caches' in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+      }
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (const reg of registrations) {
+          await reg.unregister();
+        }
+      }
+    } catch {
+      // fallback
+    }
     window.location.reload();
   };
 
@@ -48,7 +80,7 @@ export class ErrorBoundary extends Component<Props, State> {
           </div>
           <div className="space-y-2 w-full max-w-xs">
             <button
-              onClick={() => window.location.reload()}
+              onClick={this.handleReload}
               className="w-full py-3 bg-[#007AFF] text-white rounded-xl font-semibold text-sm shadow-md active:opacity-85"
             >
               Reload App
