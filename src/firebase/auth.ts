@@ -7,7 +7,10 @@ import {
   signInWithPhoneNumber,
   ConfirmationResult,
   signInWithEmailAndPassword,
-  createUserWithEmailAndPassword
+  createUserWithEmailAndPassword,
+  linkWithPopup,
+  linkWithPhoneNumber,
+  unlink
 } from 'firebase/auth';
 import { auth, googleProvider } from './config';
 
@@ -85,3 +88,35 @@ export function subscribeToAuthChanges(callback: (user: User | null) => void): (
   }
   return onAuthStateChanged(auth, callback);
 }
+
+export async function linkGoogleAccount(user: User): Promise<User> {
+  if (!auth || !googleProvider) {
+    throw new Error('Firebase Auth not configured');
+  }
+  const result = await linkWithPopup(user, googleProvider);
+  return result.user;
+}
+
+export async function sendLinkPhoneOtp(
+  user: User,
+  phoneNumber: string,
+  verifier: RecaptchaVerifier
+): Promise<ConfirmationResult> {
+  if (!auth) {
+    throw new Error('Firebase Auth not configured');
+  }
+  return await linkWithPhoneNumber(user, phoneNumber, verifier);
+}
+
+export async function confirmLinkPhoneOtp(
+  confirmation: ConfirmationResult,
+  code: string
+): Promise<User> {
+  const result = await confirmation.confirm(code);
+  return result.user;
+}
+
+export async function unlinkAuthProvider(user: User, providerId: string): Promise<User> {
+  return await unlink(user, providerId);
+}
+

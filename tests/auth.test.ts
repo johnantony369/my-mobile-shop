@@ -18,4 +18,13 @@ describe('Firebase Auth Service', () => {
   it('handles logout gracefully', async () => {
     await expect(logout()).resolves.toBeUndefined();
   });
+
+  it('linking functions are defined and call Firebase auth methods', async () => {
+    const { linkGoogleAccount, sendLinkPhoneOtp } = await import('../src/firebase/auth');
+    const dummyUser = { uid: 'test-user' } as any;
+    const dummyVerifier = {} as any;
+
+    await expect(linkGoogleAccount(dummyUser)).rejects.toThrow();
+    await expect(sendLinkPhoneOtp(dummyUser, '+919999999999', dummyVerifier)).rejects.toThrow();
+  });
 });

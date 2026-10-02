@@ -30,11 +30,14 @@ import {
   ArrowDownToLine,
   ChevronRight,
   Crown,
+  Phone,
 } from 'lucide-react';
 import { PaywallModal } from '../components/PaywallModal';
 import { isSuperAdmin } from '../utils/admin';
 import { AdminDashboardModal } from '../components/AdminDashboardModal';
 import { LegalModal } from '../components/LegalModal';
+import { linkGoogleAccount } from '../firebase/auth';
+import { LinkPhoneModal } from '../components/LinkPhoneModal';
 
 /** Standalone sub-component so it has its own state without polluting SettingsScreen */
 const AppUpdatesSection: React.FC<{ language: Language }> = ({ language }) => {
@@ -183,11 +186,38 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const [activationSuccess, setActivationSuccess] = useState(false);
 
   // Cloud Sync state
-  const { user, isConfigured, syncState, lastSyncTime, syncError, triggerSync, signOut } = useAuth();
+  const { user, isConfigured, syncState, lastSyncTime, syncError, triggerSync, signOut, reloadUser } = useAuth();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isSignOutModalOpen, setIsSignOutModalOpen] = useState(false);
   const [isAdminDashboardOpen, setIsAdminDashboardOpen] = useState(false);
   const [isLegalModalOpen, setIsLegalModalOpen] = useState(false);
+  const [isLinkPhoneModalOpen, setIsLinkPhoneModalOpen] = useState(false);
+  const [isLinkingGoogle, setIsLinkingGoogle] = useState(false);
+  const [linkMsg, setLinkMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const handleLinkGoogle = async () => {
+    if (!user) return;
+    setIsLinkingGoogle(true);
+    setLinkMsg(null);
+    try {
+      await linkGoogleAccount(user);
+      await reloadUser();
+      setLinkMsg({ type: 'success', text: 'Google account linked successfully!' });
+      setTimeout(() => setLinkMsg(null), 3500);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes('credential-already-in-use')) {
+        setLinkMsg({
+          type: 'error',
+          text: 'This Google account is already linked to a separate user.',
+        });
+      } else if (!msg.includes('popup-closed-by-user')) {
+        setLinkMsg({ type: 'error', text: msg || 'Failed to link Google account' });
+      }
+    } finally {
+      setIsLinkingGoogle(false);
+    }
+  };
 
   // Backup state
   const [backupMsg, setBackupMsg] = useState<string | null>(null);
@@ -621,52 +651,146 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               </p>
             </div>
           ) : user ? (
-            <div className="space-y-3">
-              <div className="p-3 bg-[#F2F2F7] rounded-[10px] flex items-center justify-between text-xs">
-                <div>
-                  <span className="text-[#8E8E93] block">
-                    Connected Account
-                  </span>
-                  <span className="font-semibold text-black text-sm">
-                    {user.email || user.phoneNumber || user.displayName || 'Shop Owner'}
-                  </span>
+            (() => {
+              const isGoogleLinked = user.providerData.some((p) => p.providerId === 'google.com');
+              const isPhoneLinked = user.providerData.some((p) => p.providerId === 'phone') || !!user.phoneNumber;
+              const googleEmail = user.providerData.find((p) => p.providerId === 'google.com')?.email || (isGoogleLinked ? user.email : null);
+              const phoneDisplay = user.providerData.find((p) => p.providerId === 'phone')?.phoneNumber || user.phoneNumber;
+
+              return (
+                <div className="space-y-3">
+                  <div className="p-3 bg-[#F2F2F7] rounded-[12px] flex items-center justify-between text-xs">
+                    <div>
+                      <span className="text-[#8E8E93] block font-medium">
+                        Active Cloud Session
+                      </span>
+                      <span className="font-bold text-black text-sm truncate max-w-[200px] block">
+                        {user.email || user.phoneNumber || user.displayName || 'Shop Owner'}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsSignOutModalOpen(true)}
+                      className="px-2.5 py-1.5 text-iosRed bg-red-50 hover:bg-red-100 rounded-lg transition-colors flex items-center gap-1 text-xs font-semibold"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
+
+                  {/* Linked Login Methods (Google & Phone) */}
+                  <div className="p-3 bg-white rounded-[12px] border border-black/[0.06] space-y-2.5 shadow-2xs">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-gray-800 uppercase tracking-wider text-[10px]">
+                        Linked Sign-In Methods
+                      </span>
+                      <span className="text-[10px] text-gray-500">
+                        Use either to access same shop
+                      </span>
+                    </div>
+
+                    {linkMsg && (
+                      <div className={`p-2 rounded-lg text-xs font-medium flex items-center gap-1.5 ${
+                        linkMsg.type === 'success' ? 'bg-green-50 text-iosGreen' : 'bg-red-50 text-iosRed'
+                      }`}>
+                        {linkMsg.type === 'success' ? <CheckCircle2 className="w-3.5 h-3.5 shrink-0" /> : <AlertTriangle className="w-3.5 h-3.5 shrink-0" />}
+                        <span>{linkMsg.text}</span>
+                      </div>
+                    )}
+
+                    {/* Google Provider Row */}
+                    <div className="flex items-center justify-between py-1 border-b border-gray-100/80">
+                      <div className="flex items-center space-x-2">
+                        <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+                        </svg>
+                        <div>
+                          <span className="text-xs font-semibold text-black block">Google Account</span>
+                          <span className="text-[11px] text-gray-500 block truncate max-w-[170px]">
+                            {isGoogleLinked ? googleEmail || 'Connected' : 'Not linked'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {isGoogleLinked ? (
+                        <span className="text-[11px] font-semibold text-iosGreen bg-green-50 px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3" />
+                          Linked
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={handleLinkGoogle}
+                          disabled={isLinkingGoogle}
+                          className="px-2.5 py-1 text-xs font-semibold text-iosBlue bg-blue-50 hover:bg-blue-100 rounded-lg active:scale-95 transition-all"
+                        >
+                          {isLinkingGoogle ? 'Linking...' : '+ Link Google'}
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Phone Number Provider Row */}
+                    <div className="flex items-center justify-between py-1">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                          <Phone className="w-2.5 h-2.5" />
+                        </div>
+                        <div>
+                          <span className="text-xs font-semibold text-black block">Phone Number (OTP)</span>
+                          <span className="text-[11px] text-gray-500 block">
+                            {isPhoneLinked ? phoneDisplay || 'Connected' : 'Not linked'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {isPhoneLinked ? (
+                        <span className="text-[11px] font-semibold text-iosGreen bg-green-50 px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3" />
+                          Linked
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setIsLinkPhoneModalOpen(true)}
+                          className="px-2.5 py-1 text-xs font-semibold text-iosBlue bg-blue-50 hover:bg-blue-100 rounded-lg active:scale-95 transition-all"
+                        >
+                          + Link Phone
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {syncError && (
+                    <div className="p-2.5 bg-red-50 text-iosRed text-xs rounded-lg flex items-center gap-1.5">
+                      <AlertTriangle className="w-4 h-4 shrink-0" />
+                      <span>{syncError}</span>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between text-xs text-[#8E8E93]">
+                    <span>
+                      Last Synced:{' '}
+                      <strong className="text-black font-medium">
+                        {lastSyncTime ? lastSyncTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Not yet'}
+                      </strong>
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={triggerSync}
+                      disabled={syncState === 'syncing'}
+                      className="px-3 py-1.5 bg-iosBlue/10 hover:bg-iosBlue/20 text-iosBlue font-semibold rounded-lg flex items-center gap-1.5 transition-colors"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${syncState === 'syncing' ? 'animate-spin' : ''}`} />
+                      <span>Sync Now</span>
+                    </button>
+                  </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setIsSignOutModalOpen(true)}
-                  className="p-1.5 text-iosRed hover:bg-red-50 rounded-lg transition-colors flex items-center gap-1 text-xs font-medium"
-                >
-                  <LogOut className="w-3.5 h-3.5" />
-                  <span>Sign Out</span>
-                </button>
-              </div>
-
-              {syncError && (
-                <div className="p-2.5 bg-red-50 text-iosRed text-xs rounded-lg flex items-center gap-1.5">
-                  <AlertTriangle className="w-4 h-4 shrink-0" />
-                  <span>{syncError}</span>
-                </div>
-              )}
-
-              <div className="flex items-center justify-between text-xs text-[#8E8E93]">
-                <span>
-                  Last Synced:{' '}
-                  <strong className="text-black font-medium">
-                    {lastSyncTime ? lastSyncTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Not yet'}
-                  </strong>
-                </span>
-
-                <button
-                  type="button"
-                  onClick={triggerSync}
-                  disabled={syncState === 'syncing'}
-                  className="px-3 py-1.5 bg-iosBlue/10 hover:bg-iosBlue/20 text-iosBlue font-semibold rounded-lg flex items-center gap-1.5 transition-colors"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 ${syncState === 'syncing' ? 'animate-spin' : ''}`} />
-                  <span>Sync Now</span>
-                </button>
-              </div>
-            </div>
+              );
+            })()
           ) : (
             <div className="space-y-3">
               <p className="text-xs text-[#8E8E93] leading-relaxed">
@@ -893,6 +1017,20 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         isOpen={isLegalModalOpen}
         onClose={() => setIsLegalModalOpen(false)}
       />
+
+      {/* Link Phone Number Modal */}
+      {user && (
+        <LinkPhoneModal
+          isOpen={isLinkPhoneModalOpen}
+          onClose={() => setIsLinkPhoneModalOpen(false)}
+          onSuccess={async () => {
+            await reloadUser();
+            setLinkMsg({ type: 'success', text: 'Phone number linked successfully!' });
+            setTimeout(() => setLinkMsg(null), 3500);
+          }}
+          user={user}
+        />
+      )}
     </div>
   );
 };

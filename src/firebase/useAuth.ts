@@ -13,6 +13,7 @@ export interface UseAuthReturn {
   syncError: string | null;
   triggerSync: () => Promise<void>;
   signOut: () => Promise<void>;
+  reloadUser: () => Promise<void>;
 }
 
 export function useAuth(): UseAuthReturn {
@@ -127,6 +128,13 @@ export function useAuth(): UseAuthReturn {
     setSyncState('idle');
   }, []);
 
+  const reloadUser = useCallback(async () => {
+    if (auth?.currentUser) {
+      await auth.currentUser.reload();
+      setUser({ ...auth.currentUser } as User);
+    }
+  }, []);
+
   return {
     user,
     loading,
@@ -136,5 +144,6 @@ export function useAuth(): UseAuthReturn {
     syncError,
     triggerSync,
     signOut,
+    reloadUser,
   };
 }
