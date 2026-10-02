@@ -47,12 +47,14 @@ export function generateValidCode(): string {
   return `${full.slice(0, 4)}-${full.slice(4, 8)}-${full.slice(8, 12)}-${full.slice(12, 16)}`;
 }
 
+export const TRIAL_DURATION_DAYS = 2;
+
 /**
  * Calculates remaining trial days given the first launch date string ('YYYY-MM-DD').
- * Trial lasts 14 days from first launch.
+ * Trial lasts TRIAL_DURATION_DAYS (2 days) from first launch.
  */
 export function getTrialDaysRemaining(firstLaunchDateStr: string): number {
-  if (!firstLaunchDateStr) return 14;
+  if (!firstLaunchDateStr) return TRIAL_DURATION_DAYS;
   const firstLaunch = new Date(firstLaunchDateStr);
   const now = new Date();
   
@@ -61,6 +63,6 @@ export function getTrialDaysRemaining(firstLaunchDateStr: string): number {
   const d2 = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
   
   const diffDays = Math.floor((d2 - d1) / (1000 * 60 * 60 * 24));
-  const remaining = 14 - diffDays;
+  const remaining = TRIAL_DURATION_DAYS - diffDays;
   return Math.max(0, remaining);
 }
