@@ -38,19 +38,19 @@ import { AdminDashboardModal } from '../components/AdminDashboardModal';
 import { LegalModal } from '../components/LegalModal';
 import { linkGoogleAccount } from '../firebase/auth';
 import { LinkPhoneModal } from '../components/LinkPhoneModal';
+import { InstallGuideModal } from '../components/InstallBanner';
 
 /** Standalone sub-component so it has its own state without polluting SettingsScreen */
 const AppUpdatesSection: React.FC<{ language: Language }> = ({ language }) => {
   const { isInstalled, canInstall, platform, triggerInstall } = usePWAInstall();
   const [updateStatus, setUpdateStatus] = useState<'idle' | 'checking' | 'upToDate' | 'updating'>('idle');
-  const [showIOSHint, setShowIOSHint] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
 
   const handleInstallClick = async () => {
-    if (platform === 'ios') {
-      setShowIOSHint(true);
-      setTimeout(() => setShowIOSHint(false), 5000);
-    } else {
+    if (canInstall) {
       await triggerInstall();
+    } else {
+      setShowGuide(true);
     }
   };
 
@@ -98,30 +98,21 @@ const AppUpdatesSection: React.FC<{ language: Language }> = ({ language }) => {
               ? 'Running as a home screen app'
               : 'Add a shortcut to your home screen'}
           </span>
-          {showIOSHint && (
-            <span className="text-[11px] text-iosBlue font-medium block mt-1 leading-snug">
-              📤 In Safari: tap Share → "Add to Home Screen"
-            </span>
-          )}
         </div>
         {isInstalled ? (
           <span className="flex items-center gap-1 text-[11px] font-semibold text-iosGreen bg-green-50 px-2.5 py-1 rounded-full flex-shrink-0">
             <CheckCircle2 className="w-3.5 h-3.5" />
             Installed
           </span>
-        ) : (canInstall || platform === 'ios') ? (
+        ) : (
           <button
             type="button"
             onClick={handleInstallClick}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-iosBlue text-white text-xs font-bold rounded-full flex-shrink-0 active:opacity-80 transition-opacity"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-iosBlue hover:bg-blue-600 text-white text-xs font-bold rounded-full flex-shrink-0 active:opacity-80 transition-all shadow-xs"
           >
             <ArrowDownToLine className="w-3.5 h-3.5" />
             Install
           </button>
-        ) : (
-          <span className="text-[11px] text-[#8E8E93] text-right flex-shrink-0 max-w-[120px] leading-tight">
-            Open in Chrome or Safari to install
-          </span>
         )}
       </div>
 
@@ -145,9 +136,17 @@ const AppUpdatesSection: React.FC<{ language: Language }> = ({ language }) => {
           className="flex items-center gap-1.5 px-3 py-1.5 bg-[#F2F2F7] hover:bg-gray-200 rounded-[10px] text-xs font-semibold text-black flex-shrink-0 active:opacity-80 transition-all disabled:opacity-50"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${updateStatus === 'checking' ? 'animate-spin' : ''}`} />
-          Check
+          {t('pwa_check_update_btn', language)}
         </button>
       </div>
+
+      {/* Guided install modal when browser doesn't support programmatic beforeinstallprompt */}
+      {showGuide && (
+        <InstallGuideModal
+          platform={platform}
+          onClose={() => setShowGuide(false)}
+        />
+      )}
     </div>
   );
 };
@@ -548,6 +547,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 <span className="text-xs font-semibold">
                   {isExpired
                     ? t('trial_expired', language)
+                    : trialDays === 1
+                    ? t('trial_day_remaining', language)
                     : t('trial_days_remaining', language, { days: trialDays })}
                 </span>
               </div>

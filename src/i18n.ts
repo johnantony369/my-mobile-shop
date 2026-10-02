@@ -231,6 +231,9 @@ export const translations = {
   activated_status: {
     en: 'Activated (Lifetime Access)',
   },
+  trial_day_remaining: {
+    en: 'Free Trial: 1 day remaining',
+  },
   trial_days_remaining: {
     en: 'Free Trial: {days} days remaining',
   },
