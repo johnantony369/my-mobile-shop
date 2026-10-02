@@ -36,7 +36,7 @@ export const StockScreen: React.FC<StockScreenProps> = ({
   shopName,
   isReadOnly = false,
   isActivated: _isActivated,
-  onOpenPaywall: _onOpenPaywall,
+  onOpenPaywall,
 }) => {
   const [currentFilter, setCurrentFilter] = useState<FilterTab>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -218,7 +218,7 @@ export const StockScreen: React.FC<StockScreenProps> = ({
         </div>
 
         {/* Quick Summary Cards Carousel */}
-        <div className="flex gap-2.5 overflow-x-auto no-scrollbar scroll-smooth snap-x pb-1 -mx-4 px-4 sm:mx-0 sm:px-0">
+        <div className="flex gap-2.5 overflow-x-auto no-scrollbar scroll-smooth snap-x snap-mandatory momentum-scroll overscroll-x-contain touch-pan-x pb-1 -mx-4 px-4 sm:mx-0 sm:px-0">
           {/* Card 1: Total Products */}
           <button
             type="button"
@@ -322,7 +322,7 @@ export const StockScreen: React.FC<StockScreenProps> = ({
         </div>
 
         {/* Filter Tabs */}
-        <div className="flex items-center space-x-1.5 overflow-x-auto no-scrollbar py-0.5 -mx-4 px-4 sm:mx-0 sm:px-0">
+        <div className="flex items-center space-x-1.5 overflow-x-auto no-scrollbar momentum-scroll overscroll-x-contain touch-pan-x py-0.5 -mx-4 px-4 sm:mx-0 sm:px-0">
           <button
             type="button"
             onClick={() => setCurrentFilter('all')}
@@ -573,6 +573,37 @@ export const StockScreen: React.FC<StockScreenProps> = ({
             })}
           </div>
         )}
+      </div>
+
+      {/* Floating Add Item Button */}
+      <div className="fixed bottom-[calc(env(safe-area-inset-bottom)+66px)] right-5 sm:right-[max(1.25rem,calc((100vw-32rem)/2+1.25rem))] z-30">
+        <button
+          type="button"
+          onClick={() => {
+            if (isReadOnly && onOpenPaywall) {
+              onOpenPaywall();
+            } else {
+              handleOpenAdd(currentFilter === 'service' ? 'service' : 'product');
+            }
+          }}
+          className={`h-13 px-5 py-3 rounded-full flex items-center space-x-2 font-bold text-[15px] shadow-lg active:scale-95 transition-all duration-150 ${
+            isReadOnly
+              ? 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-amber-500/35'
+              : 'bg-iosBlue text-white shadow-iosBlue/35 hover:bg-blue-600'
+          }`}
+        >
+          {isReadOnly ? (
+            <>
+              <img src="/icon-192.png" alt="Pro" className="w-5 h-5 rounded-md object-cover" />
+              <span>Unlock Pro</span>
+            </>
+          ) : (
+            <>
+              <Plus className="w-5 h-5 stroke-[2.5]" />
+              <span>Add Item</span>
+            </>
+          )}
+        </button>
       </div>
 
       {/* Add / Edit Sheet Modal */}

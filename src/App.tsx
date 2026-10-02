@@ -103,6 +103,7 @@ export default function App() {
   const currentSettings = settingsList && settingsList[0];
   const showStock = currentSettings ? currentSettings.showStock !== false : true;
   const showRepairs = currentSettings ? !!currentSettings.showRepairs : false;
+  const isAdmin = isSuperAdmin(user);
 
   useEffect(() => {
     if (!showStock && currentTab === 'stock') {
@@ -112,6 +113,15 @@ export default function App() {
       setCurrentTab('book');
     }
   }, [showStock, showRepairs, currentTab]);
+
+  // Auto-activate local settings unconditionally if superadmin is logged in
+  useEffect(() => {
+    if (isAdmin && currentSettings && !currentSettings.activated) {
+      updateAppSettings({ activated: true }).catch((err) => {
+        console.warn('Failed to auto-activate local settings for admin:', err);
+      });
+    }
+  }, [isAdmin, currentSettings]);
 
   // Loading state with timeout fallback
   if (settingsList === undefined) {
@@ -156,19 +166,9 @@ export default function App() {
 
   const settings = settingsList[0];
   const language: Language = 'en';
-  const isAdmin = isSuperAdmin(user);
   const trialDays = getTrialDaysRemaining(settings.firstLaunchDate);
   const isActivated = hasFullAccess(!!settings.activated, user);
   const isReadOnly = !isActivated && trialDays <= 0;
-
-  // Auto-activate local settings if superadmin is logged in
-  useEffect(() => {
-    if (isAdmin && settings && !settings.activated) {
-      updateAppSettings({ activated: true }).catch((err) => {
-        console.warn('Failed to auto-activate local settings for admin:', err);
-      });
-    }
-  }, [isAdmin, settings]);
 
   return (
     <div className="min-h-screen bg-iosBg text-iosLabel font-sans flex flex-col justify-between selection:bg-iosBlue/20">
