@@ -29,7 +29,8 @@ export function detectPlatform(): InstallPlatform {
   if (typeof navigator === 'undefined') return 'desktop';
   const ua = navigator.userAgent || '';
   const hasMSStream = typeof window !== 'undefined' && Boolean((window as unknown as Record<string, unknown>).MSStream);
-  const isIOS = /iphone|ipad|ipod/i.test(ua) && !hasMSStream;
+  const isIPadOS = typeof navigator !== 'undefined' && (/macintosh/i.test(ua) || (navigator as { platform?: string }).platform === 'MacIntel') && (navigator.maxTouchPoints ?? 0) > 1;
+  const isIOS = (/iphone|ipad|ipod/i.test(ua) || isIPadOS) && !hasMSStream;
   if (isIOS) return 'ios';
   const isAndroid = /android/i.test(ua);
   if (isAndroid) return 'android';

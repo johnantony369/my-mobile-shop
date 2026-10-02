@@ -8,7 +8,7 @@ interface InstallBannerProps {
 }
 
 /** Step-by-step install guide modal shown when browser does not expose direct prompt */
-const InstallGuideModal: React.FC<{
+export const InstallGuideModal: React.FC<{
   platform: InstallPlatform;
   onClose: () => void;
 }> = ({ platform, onClose }) => (
