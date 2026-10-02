@@ -47,6 +47,16 @@ export function calculateDataSize(entries: unknown[], jobs: unknown[], settings:
   }
 }
 
+export function cleanForFirestore<T extends Record<string, any>>(obj: T): Record<string, any> {
+  const clean: Record<string, any> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (value !== undefined) {
+      clean[key] = value;
+    }
+  }
+  return clean;
+}
+
 /**
  * Upserts a shop's account summary into the centralized `accounts` collection in Firestore.
  */
@@ -62,15 +72,15 @@ export async function upsertAccountSummary(
     const existingSnap = await getDoc(accountRef);
     if (existingSnap.exists()) {
       const existingData = existingSnap.data() as Partial<ShopAccountSummary>;
-      await setDoc(accountRef, {
+      await setDoc(accountRef, cleanForFirestore({
         ...existingData,
         ...summary,
         uid,
         updatedAt: now,
         lastActiveAt: summary.lastActiveAt || now,
-      }, { merge: true });
+      }), { merge: true });
     } else {
-      await setDoc(accountRef, {
+      await setDoc(accountRef, cleanForFirestore({
         uid,
         email: summary.email || null,
         phoneNumber: summary.phoneNumber || null,
@@ -82,7 +92,7 @@ export async function upsertAccountSummary(
         createdAt: summary.createdAt || now,
         lastActiveAt: summary.lastActiveAt || now,
         updatedAt: now,
-      }, { merge: true });
+      }), { merge: true });
     }
   } catch (err) {
     console.warn('Failed to upsert account summary to Firestore:', err);

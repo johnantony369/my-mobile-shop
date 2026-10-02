@@ -14,6 +14,19 @@ import { upsertAccountSummary, calculateDataSize } from './admin';
 
 export type SyncState = 'idle' | 'syncing' | 'synced' | 'offline' | 'error';
 
+/**
+ * Strips out any keys with `undefined` values to prevent Firestore from rejecting batch writes.
+ */
+export function cleanForFirestore<T extends Record<string, any>>(obj: T): Record<string, any> {
+  const clean: Record<string, any> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (value !== undefined) {
+      clean[key] = value;
+    }
+  }
+  return clean;
+}
+
 export async function reconcileRemoteEntries(remoteEntries: Entry[]): Promise<number> {
   let updatedCount = 0;
   for (const remote of remoteEntries) {
@@ -145,19 +158,19 @@ export async function pushPendingChanges(uid: string): Promise<number> {
       const now = new Date().toISOString();
       const deletedAt = entry.deletedAt || now;
       // Soft-delete tombstone in Firestore so other devices receive the deletion
-      currentBatch.set(docRef, {
+      currentBatch.set(docRef, cleanForFirestore({
         cloudId: entry.cloudId,
         deletedAt,
         updatedAt: now,
         syncStatus: 'synced',
-      }, { merge: true });
+      }), { merge: true });
       if (entry.id) await db.entries.delete(entry.id);
       batchOps++;
       pushedCount++;
       await commitBatchIfNeeded();
     } else {
       const { id, ...dataToSync } = entry;
-      currentBatch.set(docRef, { ...dataToSync, syncStatus: 'synced' }, { merge: true });
+      currentBatch.set(docRef, cleanForFirestore({ ...dataToSync, syncStatus: 'synced' }), { merge: true });
       if (entry.id) await db.entries.update(entry.id, { syncStatus: 'synced' });
       batchOps++;
       pushedCount++;
@@ -176,19 +189,19 @@ export async function pushPendingChanges(uid: string): Promise<number> {
     if (job.syncStatus === 'deleted') {
       const now = new Date().toISOString();
       const deletedAt = job.deletedAt || now;
-      currentBatch.set(docRef, {
+      currentBatch.set(docRef, cleanForFirestore({
         cloudId: job.cloudId,
         deletedAt,
         updatedAt: now,
         syncStatus: 'synced',
-      }, { merge: true });
+      }), { merge: true });
       if (job.id) await db.jobs.delete(job.id);
       batchOps++;
       pushedCount++;
       await commitBatchIfNeeded();
     } else {
       const { id, ...dataToSync } = job;
-      currentBatch.set(docRef, { ...dataToSync, syncStatus: 'synced' }, { merge: true });
+      currentBatch.set(docRef, cleanForFirestore({ ...dataToSync, syncStatus: 'synced' }), { merge: true });
       if (job.id) await db.jobs.update(job.id, { syncStatus: 'synced' });
       batchOps++;
       pushedCount++;
@@ -207,19 +220,19 @@ export async function pushPendingChanges(uid: string): Promise<number> {
     if (item.syncStatus === 'deleted') {
       const now = new Date().toISOString();
       const deletedAt = item.deletedAt || now;
-      currentBatch.set(docRef, {
+      currentBatch.set(docRef, cleanForFirestore({
         cloudId: item.cloudId,
         deletedAt,
         updatedAt: now,
         syncStatus: 'synced',
-      }, { merge: true });
+      }), { merge: true });
       if (item.id) await db.stock.delete(item.id);
       batchOps++;
       pushedCount++;
       await commitBatchIfNeeded();
     } else {
       const { id, ...dataToSync } = item;
-      currentBatch.set(docRef, { ...dataToSync, syncStatus: 'synced' }, { merge: true });
+      currentBatch.set(docRef, cleanForFirestore({ ...dataToSync, syncStatus: 'synced' }), { merge: true });
       if (item.id) await db.stock.update(item.id, { syncStatus: 'synced' });
       batchOps++;
       pushedCount++;
@@ -232,7 +245,7 @@ export async function pushPendingChanges(uid: string): Promise<number> {
   if (localSettings && localSettings.syncStatus !== 'synced') {
     const docRef = doc(dbFirestore, 'users', uid, 'settings', 'appSettings');
     const { id, ...settingsData } = localSettings;
-    currentBatch.set(docRef, { ...settingsData, syncStatus: 'synced' }, { merge: true });
+    currentBatch.set(docRef, cleanForFirestore({ ...settingsData, syncStatus: 'synced' }), { merge: true });
     if (localSettings.id) {
       await db.settings.update(localSettings.id, { syncStatus: 'synced' });
     }
