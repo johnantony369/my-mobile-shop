@@ -21,6 +21,7 @@ import {
   CheckCircle2,
   Store,
   Info,
+  Package,
   Wrench,
   Cloud,
   RefreshCw,
@@ -271,6 +272,11 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     onRefreshSettings();
   };
 
+  const handleToggleStock = async (val: 'off' | 'on') => {
+    await updateAppSettings({ showStock: val === 'on' });
+    onRefreshSettings();
+  };
+
   const handleSeedDev = async () => {
     const count = await seedDevEntries();
     setDevNotice(`${t('dev_seed_success', language)} (+${count})`);
@@ -426,6 +432,35 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           </div>
         )}
 
+
+        {/* Section: Stock & Inventory Module Toggle */}
+        <div className="bg-white rounded-[14px] p-4 shadow-sm border border-black/[0.04]">
+          <div className="flex items-center space-x-2 text-xs font-semibold text-[#8E8E93] uppercase tracking-wider mb-2">
+            <Package className="w-4 h-4 text-iosBlue" />
+            <span>Stock & Inventory</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="pr-4">
+              <span className="text-[15px] font-semibold text-black block">
+                Enable Stock Module
+              </span>
+              <span className="text-xs text-[#8E8E93] block mt-0.5">
+                Manage inventory products, repair services & stock counts
+              </span>
+            </div>
+            <div className="w-24 flex-shrink-0">
+              <SegmentedControl<'off' | 'on'>
+                value={settings.showStock !== false ? 'on' : 'off'}
+                onChange={handleToggleStock}
+                size="sm"
+                options={[
+                  { value: 'off', label: 'Off' },
+                  { value: 'on', label: 'On' },
+                ]}
+              />
+            </div>
+          </div>
+        </div>
 
         {/* Section: Repairs Service Module Toggle */}
         <div className="bg-white rounded-[14px] p-4 shadow-sm border border-black/[0.04]">

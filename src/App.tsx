@@ -100,6 +100,19 @@ export default function App() {
     }
   }, [user, settingsList, checkedCloudUid]);
 
+  const currentSettings = settingsList && settingsList[0];
+  const showStock = currentSettings ? currentSettings.showStock !== false : true;
+  const showRepairs = currentSettings ? !!currentSettings.showRepairs : false;
+
+  useEffect(() => {
+    if (!showStock && currentTab === 'stock') {
+      setCurrentTab('book');
+    }
+    if (!showRepairs && currentTab === 'repairs') {
+      setCurrentTab('book');
+    }
+  }, [showStock, showRepairs, currentTab]);
+
   // Loading state with timeout fallback
   if (settingsList === undefined) {
     return (
@@ -143,7 +156,6 @@ export default function App() {
 
   const settings = settingsList[0];
   const language: Language = 'en';
-  const showRepairs = !!settings.showRepairs;
   const trialDays = getTrialDaysRemaining(settings.firstLaunchDate);
   const isReadOnly = !settings.activated && trialDays <= 0;
   const isActivated = !!settings.activated;
@@ -196,7 +208,7 @@ export default function App() {
             onOpenPaywall={() => setIsPaywallOpen(true)}
           />
         )}
-        {currentTab === 'stock' && (
+        {showStock && currentTab === 'stock' && (
           <StockScreen
             language={language}
             shopName={settings.shopName}
@@ -244,6 +256,7 @@ export default function App() {
         onTabChange={(tab) => setCurrentTab(tab)}
         language={language}
         showRepairs={showRepairs}
+        showStock={showStock}
         readyCount={readyJobsCount}
         lowStockCount={lowStockCount}
       />

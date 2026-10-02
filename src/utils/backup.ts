@@ -110,6 +110,7 @@ export async function importBackup(file: File): Promise<{ count: number }> {
       shopName: data.settings.shopName,
       language: 'en',
       showRepairs: data.settings.showRepairs ?? false,
+      showStock: data.settings.showStock !== false,
     });
   }
 

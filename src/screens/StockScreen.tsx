@@ -217,28 +217,30 @@ export const StockScreen: React.FC<StockScreenProps> = ({
           </button>
         </div>
 
-        {/* Quick Summary Cards Carousel / Grid */}
-        <div className="grid grid-cols-3 gap-2.5">
+        {/* Quick Summary Cards Carousel */}
+        <div className="flex gap-2.5 overflow-x-auto no-scrollbar scroll-smooth snap-x pb-1 -mx-4 px-4 sm:mx-0 sm:px-0">
           {/* Card 1: Total Products */}
           <button
             type="button"
-            onClick={() => setCurrentFilter('product')}
-            className={`p-3 rounded-[14px] text-left transition-all border ${
+            onClick={() => setCurrentFilter(currentFilter === 'product' ? 'all' : 'product')}
+            className={`min-w-[130px] flex-1 snap-start p-3 rounded-[16px] text-left transition-all border shrink-0 ${
               currentFilter === 'product'
                 ? 'bg-blue-50/80 border-iosBlue ring-2 ring-iosBlue/20 shadow-xs'
                 : 'bg-white border-black/[0.05] shadow-xs hover:border-gray-300'
             }`}
           >
-            <div className="flex items-center justify-between text-iosBlue mb-1">
-              <Package className="w-4 h-4" />
+            <div className="flex items-center justify-between text-iosBlue mb-1.5">
+              <div className="w-6 h-6 rounded-lg bg-blue-100/70 flex items-center justify-center">
+                <Package className="w-3.5 h-3.5" />
+              </div>
               <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">
                 Products
               </span>
             </div>
-            <div className="text-xl font-extrabold text-black">
+            <div className="text-xl font-extrabold text-black tracking-tight">
               {metrics.productCount}
             </div>
-            <div className="text-[10px] text-gray-500 mt-0.5 truncate">
+            <div className="text-[10px] text-gray-500 mt-0.5 whitespace-nowrap">
               {metrics.totalStockUnits} units in shop
             </div>
           </button>
@@ -246,23 +248,25 @@ export const StockScreen: React.FC<StockScreenProps> = ({
           {/* Card 2: Services */}
           <button
             type="button"
-            onClick={() => setCurrentFilter('service')}
-            className={`p-3 rounded-[14px] text-left transition-all border ${
+            onClick={() => setCurrentFilter(currentFilter === 'service' ? 'all' : 'service')}
+            className={`min-w-[130px] flex-1 snap-start p-3 rounded-[16px] text-left transition-all border shrink-0 ${
               currentFilter === 'service'
                 ? 'bg-purple-50/80 border-purple-500 ring-2 ring-purple-500/20 shadow-xs'
                 : 'bg-white border-black/[0.05] shadow-xs hover:border-gray-300'
             }`}
           >
-            <div className="flex items-center justify-between text-purple-600 mb-1">
-              <Wrench className="w-4 h-4" />
+            <div className="flex items-center justify-between text-purple-600 mb-1.5">
+              <div className="w-6 h-6 rounded-lg bg-purple-100/70 flex items-center justify-center">
+                <Wrench className="w-3.5 h-3.5" />
+              </div>
               <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">
                 Services
               </span>
             </div>
-            <div className="text-xl font-extrabold text-black">
+            <div className="text-xl font-extrabold text-black tracking-tight">
               {metrics.serviceCount}
             </div>
-            <div className="text-[10px] text-gray-500 mt-0.5 truncate">
+            <div className="text-[10px] text-gray-500 mt-0.5 whitespace-nowrap">
               Repair & labour
             </div>
           </button>
@@ -270,8 +274,8 @@ export const StockScreen: React.FC<StockScreenProps> = ({
           {/* Card 3: Low Stock Alerts */}
           <button
             type="button"
-            onClick={() => setCurrentFilter('low_stock')}
-            className={`p-3 rounded-[14px] text-left transition-all border ${
+            onClick={() => setCurrentFilter(currentFilter === 'low_stock' ? 'all' : 'low_stock')}
+            className={`min-w-[130px] flex-1 snap-start p-3 rounded-[16px] text-left transition-all border shrink-0 ${
               currentFilter === 'low_stock'
                 ? 'bg-amber-50/90 border-amber-500 ring-2 ring-amber-500/20 shadow-xs'
                 : metrics.lowStockCount > 0
@@ -279,16 +283,18 @@ export const StockScreen: React.FC<StockScreenProps> = ({
                 : 'bg-white border-black/[0.05] shadow-xs hover:border-gray-300'
             }`}
           >
-            <div className="flex items-center justify-between text-amber-600 mb-1">
-              <AlertTriangle className="w-4 h-4" />
+            <div className="flex items-center justify-between text-amber-600 mb-1.5">
+              <div className="w-6 h-6 rounded-lg bg-amber-100/70 flex items-center justify-center">
+                <AlertTriangle className="w-3.5 h-3.5" />
+              </div>
               <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">
                 Low Stock
               </span>
             </div>
-            <div className={`text-xl font-extrabold ${metrics.lowStockCount > 0 ? 'text-amber-600' : 'text-black'}`}>
+            <div className={`text-xl font-extrabold tracking-tight ${metrics.lowStockCount > 0 ? 'text-amber-600' : 'text-black'}`}>
               {metrics.lowStockCount}
             </div>
-            <div className="text-[10px] text-gray-500 mt-0.5 truncate">
+            <div className="text-[10px] text-gray-500 mt-0.5 whitespace-nowrap">
               {metrics.lowStockCount > 0 ? 'Needs reorder' : 'All well-stocked'}
             </div>
           </button>
@@ -316,11 +322,11 @@ export const StockScreen: React.FC<StockScreenProps> = ({
         </div>
 
         {/* Filter Tabs */}
-        <div className="flex items-center space-x-1.5 overflow-x-auto no-scrollbar py-0.5">
+        <div className="flex items-center space-x-1.5 overflow-x-auto no-scrollbar py-0.5 -mx-4 px-4 sm:mx-0 sm:px-0">
           <button
             type="button"
             onClick={() => setCurrentFilter('all')}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
+            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold shrink-0 whitespace-nowrap transition-all ${
               currentFilter === 'all'
                 ? 'bg-black text-white shadow-xs'
                 : 'bg-white text-gray-600 border border-black/[0.05] hover:bg-gray-100'
@@ -331,7 +337,7 @@ export const StockScreen: React.FC<StockScreenProps> = ({
           <button
             type="button"
             onClick={() => setCurrentFilter('product')}
-            className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
+            className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold shrink-0 whitespace-nowrap transition-all ${
               currentFilter === 'product'
                 ? 'bg-iosBlue text-white shadow-xs'
                 : 'bg-white text-gray-600 border border-black/[0.05] hover:bg-gray-100'
@@ -343,7 +349,7 @@ export const StockScreen: React.FC<StockScreenProps> = ({
           <button
             type="button"
             onClick={() => setCurrentFilter('service')}
-            className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
+            className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold shrink-0 whitespace-nowrap transition-all ${
               currentFilter === 'service'
                 ? 'bg-purple-600 text-white shadow-xs'
                 : 'bg-white text-gray-600 border border-black/[0.05] hover:bg-gray-100'
@@ -355,7 +361,7 @@ export const StockScreen: React.FC<StockScreenProps> = ({
           <button
             type="button"
             onClick={() => setCurrentFilter('low_stock')}
-            className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
+            className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold shrink-0 whitespace-nowrap transition-all ${
               currentFilter === 'low_stock'
                 ? 'bg-amber-500 text-white shadow-xs'
                 : 'bg-white text-amber-700 border border-amber-200 hover:bg-amber-50'
@@ -422,129 +428,96 @@ export const StockScreen: React.FC<StockScreenProps> = ({
                 <div
                   key={item.id}
                   onClick={() => handleOpenEdit(item)}
-                  className="bg-white rounded-[14px] p-3.5 border border-black/[0.05] shadow-xs hover:border-gray-300 active:bg-gray-50/80 transition-all cursor-pointer select-none"
+                  className="bg-white rounded-[16px] p-3.5 border border-black/[0.06] shadow-xs hover:border-gray-300 active:bg-gray-50/80 transition-all cursor-pointer select-none space-y-2.5"
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    {/* Left Icon & Info */}
-                    <div className="flex items-start space-x-3 min-w-0">
+                  {/* Top Row: Icon + Name/SKU + Price */}
+                  <div className="flex items-start justify-between gap-2.5">
+                    <div className="flex items-start space-x-2.5 min-w-0 flex-1">
                       <div
-                        className={`w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0 mt-0.5 ${
+                        className={`w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0 mt-0.5 ${
                           isProduct
                             ? 'bg-blue-50 text-iosBlue'
                             : 'bg-purple-50 text-purple-600'
                         }`}
                       >
-                        {isProduct ? <Package className="w-5 h-5" /> : <Wrench className="w-5 h-5" />}
+                        {isProduct ? <Package className="w-4 h-4" /> : <Wrench className="w-4 h-4" />}
                       </div>
 
-                      <div className="min-w-0 space-y-1">
-                        <div className="flex items-center space-x-2">
-                          <h4 className="font-bold text-[15px] text-black leading-snug truncate">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <h4 className="font-bold text-[15px] text-black leading-snug break-words">
                             {item.name}
                           </h4>
                           {item.sku && (
-                            <span className="font-mono text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
+                            <span className="font-mono text-[9px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded tracking-wide">
                               {item.sku}
                             </span>
                           )}
                         </div>
-
-                        {/* Status Pills */}
-                        <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
-                          {isProduct ? (
-                            isOutOfStock ? (
-                              <span className="inline-flex items-center space-x-1 text-iosRed font-semibold bg-red-50 border border-red-200 px-2 py-0.5 rounded-full">
-                                <span>Out of stock</span>
-                              </span>
-                            ) : isLowStock ? (
-                              <span className="inline-flex items-center space-x-1 text-amber-700 font-semibold bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
-                                <AlertTriangle className="w-3 h-3 text-amber-500" />
-                                <span>Low stock: {qty} left</span>
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center space-x-1 text-emerald-700 font-semibold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-                                <span>{qty} {item.unit || 'pcs'} in stock</span>
-                              </span>
-                            )
-                          ) : (
-                            <span className="inline-flex items-center space-x-1 text-purple-700 font-semibold bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-full">
-                              <span>Service / Labour</span>
-                            </span>
-                          )}
-
-                          {margin !== null && (
-                            <span className="text-[10px] text-gray-500 font-medium flex items-center gap-0.5">
-                              <TrendingUp className="w-2.5 h-2.5 text-iosGreen" />
-                              <span>Profit: ₹{formatINR(margin)}</span>
-                            </span>
-                          )}
-                        </div>
-
                         {item.notes && (
-                          <p className="text-[11px] text-gray-500 truncate max-w-xs">
+                          <p className="text-[11px] text-gray-400 line-clamp-1 mt-0.5">
                             {item.notes}
                           </p>
                         )}
                       </div>
                     </div>
 
-                    {/* Right side: Price & Actions */}
-                    <div className="text-right shrink-0 space-y-1.5">
-                      <div>
-                        <span className="text-[17px] font-extrabold text-black block tracking-tight">
-                          ₹{formatINR(item.sellingPrice)}
+                    {/* Price Block */}
+                    <div className="text-right shrink-0">
+                      <span className="text-[16px] font-extrabold text-black block tracking-tight leading-tight">
+                        ₹{formatINR(item.sellingPrice)}
+                      </span>
+                      {hasCost && (
+                        <span className="text-[10px] text-gray-400 block font-medium">
+                          Cost: ₹{formatINR(item.costPrice!)}
                         </span>
-                        {hasCost && (
-                          <span className="text-[10px] text-gray-400 block">
-                            Cost: ₹{formatINR(item.costPrice!)}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Quick Stock +/- Stepper for Products */}
-                      {isProduct && item.id && (
-                        <div
-                          onClick={(e) => e.stopPropagation()}
-                          className="flex items-center justify-end space-x-1 pt-0.5"
-                        >
-                          <button
-                            type="button"
-                            title="Decrease stock by 1"
-                            onClick={(e) => handleQuickAdjust(e, item.id!, -1)}
-                            disabled={qty <= 0}
-                            className="w-7 h-7 rounded-full bg-[#F2F2F7] hover:bg-gray-200 active:scale-95 disabled:opacity-40 flex items-center justify-center text-gray-700 transition-all"
-                          >
-                            <Minus className="w-3.5 h-3.5" />
-                          </button>
-                          <span className="font-bold text-xs text-black min-w-[20px] text-center">
-                            {qty}
-                          </span>
-                          <button
-                            type="button"
-                            title="Increase stock by 1"
-                            onClick={(e) => handleQuickAdjust(e, item.id!, 1)}
-                            className="w-7 h-7 rounded-full bg-[#F2F2F7] hover:bg-gray-200 active:scale-95 flex items-center justify-center text-gray-700 transition-all"
-                          >
-                            <Plus className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
                       )}
                     </div>
                   </div>
 
-                  {/* Bottom action row */}
-                  <div className="mt-2.5 pt-2 border-t border-gray-100 flex items-center justify-between text-xs text-gray-400">
-                    <span className="text-[11px] text-gray-400">
-                      Tap card to edit details
-                    </span>
-                    <div className="flex items-center space-x-3">
+                  {/* Middle Row: Badges & Profit */}
+                  <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                    {isProduct ? (
+                      isOutOfStock ? (
+                        <span className="inline-flex items-center space-x-1 text-iosRed font-semibold bg-red-50 border border-red-200/80 px-2 py-0.5 rounded-full">
+                          <span className="w-1.5 h-1.5 rounded-full bg-iosRed inline-block" />
+                          <span>Out of stock</span>
+                        </span>
+                      ) : isLowStock ? (
+                        <span className="inline-flex items-center space-x-1 text-amber-700 font-semibold bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                          <AlertTriangle className="w-3 h-3 text-amber-500" />
+                          <span>Low stock: {qty} left</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center space-x-1 text-emerald-700 font-semibold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+                          <span>{qty} {item.unit || 'pcs'} in stock</span>
+                        </span>
+                      )
+                    ) : (
+                      <span className="inline-flex items-center space-x-1 text-purple-700 font-semibold bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-full">
+                        <span>Service / Labour</span>
+                      </span>
+                    )}
+
+                    {margin !== null && (
+                      <span className="text-[10px] text-emerald-700 font-semibold bg-emerald-50/60 border border-emerald-200/60 px-2 py-0.5 rounded-full flex items-center gap-0.5">
+                        <TrendingUp className="w-2.5 h-2.5 text-iosGreen" />
+                        <span>Profit: ₹{formatINR(margin)}</span>
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Bottom Row: Actions (Left) and Stepper / Details (Right) */}
+                  <div className="pt-2 border-t border-gray-100/90 flex items-center justify-between">
+                    <div className="flex items-center space-x-3 text-xs">
                       <button
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleOpenEdit(item);
                         }}
-                        className="text-iosBlue hover:underline flex items-center space-x-1 py-0.5"
+                        className="text-iosBlue hover:underline flex items-center space-x-1 py-1 font-medium"
                       >
                         <Edit2 className="w-3 h-3" />
                         <span>Edit</span>
@@ -555,12 +528,45 @@ export const StockScreen: React.FC<StockScreenProps> = ({
                           e.stopPropagation();
                           setItemToDelete(item);
                         }}
-                        className="text-iosRed hover:underline flex items-center space-x-1 py-0.5"
+                        className="text-iosRed hover:underline flex items-center space-x-1 py-1 font-medium"
                       >
                         <Trash2 className="w-3 h-3" />
                         <span>Delete</span>
                       </button>
                     </div>
+
+                    {/* Right: Quick Stock Stepper (Product) or Tap to edit hint */}
+                    {isProduct && item.id ? (
+                      <div
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex items-center space-x-1.5 bg-[#F2F2F7] px-1.5 py-0.5 rounded-full border border-black/[0.04]"
+                      >
+                        <button
+                          type="button"
+                          title="Decrease stock by 1"
+                          onClick={(e) => handleQuickAdjust(e, item.id!, -1)}
+                          disabled={qty <= 0}
+                          className="w-7 h-7 rounded-full bg-white hover:bg-gray-100 active:scale-95 disabled:opacity-40 flex items-center justify-center text-gray-700 shadow-2xs transition-all"
+                        >
+                          <Minus className="w-3.5 h-3.5" />
+                        </button>
+                        <span className="font-extrabold text-xs text-black min-w-[24px] text-center select-none">
+                          {qty}
+                        </span>
+                        <button
+                          type="button"
+                          title="Increase stock by 1"
+                          onClick={(e) => handleQuickAdjust(e, item.id!, 1)}
+                          className="w-7 h-7 rounded-full bg-white hover:bg-gray-100 active:scale-95 flex items-center justify-center text-gray-700 shadow-2xs transition-all"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-[11px] text-gray-400 font-medium">
+                        Tap to edit
+                      </span>
+                    )}
                   </div>
                 </div>
               );

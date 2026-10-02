@@ -52,6 +52,7 @@ export interface AppSettings extends SyncMetadata {
   activated: boolean;
   lastBackupAt: string | null;
   showRepairs: boolean; // toggle for repairs module
+  showStock?: boolean; // toggle for stock/inventory module
 }
 
 export interface DaySummary {

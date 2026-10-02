@@ -123,7 +123,8 @@ export async function getAppSettings(): Promise<AppSettings | undefined> {
 export async function initAppSettings(
   shopName: string,
   language: Language = 'en',
-  showRepairs: boolean = false
+  showRepairs: boolean = false,
+  showStock: boolean = true
 ): Promise<AppSettings> {
   const existing = await getAppSettings();
   if (existing) {
@@ -137,6 +138,7 @@ export async function initAppSettings(
     activated: false,
     lastBackupAt: null,
     showRepairs,
+    showStock,
     cloudId: generateCloudId(),
     updatedAt: now,
     syncStatus: 'pending',
@@ -162,6 +164,7 @@ export async function updateAppSettings(partial: Partial<AppSettings>): Promise<
       activated: false,
       lastBackupAt: null,
       showRepairs: false,
+      showStock: true,
       cloudId: generateCloudId(),
       updatedAt: now,
       syncStatus: 'pending',

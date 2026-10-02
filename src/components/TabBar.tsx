@@ -10,6 +10,7 @@ interface TabBarProps {
   onTabChange: (tab: TabType) => void;
   language: Language;
   showRepairs?: boolean;
+  showStock?: boolean;
   readyCount?: number;
   lowStockCount?: number;
 }
@@ -19,6 +20,7 @@ export const TabBar: React.FC<TabBarProps> = ({
   onTabChange,
   language,
   showRepairs = false,
+  showStock = true,
   readyCount = 0,
   lowStockCount = 0,
 }) => {
@@ -30,13 +32,17 @@ export const TabBar: React.FC<TabBarProps> = ({
       badge: 0,
       badgeColor: 'bg-iosGreen',
     },
-    {
-      id: 'stock' as TabType,
-      label: t('tab_stock', language),
-      icon: Package,
-      badge: lowStockCount,
-      badgeColor: 'bg-amber-500',
-    },
+    ...(showStock
+      ? [
+          {
+            id: 'stock' as TabType,
+            label: t('tab_stock', language),
+            icon: Package,
+            badge: lowStockCount,
+            badgeColor: 'bg-amber-500',
+          },
+        ]
+      : []),
     ...(showRepairs
       ? [
           {
@@ -93,7 +99,7 @@ export const TabBar: React.FC<TabBarProps> = ({
                 )}
               </div>
               <span
-                className={`text-[10px] mt-0.5 tracking-tight font-medium transition-colors duration-150 ${
+                className={`text-[10px] mt-0.5 tracking-tight font-medium transition-colors duration-150 truncate max-w-[62px] text-center ${
                   isActive ? 'font-semibold text-iosBlue' : 'text-[#8E8E93]'
                 }`}
               >
