@@ -33,7 +33,7 @@ import {
   Phone,
 } from 'lucide-react';
 import { PaywallModal } from '../components/PaywallModal';
-import { isSuperAdmin } from '../utils/admin';
+import { isSuperAdmin, hasFullAccess } from '../utils/admin';
 import { AdminDashboardModal } from '../components/AdminDashboardModal';
 import { LegalModal } from '../components/LegalModal';
 import { linkGoogleAccount } from '../firebase/auth';
@@ -226,8 +226,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const [isClearModalOpen, setIsClearModalOpen] = useState(false);
   const [devNotice, setDevNotice] = useState<string | null>(null);
 
+  const isAdmin = isSuperAdmin(user);
+  const isProActive = hasFullAccess(!!settings.activated || activationSuccess, user);
   const trialDays = getTrialDaysRemaining(settings.firstLaunchDate);
-  const isExpired = trialDays <= 0 && !settings.activated;
+  const isExpired = trialDays <= 0 && !isProActive;
   const backupWarning = isBackupNeeded(settings.lastBackupAt);
 
   const handleSignOutConfirm = async () => {
@@ -344,7 +346,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         )}
 
         {/* Featured Lifetime Pro Upgrade Banner */}
-        {!(settings.activated || activationSuccess) ? (
+        {!isProActive ? (
           <div className="bg-gradient-to-br from-amber-500 via-amber-600 to-yellow-600 rounded-[16px] p-4 text-white shadow-md shadow-amber-500/20 relative overflow-hidden">
             <div className="absolute -right-4 -bottom-4 w-28 h-28 bg-white/10 rounded-full blur-xl pointer-events-none" />
             <div className="flex items-center justify-between mb-2">
@@ -382,10 +384,12 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               </div>
               <div>
                 <h3 className="text-[15px] font-bold tracking-tight">
-                  {t('pro_member_badge', language)}
+                  {isAdmin ? 'Superadmin Pro Access' : t('pro_member_badge', language)}
                 </h3>
                 <p className="text-xs text-emerald-100">
-                  {t('pro_active_desc', language)}
+                  {isAdmin
+                    ? 'All features & admin privileges fully unlocked.'
+                    : t('pro_active_desc', language)}
                 </p>
               </div>
             </div>
@@ -527,11 +531,11 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             <span>{t('section_activation', language)}</span>
           </div>
 
-          {settings.activated || activationSuccess ? (
+          {isProActive ? (
             <div className="flex items-center space-x-2.5 p-3 bg-green-50 text-iosGreen rounded-[10px] border border-green-200">
               <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
               <span className="text-sm font-semibold">
-                {t('activated_status', language)}
+                {isAdmin ? 'Activated (Superadmin Lifetime Access)' : t('activated_status', language)}
               </span>
             </div>
           ) : (

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isSuperAdmin, SUPERADMIN_EMAIL } from '../src/utils/admin';
+import { isSuperAdmin, SUPERADMIN_EMAIL, hasFullAccess } from '../src/utils/admin';
 
 describe('Superadmin Authorization (isSuperAdmin)', () => {
   it('has the correct SUPERADMIN_EMAIL constant', () => {
@@ -29,3 +29,21 @@ describe('Superadmin Authorization (isSuperAdmin)', () => {
     expect(isSuperAdmin({ email: '' })).toBe(false);
   });
 });
+
+describe('Full Access Resolution (hasFullAccess)', () => {
+  it('returns true when activated is true, regardless of user', () => {
+    expect(hasFullAccess(true, null)).toBe(true);
+    expect(hasFullAccess(true, { email: 'user@example.com' })).toBe(true);
+  });
+
+  it('returns true for superadmin even if activated is false', () => {
+    expect(hasFullAccess(false, { email: 'johnantony271@gmail.com' })).toBe(true);
+    expect(hasFullAccess(false, { email: '  JOHNANTONY271@GMAIL.COM ' })).toBe(true);
+  });
+
+  it('returns false when activated is false and user is not superadmin', () => {
+    expect(hasFullAccess(false, null)).toBe(false);
+    expect(hasFullAccess(false, { email: 'user@example.com' })).toBe(false);
+  });
+});
+

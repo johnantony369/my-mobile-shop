@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from './db/db';
+import { db, updateAppSettings } from './db/db';
 import { TabBar, TabType } from './components/TabBar';
 import { BookScreen } from './screens/BookScreen';
 import { StockScreen } from './screens/StockScreen';
@@ -9,6 +9,7 @@ import { ReportsScreen } from './screens/ReportsScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { OnboardingScreen } from './screens/OnboardingScreen';
 import { getTrialDaysRemaining } from './utils/activation';
+import { isSuperAdmin, hasFullAccess } from './utils/admin';
 import { requestPersistentStorage } from './utils/storage';
 import { useAuth } from './firebase/useAuth';
 import { LoginModal } from './components/LoginModal';
@@ -16,7 +17,6 @@ import { InstallBanner } from './components/InstallBanner';
 import { PaywallModal } from './components/PaywallModal';
 import { Language } from './types';
 import { pullCloudChanges } from './firebase/sync';
-import { Cloud, CloudOff, RefreshCw, AlertTriangle, LogIn } from 'lucide-react';
 
 export default function App() {
   const [currentTab, setCurrentTab] = useState<TabType>('book');
@@ -24,7 +24,7 @@ export default function App() {
   const [loadingTimeout, setLoadingTimeout] = useState(false);
   const [isPaywallOpen, setIsPaywallOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const { user, loading: authLoading, isConfigured, syncState, triggerSync } = useAuth();
+  const { user, loading: authLoading } = useAuth();
 
   useEffect(() => {
     // Request OS to keep storage persistent
@@ -156,46 +156,22 @@ export default function App() {
 
   const settings = settingsList[0];
   const language: Language = 'en';
+  const isAdmin = isSuperAdmin(user);
   const trialDays = getTrialDaysRemaining(settings.firstLaunchDate);
-  const isReadOnly = !settings.activated && trialDays <= 0;
-  const isActivated = !!settings.activated;
+  const isActivated = hasFullAccess(!!settings.activated, user);
+  const isReadOnly = !isActivated && trialDays <= 0;
+
+  // Auto-activate local settings if superadmin is logged in
+  useEffect(() => {
+    if (isAdmin && settings && !settings.activated) {
+      updateAppSettings({ activated: true }).catch((err) => {
+        console.warn('Failed to auto-activate local settings for admin:', err);
+      });
+    }
+  }, [isAdmin, settings]);
 
   return (
     <div className="min-h-screen bg-iosBg text-iosLabel font-sans flex flex-col justify-between selection:bg-iosBlue/20">
-      {/* Top Floating Cloud Sync Status Indicator */}
-      {user ? (
-        <button
-          type="button"
-          onClick={triggerSync}
-          title={
-            syncState === 'synced'
-              ? 'Cloud Synced - Tap to refresh'
-              : syncState === 'syncing'
-              ? 'Syncing with cloud...'
-              : syncState === 'error'
-              ? 'Sync error - Tap to retry'
-              : 'Offline'
-          }
-          className="fixed top-2.5 right-3 z-40 bg-white/85 dark:bg-slate-800/85 backdrop-blur-md px-2.5 py-1 rounded-full shadow-sm border border-black/[0.06] flex items-center gap-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 active:scale-95 transition-all"
-        >
-          {syncState === 'synced' && <Cloud className="w-3.5 h-3.5 text-iosGreen" />}
-          {syncState === 'syncing' && <RefreshCw className="w-3.5 h-3.5 text-iosBlue animate-spin" />}
-          {syncState === 'error' && <AlertTriangle className="w-3.5 h-3.5 text-iosRed" />}
-          {syncState === 'offline' && <CloudOff className="w-3.5 h-3.5 text-slate-400" />}
-          <span className="capitalize">{syncState}</span>
-        </button>
-      ) : isConfigured ? (
-        <button
-          type="button"
-          onClick={() => setIsLoginModalOpen(true)}
-          title="Sign in to backup and sync your shop data"
-          className="fixed top-2.5 right-3 z-40 bg-white/85 dark:bg-slate-800/85 backdrop-blur-md px-2.5 py-1 rounded-full shadow-sm border border-black/[0.06] flex items-center gap-1.5 text-[11px] font-semibold text-iosBlue active:scale-95 transition-all"
-        >
-          <LogIn className="w-3.5 h-3.5 text-iosBlue" />
-          <span>Sign In</span>
-        </button>
-      ) : null}
-
       {/* Active Screen View */}
       <main key={currentTab} className="flex-1 w-full max-w-lg mx-auto animate-fade-slide-in">
         {currentTab === 'book' && (
