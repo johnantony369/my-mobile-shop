@@ -14,7 +14,7 @@ interface UsePWAInstallReturn {
   /** Whether the install banner should be shown */
   showBanner: boolean;
   /** Trigger the native browser install prompt (Android/Desktop) */
-  triggerInstall: () => Promise<void>;
+  triggerInstall: () => Promise<boolean>;
   /** Dismiss the install banner for the current session */
   dismissBanner: () => void;
 }
@@ -151,9 +151,9 @@ export function usePWAInstall(): UsePWAInstallReturn {
     };
   }, []);
 
-  const triggerInstall = async () => {
+  const triggerInstall = async (): Promise<boolean> => {
     const promptToUse = deferredPrompt || globalDeferredPrompt;
-    if (!promptToUse) return;
+    if (!promptToUse) return false;
     try {
       if (deferredPrompt) {
         await deferredPrompt.prompt();
@@ -164,8 +164,10 @@ export function usePWAInstall(): UsePWAInstallReturn {
       if (outcome === 'accepted') {
         setIsInstalled(true);
       }
+      return true;
     } catch (err) {
       console.error('Error triggering PWA install:', err);
+      return false;
     } finally {
       globalDeferredPrompt = null;
       setDeferredPrompt(null);

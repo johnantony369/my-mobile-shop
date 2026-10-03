@@ -21,6 +21,11 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
   onConfirm,
   onCancel,
 }) => {
+  const isConfirmingRef = React.useRef(false);
+  React.useEffect(() => {
+    if (isOpen) isConfirmingRef.current = false;
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (
@@ -48,7 +53,11 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
           </button>
           <button
             type="button"
-            onClick={onConfirm}
+            onClick={() => {
+              if (isConfirmingRef.current) return;
+              isConfirmingRef.current = true;
+              onConfirm();
+            }}
             className={`flex-1 py-3 text-[17px] font-semibold hover:bg-black/[0.04] active:bg-black/[0.08] transition-colors ${
               isDestructive ? 'text-iosRed' : 'text-iosBlue'
             }`}

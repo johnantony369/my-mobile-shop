@@ -177,7 +177,10 @@ export const InstallBanner: React.FC<InstallBannerProps> = ({ language: _languag
     if (canInstall) {
       await triggerInstall();
     } else {
-      setShowGuide(true);
+      const triggered = await triggerInstall();
+      if (!triggered) {
+        setShowGuide(true);
+      }
     }
   };
 

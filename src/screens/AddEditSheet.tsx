@@ -12,7 +12,7 @@ import { Package, X, Check } from 'lucide-react';
 interface AddEditSheetProps {
   isOpen: boolean;
   onClose: () => void;
-  onSaved: () => void;
+  onSaved: (savedDate?: string) => void;
   entryToEdit: Entry | null;
   defaultDate: string;
   language: Language;
@@ -36,6 +36,8 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
   const [note, setNote] = useState('');
   const [date, setDate] = useState(defaultDate || getLocalDateString());
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmittingRef = useRef(false);
 
   // Stock selection state
   const [isStockPickerOpen, setIsStockPickerOpen] = useState(false);
@@ -83,6 +85,8 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
         setDeductStock(true);
       }
       setError(null);
+      isSubmittingRef.current = false;
+      setIsSubmitting(false);
 
       // Auto-focus amount field
       const timer = setTimeout(() => {
@@ -113,9 +117,14 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
 
   const handleSave = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
+    setIsSubmitting(true);
 
     if (isReadOnly) {
       setError(t('read_only_locked_msg', language));
+      isSubmittingRef.current = false;
+      setIsSubmitting(false);
       return;
     }
 
@@ -126,6 +135,8 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
     if (isNaN(parsedAmount) || parsedAmount <= 0 || parsedAmount > 9999999) {
       setError(t('amount_error', language));
       amountInputRef.current?.focus();
+      isSubmittingRef.current = false;
+      setIsSubmitting(false);
       return;
     }
 
@@ -164,11 +175,13 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
         }
       }
 
-      onSaved();
+      onSaved(date);
       onClose();
     } catch (err) {
       console.error('Failed to save entry:', err);
       setError('Error saving to local database');
+      isSubmittingRef.current = false;
+      setIsSubmitting(false);
     }
   };
 
@@ -179,13 +192,15 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
       title={entryToEdit ? t('edit_entry_title', language) : t('new_entry_title', language)}
       footer={
         <button
-          type="submit"
-          form="add-entry-form"
-          onClick={() => handleSave()}
-          disabled={isReadOnly}
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            handleSave();
+          }}
+          disabled={isReadOnly || isSubmitting}
           className={`w-full h-12 rounded-[12px] font-semibold text-[16px] text-white transition-opacity ${
-            isReadOnly
-              ? 'bg-gray-400 cursor-not-allowed'
+            isReadOnly || isSubmitting
+              ? 'bg-gray-400 cursor-not-allowed opacity-70'
               : 'bg-iosBlue active:opacity-85 shadow-md shadow-iosBlue/20'
           }`}
         >
@@ -193,7 +208,7 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
         </button>
       }
     >
-      <form id="add-entry-form" onSubmit={handleSave} className="space-y-4 pt-1">
+      <form id="add-entry-form" onSubmit={(e) => { e.preventDefault(); handleSave(e); }} className="space-y-4 pt-1">
         {isReadOnly && (
           <div className="bg-red-50 text-iosRed p-3 rounded-[10px] text-xs font-medium">
             {t('read_only_locked_msg', language)}

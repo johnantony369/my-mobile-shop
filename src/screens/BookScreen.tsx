@@ -12,7 +12,7 @@ import { ConfirmModal } from '../components/ConfirmModal';
 import { AddEditSheet } from './AddEditSheet';
 import { FloatingAction } from '../components/FloatingAction';
 import { BillSheet } from './BillSheet';
-import { Plus, Receipt } from 'lucide-react';
+import { Plus } from 'lucide-react';
 
 interface BookScreenProps {
   language: Language;
@@ -32,6 +32,7 @@ export const BookScreen: React.FC<BookScreenProps> = ({
   onOpenPaywall,
 }) => {
   const [selectedDate, setSelectedDate] = useState<string>(getLocalDateString());
+  const [refreshKey, setRefreshKey] = useState(0);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isAddSheetOpen, setIsAddSheetOpen] = useState(false);
   const [entryToEdit, setEntryToEdit] = useState<Entry | null>(null);
@@ -41,11 +42,11 @@ export const BookScreen: React.FC<BookScreenProps> = ({
   // Live query for the selected date's entries from IndexedDB
   const entries = useLiveQuery(
     () => db.entries.where('date').equals(selectedDate).toArray(),
-    [selectedDate]
+    [selectedDate, refreshKey]
   ) ?? [];
 
-  // Sort chronologically (oldest first or newest first: chronological means earliest first)
-  const sortedEntries = [...entries].sort((a, b) => a.createdAt - b.createdAt);
+  // Sort newest first so freshly created transactions appear immediately at the top
+  const sortedEntries = [...entries].sort((a, b) => b.createdAt - a.createdAt);
   const summary = computeSummary(sortedEntries);
 
   const isToday = selectedDate === getLocalDateString();
@@ -183,21 +184,6 @@ export const BookScreen: React.FC<BookScreenProps> = ({
             if (isReadOnly && onOpenPaywall) {
               onOpenPaywall();
             } else {
-              setIsBillOpen(true);
-            }
-          }}
-          aria-label="New Bill"
-          className="h-11 px-4 rounded-full flex items-center space-x-2 font-bold text-[14px] bg-white text-iosBlue border border-iosBlue/20 shadow-lg active:scale-95 transition-all duration-150"
-        >
-          <Receipt className="w-4.5 h-4.5" />
-          <span>New Bill</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            if (isReadOnly && onOpenPaywall) {
-              onOpenPaywall();
-            } else {
               handleOpenAdd();
             }
           }}
@@ -225,7 +211,10 @@ export const BookScreen: React.FC<BookScreenProps> = ({
       {/* Easy Billing Sheet */}
       <BillSheet
         isOpen={isBillOpen}
-        onClose={() => setIsBillOpen(false)}
+        onClose={() => {
+          setIsBillOpen(false);
+          setRefreshKey((k) => k + 1);
+        }}
         defaultDate={selectedDate}
         shopName={shopName}
         language={language}
@@ -235,7 +224,12 @@ export const BookScreen: React.FC<BookScreenProps> = ({
       <AddEditSheet
         isOpen={isAddSheetOpen}
         onClose={() => setIsAddSheetOpen(false)}
-        onSaved={() => {}}
+        onSaved={(savedDate) => {
+          if (savedDate && savedDate !== selectedDate) {
+            setSelectedDate(savedDate);
+          }
+          setRefreshKey((k) => k + 1);
+        }}
         entryToEdit={entryToEdit}
         defaultDate={selectedDate}
         language={language}

@@ -26,6 +26,8 @@ export const DeliverySheet: React.FC<DeliverySheetProps> = ({
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
   const [addToBook, setAddToBook] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmittingRef = useRef(false);
 
   const amountInputRef = useRef<HTMLInputElement>(null);
 
@@ -36,6 +38,8 @@ export const DeliverySheet: React.FC<DeliverySheetProps> = ({
       setPaymentMethod('cash');
       setAddToBook(true);
       setError(null);
+      isSubmittingRef.current = false;
+      setIsSubmitting(false);
 
       const timer = setTimeout(() => {
         amountInputRef.current?.focus();
@@ -62,8 +66,14 @@ export const DeliverySheet: React.FC<DeliverySheetProps> = ({
 
   const handleConfirm = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
+    setIsSubmitting(true);
+
     if (isNaN(parsedFinal) || parsedFinal < 0 || parsedFinal > 9999999) {
       setError(t('amount_error', language));
+      isSubmittingRef.current = false;
+      setIsSubmitting(false);
       return;
     }
 
@@ -102,6 +112,8 @@ export const DeliverySheet: React.FC<DeliverySheetProps> = ({
     } catch (err) {
       console.error('Failed to complete delivery:', err);
       setError('Error saving delivery to database');
+      isSubmittingRef.current = false;
+      setIsSubmitting(false);
     }
   };
 
@@ -112,16 +124,21 @@ export const DeliverySheet: React.FC<DeliverySheetProps> = ({
       title={t('delivery_sheet_title', language)}
       footer={
         <button
-          type="submit"
-          form="delivery-form"
-          onClick={() => handleConfirm()}
-          className="w-full h-12 bg-iosGreen text-white rounded-[12px] font-semibold text-[16px] active:opacity-85 shadow-md shadow-iosGreen/20 transition-opacity"
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            handleConfirm();
+          }}
+          disabled={isSubmitting}
+          className={`w-full h-12 bg-iosGreen text-white rounded-[12px] font-semibold text-[16px] active:opacity-85 shadow-md shadow-iosGreen/20 transition-opacity ${
+            isSubmitting ? 'opacity-70 cursor-not-allowed' : ''
+          }`}
         >
           {t('delivery_confirm_btn', language)}
         </button>
       }
     >
-      <form id="delivery-form" onSubmit={handleConfirm} className="space-y-4 pt-1">
+      <form id="delivery-form" onSubmit={(e) => { e.preventDefault(); handleConfirm(e); }} className="space-y-4 pt-1">
         {/* Model & Customer summary */}
         <div className="bg-blue-50/60 rounded-[12px] p-3 border border-blue-100 flex items-center justify-between">
           <div>

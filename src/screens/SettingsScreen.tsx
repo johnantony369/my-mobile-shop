@@ -50,7 +50,10 @@ const AppUpdatesSection: React.FC<{ language: Language }> = ({ language }) => {
     if (canInstall) {
       await triggerInstall();
     } else {
-      setShowGuide(true);
+      const triggered = await triggerInstall();
+      if (!triggered) {
+        setShowGuide(true);
+      }
     }
   };
 

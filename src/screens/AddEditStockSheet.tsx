@@ -3,7 +3,7 @@ import { BottomSheet } from '../components/BottomSheet';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { StockItem, StockCategory, Language } from '../types';
 import { db } from '../db/db';
-import { Package, Wrench, Sparkles, Plus, Minus } from 'lucide-react';
+import { Package, Wrench, Plus, Minus } from 'lucide-react';
 
 interface AddEditStockSheetProps {
   isOpen: boolean;
@@ -13,19 +13,6 @@ interface AddEditStockSheetProps {
   language: Language;
   defaultCategory?: StockCategory;
 }
-
-const COMMON_SUGGESTIONS: { label: string; category: StockCategory; defaultPrice?: number; defaultCost?: number }[] = [
-  { label: 'Tempered Glass 11D', category: 'product', defaultPrice: 150, defaultCost: 35 },
-  { label: 'Type-C Fast Cable', category: 'product', defaultPrice: 250, defaultCost: 60 },
-  { label: 'Display Combo Replacement', category: 'service', defaultPrice: 1800, defaultCost: 1100 },
-  { label: 'Battery Replacement', category: 'service', defaultPrice: 950, defaultCost: 450 },
-  { label: 'Charging Port / CC Board Repair', category: 'service', defaultPrice: 450, defaultCost: 120 },
-  { label: 'Smoke Matte Back Cover', category: 'product', defaultPrice: 180, defaultCost: 45 },
-  { label: '20W Fast Charger Adapter', category: 'product', defaultPrice: 599, defaultCost: 210 },
-  { label: 'Software Flashing / Reset', category: 'service', defaultPrice: 500, defaultCost: 0 },
-  { label: 'Ear Receiver / Speaker Repair', category: 'service', defaultPrice: 350, defaultCost: 80 },
-  { label: 'Camera Lens Protector', category: 'product', defaultPrice: 120, defaultCost: 25 },
-];
 
 export const AddEditStockSheet: React.FC<AddEditStockSheetProps> = ({
   isOpen,
@@ -45,6 +32,8 @@ export const AddEditStockSheet: React.FC<AddEditStockSheetProps> = ({
   const [sku, setSku] = useState('');
   const [notes, setNotes] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmittingRef = useRef(false);
 
   const nameInputRef = useRef<HTMLInputElement>(null);
 
@@ -72,6 +61,8 @@ export const AddEditStockSheet: React.FC<AddEditStockSheetProps> = ({
         setNotes('');
       }
       setError(null);
+      isSubmittingRef.current = false;
+      setIsSubmitting(false);
 
       const timer = setTimeout(() => {
         nameInputRef.current?.focus();
@@ -80,21 +71,19 @@ export const AddEditStockSheet: React.FC<AddEditStockSheetProps> = ({
     }
   }, [isOpen, itemToEdit, defaultCategory]);
 
-  const handleApplySuggestion = (sug: typeof COMMON_SUGGESTIONS[0]) => {
-    setName(sug.label);
-    setCategory(sug.category);
-    setUnit(sug.category === 'product' ? 'pcs' : 'service');
-    if (sug.defaultPrice) setSellingPriceStr(sug.defaultPrice.toString());
-    if (sug.defaultCost) setCostPriceStr(sug.defaultCost.toString());
-  };
 
   const handleSave = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
+    setIsSubmitting(true);
 
     const trimmedName = name.trim();
     if (!trimmedName) {
       setError('Please enter item or service name');
       nameInputRef.current?.focus();
+      isSubmittingRef.current = false;
+      setIsSubmitting(false);
       return;
     }
 
@@ -102,6 +91,8 @@ export const AddEditStockSheet: React.FC<AddEditStockSheetProps> = ({
     const parsedSell = parseFloat(cleanSell);
     if (isNaN(parsedSell) || parsedSell < 0 || parsedSell > 9999999) {
       setError('Please enter a valid selling price');
+      isSubmittingRef.current = false;
+      setIsSubmitting(false);
       return;
     }
 
@@ -111,6 +102,8 @@ export const AddEditStockSheet: React.FC<AddEditStockSheetProps> = ({
       const pCost = parseFloat(cleanCost);
       if (isNaN(pCost) || pCost < 0 || pCost > 9999999) {
         setError('Please enter a valid cost price');
+        isSubmittingRef.current = false;
+        setIsSubmitting(false);
         return;
       }
       parsedCost = pCost;
@@ -141,6 +134,8 @@ export const AddEditStockSheet: React.FC<AddEditStockSheetProps> = ({
     } catch (err) {
       console.error('Failed to save stock item:', err);
       setError('Error saving stock to database');
+      isSubmittingRef.current = false;
+      setIsSubmitting(false);
     }
   };
 
@@ -151,17 +146,22 @@ export const AddEditStockSheet: React.FC<AddEditStockSheetProps> = ({
       title={itemToEdit ? 'Edit Stock Item' : 'New Product / Service'}
       footer={
         <button
-          type="submit"
-          form="add-stock-form"
-          onClick={() => handleSave()}
-          className="w-full h-12 bg-iosBlue text-white rounded-[12px] font-semibold text-[16px] active:opacity-85 shadow-md shadow-iosBlue/20 transition-opacity flex items-center justify-center space-x-2"
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            handleSave();
+          }}
+          disabled={isSubmitting}
+          className={`w-full h-12 bg-iosBlue text-white rounded-[12px] font-semibold text-[16px] active:opacity-85 shadow-md shadow-iosBlue/20 transition-opacity flex items-center justify-center space-x-2 ${
+            isSubmitting ? 'opacity-70 cursor-not-allowed' : ''
+          }`}
         >
           {category === 'product' ? <Package className="w-5 h-5" /> : <Wrench className="w-5 h-5" />}
           <span>{itemToEdit ? 'Update Stock Item' : 'Add to Stock'}</span>
         </button>
       }
     >
-      <form id="add-stock-form" onSubmit={handleSave} className="space-y-4 pt-1">
+      <form id="add-stock-form" onSubmit={(e) => { e.preventDefault(); handleSave(e); }} className="space-y-4 pt-1">
         {error && (
           <div className="bg-red-50 text-iosRed p-2.5 rounded-[10px] text-xs font-medium">
             {error}
@@ -209,26 +209,6 @@ export const AddEditStockSheet: React.FC<AddEditStockSheetProps> = ({
             className="w-full bg-[#F2F2F7] rounded-[10px] px-3.5 py-2.5 text-[15px] text-black focus:outline-none focus:ring-2 focus:ring-iosBlue/40 border border-black/[0.04]"
           />
 
-          {/* Quick suggestions chips */}
-          {!itemToEdit && (
-            <div className="pt-1">
-              <span className="text-[11px] text-[#8E8E93] font-medium flex items-center gap-1 mb-1">
-                <Sparkles className="w-3 h-3 text-amber-500" /> Quick Mobile Shop Presets:
-              </span>
-              <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar momentum-scroll overscroll-x-contain touch-pan-x text-xs">
-                {COMMON_SUGGESTIONS.filter((s) => s.category === category).map((sug) => (
-                  <button
-                    key={sug.label}
-                    type="button"
-                    onClick={() => handleApplySuggestion(sug)}
-                    className="shrink-0 bg-white border border-gray-200/80 hover:border-iosBlue text-gray-700 px-2.5 py-1 rounded-full text-[11px] font-medium transition-all active:scale-95 shadow-xs"
-                  >
-                    + {sug.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
 
         {/* 3. Pricing Row: Selling Price & Cost Price */}

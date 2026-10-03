@@ -37,6 +37,8 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
   const [phoneError, setPhoneError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [sendWhatsAppSlip, setSendWhatsAppSlip] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmittingRef = useRef(false);
 
   // Stock picker state
   const [isStockPickerOpen, setIsStockPickerOpen] = useState(false);
@@ -82,6 +84,8 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
       setSelectedStockItem(null);
       setPhoneError(null);
       setFormError(null);
+      isSubmittingRef.current = false;
+      setIsSubmitting(false);
 
       const timer = setTimeout(() => {
         nameInputRef.current?.focus();
@@ -111,6 +115,9 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
 
   const handleSave = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
+    setIsSubmitting(true);
 
     const trimmedName = customerName.trim();
     const trimmedModel = model.trim();
@@ -119,11 +126,15 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
 
     if (!trimmedName || !trimmedModel || !trimmedComplaint) {
       setFormError('Please fill in required fields');
+      isSubmittingRef.current = false;
+      setIsSubmitting(false);
       return;
     }
 
     if (!isValidIndianPhone(cleanedPhone)) {
       setPhoneError(t('invalid_phone_error', language));
+      isSubmittingRef.current = false;
+      setIsSubmitting(false);
       return;
     }
 
@@ -132,6 +143,8 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
     const parsedEstimate = cleanEst ? parseFloat(cleanEst) : undefined;
     if (parsedEstimate !== undefined && (isNaN(parsedEstimate) || parsedEstimate <= 0 || parsedEstimate > 9999999)) {
       setFormError(t('amount_error', language));
+      isSubmittingRef.current = false;
+      setIsSubmitting(false);
       return;
     }
 
@@ -139,6 +152,8 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
     const parsedAdvance = cleanAdv ? parseFloat(cleanAdv) : 0;
     if (isNaN(parsedAdvance) || parsedAdvance < 0 || parsedAdvance > 9999999) {
       setFormError(t('amount_error', language));
+      isSubmittingRef.current = false;
+      setIsSubmitting(false);
       return;
     }
 
@@ -213,6 +228,8 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
     } catch (err) {
       console.error('Failed to save job:', err);
       setFormError('Error saving job to database');
+      isSubmittingRef.current = false;
+      setIsSubmitting(false);
     }
   };
 
@@ -223,16 +240,21 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
       title={jobToEdit ? t('edit_job', language) : t('new_job_btn', language)}
       footer={
         <button
-          type="submit"
-          form="add-job-form"
-          onClick={() => handleSave()}
-          className="w-full h-12 bg-iosBlue text-white rounded-[12px] font-semibold text-[16px] active:opacity-85 shadow-md shadow-iosBlue/20 transition-opacity"
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            handleSave();
+          }}
+          disabled={isSubmitting}
+          className={`w-full h-12 bg-iosBlue text-white rounded-[12px] font-semibold text-[16px] active:opacity-85 shadow-md shadow-iosBlue/20 transition-opacity ${
+            isSubmitting ? 'opacity-70 cursor-not-allowed' : ''
+          }`}
         >
           {jobToEdit ? t('update_job', language) : t('save_job', language)}
         </button>
       }
     >
-      <form id="add-job-form" onSubmit={handleSave} className="space-y-3.5 pt-1">
+      <form id="add-job-form" onSubmit={(e) => { e.preventDefault(); handleSave(e); }} className="space-y-3.5 pt-1">
         {formError && (
           <div className="bg-red-50 text-iosRed p-2.5 rounded-[10px] text-xs font-medium">
             {formError}
