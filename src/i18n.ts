@@ -49,7 +49,7 @@ export const translations = {
     en: 'Yesterday',
   },
   add_entry: {
-    en: '+ Add',
+    en: 'Add',
   },
   empty_today: {
     en: 'No entries today yet',
@@ -156,10 +156,10 @@ export const translations = {
     en: 'Date',
   },
   save_btn: {
-    en: 'Save Entry',
+    en: 'Confirm & Save Entry',
   },
   update_btn: {
-    en: 'Update Entry',
+    en: 'Confirm & Update Entry',
   },
   amount_error: {
     en: 'Enter a valid amount (₹1 to ₹99,99,999)',

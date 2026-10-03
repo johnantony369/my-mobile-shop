@@ -10,7 +10,9 @@ import { DailyRitualCard } from '../components/DailyRitualCard';
 import { EntryList } from '../components/EntryList';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { AddEditSheet } from './AddEditSheet';
-import { Plus } from 'lucide-react';
+import { FloatingAction } from '../components/FloatingAction';
+import { BillSheet } from './BillSheet';
+import { Plus, Receipt } from 'lucide-react';
 
 interface BookScreenProps {
   language: Language;
@@ -34,6 +36,7 @@ export const BookScreen: React.FC<BookScreenProps> = ({
   const [isAddSheetOpen, setIsAddSheetOpen] = useState(false);
   const [entryToEdit, setEntryToEdit] = useState<Entry | null>(null);
   const [entryToDelete, setEntryToDelete] = useState<Entry | null>(null);
+  const [isBillOpen, setIsBillOpen] = useState(false);
 
   // Live query for the selected date's entries from IndexedDB
   const entries = useLiveQuery(
@@ -173,7 +176,22 @@ export const BookScreen: React.FC<BookScreenProps> = ({
       </div>
 
       {/* Prominent iOS-style "+ Add" button fixed above the bottom tab bar */}
-      <div className="fixed bottom-[calc(env(safe-area-inset-bottom)+66px)] right-5 z-30">
+      <FloatingAction>
+        <button
+          type="button"
+          onClick={() => {
+            if (isReadOnly && onOpenPaywall) {
+              onOpenPaywall();
+            } else {
+              setIsBillOpen(true);
+            }
+          }}
+          aria-label="New Bill"
+          className="h-11 px-4 rounded-full flex items-center space-x-2 font-bold text-[14px] bg-white text-iosBlue border border-iosBlue/20 shadow-lg active:scale-95 transition-all duration-150"
+        >
+          <Receipt className="w-4.5 h-4.5" />
+          <span>New Bill</span>
+        </button>
         <button
           type="button"
           onClick={() => {
@@ -202,7 +220,16 @@ export const BookScreen: React.FC<BookScreenProps> = ({
             </>
           )}
         </button>
-      </div>
+      </FloatingAction>
+
+      {/* Easy Billing Sheet */}
+      <BillSheet
+        isOpen={isBillOpen}
+        onClose={() => setIsBillOpen(false)}
+        defaultDate={selectedDate}
+        shopName={shopName}
+        language={language}
+      />
 
       {/* Add / Edit Sheet */}
       <AddEditSheet

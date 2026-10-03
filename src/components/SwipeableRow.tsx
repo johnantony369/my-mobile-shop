@@ -21,44 +21,62 @@ export const SwipeableRow: React.FC<SwipeableRowProps> = ({
   const [offsetX, setOffsetX] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const startX = useRef(0);
-  const currentX = useRef(0);
+  const startY = useRef(0);
   const isDragging = useRef(false);
   const hasMoved = useRef(false);
+  const isHorizontalSwipe = useRef<boolean | null>(null);
 
   const ACTIONS_WIDTH = 140; // width of both buttons combined
 
   const handleTouchStart = (e: React.TouchEvent | React.MouseEvent) => {
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
     startX.current = clientX;
-    currentX.current = clientX;
+    startY.current = clientY;
     isDragging.current = true;
     hasMoved.current = false;
+    isHorizontalSwipe.current = null;
   };
 
   const handleTouchMove = (e: React.TouchEvent | React.MouseEvent) => {
     if (!isDragging.current) return;
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-    const diff = clientX - startX.current;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    const diffX = clientX - startX.current;
+    const diffY = clientY - startY.current;
 
-    if (Math.abs(diff) > 6) {
-      hasMoved.current = true;
+    // Directional lock: If movement is primarily vertical, release and let page scroll naturally
+    if (isHorizontalSwipe.current === null) {
+      if (Math.abs(diffY) > 6 && Math.abs(diffY) >= Math.abs(diffX)) {
+        isHorizontalSwipe.current = false;
+        isDragging.current = false;
+        return;
+      }
+      if (Math.abs(diffX) > 6 && Math.abs(diffX) > Math.abs(diffY)) {
+        isHorizontalSwipe.current = true;
+      }
     }
+
+    if (!isHorizontalSwipe.current) return;
+
+    hasMoved.current = true;
 
     if (isOpen) {
       // Swiping right from open state
-      const newOffset = Math.min(0, Math.max(-ACTIONS_WIDTH, -ACTIONS_WIDTH + diff));
+      const newOffset = Math.min(0, Math.max(-ACTIONS_WIDTH, -ACTIONS_WIDTH + diffX));
       setOffsetX(newOffset);
     } else {
       // Swiping left from closed state
-      if (diff < 0) {
-        setOffsetX(Math.max(-ACTIONS_WIDTH - 20, diff));
+      if (diffX < 0) {
+        setOffsetX(Math.max(-ACTIONS_WIDTH - 20, diffX));
       }
     }
   };
 
   const handleTouchEnd = () => {
-    if (!isDragging.current) return;
+    if (!isDragging.current && isHorizontalSwipe.current === false) return;
     isDragging.current = false;
+    isHorizontalSwipe.current = null;
 
     if (!hasMoved.current) {
       // It was a tap!
@@ -71,7 +89,7 @@ export const SwipeableRow: React.FC<SwipeableRowProps> = ({
       return;
     }
 
-    // Determine snap position
+    // Determine snap position with iOS-style spring snap
     if (isOpen) {
       if (offsetX > -ACTIONS_WIDTH + 40) {
         setIsOpen(false);
@@ -90,7 +108,7 @@ export const SwipeableRow: React.FC<SwipeableRowProps> = ({
   };
 
   return (
-    <div className="relative overflow-hidden w-full bg-white select-none">
+    <div className="relative overflow-hidden w-full bg-white select-none touch-pan-y">
       {/* Background action buttons revealed upon swipe */}
       <div className="absolute inset-y-0 right-0 flex items-stretch z-0">
         <button
@@ -123,9 +141,9 @@ export const SwipeableRow: React.FC<SwipeableRowProps> = ({
         </button>
       </div>
 
-      {/* Foreground sliding row */}
+      {/* Foreground sliding row with spring physics */}
       <div
-        className="relative z-10 bg-white transition-transform duration-150 ease-out"
+        className="relative z-10 bg-white transition-transform duration-200 ease-[cubic-bezier(0.25,1,0.5,1)] touch-pan-y"
         style={{ transform: `translateX(${offsetX}px)` }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}

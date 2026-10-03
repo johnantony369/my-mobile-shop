@@ -113,7 +113,7 @@ export const StockPickerSheet: React.FC<StockPickerSheetProps> = ({
 
           {/* Quick Category Filter Pills */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-1.5 overflow-x-auto no-scrollbar py-0.5">
+            <div className="flex items-center space-x-1.5 overflow-x-auto no-scrollbar momentum-scroll overscroll-x-contain touch-pan-x py-0.5">
               <button
                 type="button"
                 onClick={() => setFilter('all')}

@@ -149,8 +149,19 @@ export const AddEditStockSheet: React.FC<AddEditStockSheetProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title={itemToEdit ? 'Edit Stock Item' : 'New Product / Service'}
+      footer={
+        <button
+          type="submit"
+          form="add-stock-form"
+          onClick={() => handleSave()}
+          className="w-full h-12 bg-iosBlue text-white rounded-[12px] font-semibold text-[16px] active:opacity-85 shadow-md shadow-iosBlue/20 transition-opacity flex items-center justify-center space-x-2"
+        >
+          {category === 'product' ? <Package className="w-5 h-5" /> : <Wrench className="w-5 h-5" />}
+          <span>{itemToEdit ? 'Update Stock Item' : 'Add to Stock'}</span>
+        </button>
+      }
     >
-      <form onSubmit={handleSave} className="space-y-4 pt-1">
+      <form id="add-stock-form" onSubmit={handleSave} className="space-y-4 pt-1">
         {error && (
           <div className="bg-red-50 text-iosRed p-2.5 rounded-[10px] text-xs font-medium">
             {error}
@@ -170,8 +181,8 @@ export const AddEditStockSheet: React.FC<AddEditStockSheetProps> = ({
             }}
             size="md"
             options={[
-              { value: 'product', label: '📦 Product (Inventory)' },
-              { value: 'service', label: '🛠️ Service / Labour' },
+              { value: 'product', label: 'Product (Inventory)' },
+              { value: 'service', label: 'Service / Labour' },
             ]}
           />
         </div>
@@ -204,7 +215,7 @@ export const AddEditStockSheet: React.FC<AddEditStockSheetProps> = ({
               <span className="text-[11px] text-[#8E8E93] font-medium flex items-center gap-1 mb-1">
                 <Sparkles className="w-3 h-3 text-amber-500" /> Quick Mobile Shop Presets:
               </span>
-              <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
+              <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar momentum-scroll overscroll-x-contain touch-pan-x text-xs">
                 {COMMON_SUGGESTIONS.filter((s) => s.category === category).map((sug) => (
                   <button
                     key={sug.label}
@@ -359,17 +370,6 @@ export const AddEditStockSheet: React.FC<AddEditStockSheetProps> = ({
             placeholder={category === 'product' ? 'e.g. 6 months warranty, fits all models' : 'e.g. 30 days display warranty'}
             className="w-full bg-[#F2F2F7] rounded-[10px] px-3.5 py-2 text-[14px] text-black focus:outline-none focus:ring-2 focus:ring-iosBlue/40 border border-black/[0.04]"
           />
-        </div>
-
-        {/* Submit button */}
-        <div className="pt-2">
-          <button
-            type="submit"
-            className="w-full h-12 bg-iosBlue text-white rounded-[12px] font-semibold text-[16px] active:opacity-85 shadow-md shadow-iosBlue/20 transition-opacity flex items-center justify-center space-x-2"
-          >
-            {category === 'product' ? <Package className="w-5 h-5" /> : <Wrench className="w-5 h-5" />}
-            <span>{itemToEdit ? 'Update Stock Item' : 'Add to Stock'}</span>
-          </button>
         </div>
       </form>
     </BottomSheet>

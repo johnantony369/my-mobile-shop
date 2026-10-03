@@ -177,8 +177,23 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title={entryToEdit ? t('edit_entry_title', language) : t('new_entry_title', language)}
+      footer={
+        <button
+          type="submit"
+          form="add-entry-form"
+          onClick={() => handleSave()}
+          disabled={isReadOnly}
+          className={`w-full h-12 rounded-[12px] font-semibold text-[16px] text-white transition-opacity ${
+            isReadOnly
+              ? 'bg-gray-400 cursor-not-allowed'
+              : 'bg-iosBlue active:opacity-85 shadow-md shadow-iosBlue/20'
+          }`}
+        >
+          {entryToEdit ? t('update_btn', language) : t('save_btn', language)}
+        </button>
+      }
     >
-      <form onSubmit={handleSave} className="space-y-4 pt-1">
+      <form id="add-entry-form" onSubmit={handleSave} className="space-y-4 pt-1">
         {isReadOnly && (
           <div className="bg-red-50 text-iosRed p-3 rounded-[10px] text-xs font-medium">
             {t('read_only_locked_msg', language)}
@@ -250,13 +265,13 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
               className="text-xs font-semibold text-iosBlue hover:underline flex items-center space-x-1 active:opacity-75"
             >
               <Package className="w-3.5 h-3.5" />
-              <span>⚡ Pick from Stock ({stockItems.length})</span>
+              <span>Pick from Stock ({stockItems.length})</span>
             </button>
           </div>
 
           {/* Quick stock chips if available */}
           {stockItems.length > 0 && (
-            <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
+            <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar momentum-scroll overscroll-x-contain touch-pan-x text-xs">
               {stockItems.slice(0, 8).map((si) => {
                 const isSelected = selectedStockItem?.id === si.id;
                 return (
@@ -270,7 +285,7 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
                         : 'bg-white text-gray-700 border-gray-200/80 hover:border-iosBlue'
                     }`}
                   >
-                    <span>{si.category === 'product' ? '📦' : '🛠️'}</span>
+
                     <span className="font-semibold">{si.name}</span>
                     <span className={isSelected ? 'text-blue-100' : 'text-gray-400'}>
                       (₹{si.sellingPrice})
@@ -386,21 +401,6 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
               className="w-full bg-[#F2F2F7] rounded-[10px] px-3 py-2 text-[14px] text-black focus:outline-none focus:ring-2 focus:ring-iosBlue/40 border border-black/[0.04]"
             />
           </div>
-        </div>
-
-        {/* Submit button */}
-        <div className="pt-2">
-          <button
-            type="submit"
-            disabled={isReadOnly}
-            className={`w-full h-12 rounded-[12px] font-semibold text-[16px] text-white transition-opacity ${
-              isReadOnly
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-iosBlue active:opacity-85 shadow-md shadow-iosBlue/20'
-            }`}
-          >
-            {entryToEdit ? t('update_btn', language) : t('save_btn', language)}
-          </button>
         </div>
       </form>
 

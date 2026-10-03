@@ -152,6 +152,41 @@ export const JobDetailSheet: React.FC<JobDetailSheetProps> = ({
           </div>
         </div>
 
+        {/* Suggestion Card for RECEIVED / WAITING Jobs: Send Job Intake Slip */}
+        {(job.status === 'received' || job.status === 'waiting') && (
+          <div className="bg-blue-50/80 border border-blue-200/90 rounded-[14px] p-3.5 shadow-sm space-y-2">
+            <div className="flex items-center space-x-2">
+              <MessageSquare className="w-4 h-4 text-iosBlue" />
+              <h4 className="text-[14px] font-bold text-slate-900">
+                Send Repair Job Card Slip
+              </h4>
+            </div>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Send an intake receipt to {job.customerName} on WhatsApp with device model, complaint, advance, and estimate.
+            </p>
+
+            <div className="flex items-center space-x-2 pt-1">
+              <button
+                type="button"
+                onClick={() => openWhatsAppNotification(job, shopName)}
+                className="flex-1 py-2 px-3 bg-iosBlue text-white rounded-full text-xs font-bold flex items-center justify-center space-x-1.5 active:opacity-85 shadow-sm"
+              >
+                <MessageSquare className="w-4 h-4" />
+                <span>Send WhatsApp Slip</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleCopyMessage}
+                className="py-2 px-3 bg-white text-slate-700 border border-slate-300 rounded-full text-xs font-medium flex items-center justify-center space-x-1 active:bg-slate-50"
+              >
+                {copiedToast ? <Check className="w-4 h-4 text-iosGreen" /> : <Copy className="w-4 h-4" />}
+                <span>{copiedToast ? t('message_copied_toast', language) : t('copy_message', language)}</span>
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Suggestion Card for READY Jobs */}
         {job.status === 'ready' && (
           <div className="bg-green-50 border border-green-200 rounded-[14px] p-3.5 shadow-sm space-y-2.5">
@@ -184,6 +219,29 @@ export const JobDetailSheet: React.FC<JobDetailSheetProps> = ({
                 <span>{copiedToast ? t('message_copied_toast', language) : t('copy_message', language)}</span>
               </button>
             </div>
+          </div>
+        )}
+
+        {/* Suggestion Card for DELIVERED Jobs */}
+        {job.status === 'delivered' && (
+          <div className="bg-slate-50 border border-slate-200 rounded-[14px] p-3 shadow-sm flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 rounded-full bg-blue-50 text-iosBlue flex items-center justify-center shrink-0">
+                <MessageSquare className="w-4 h-4" />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-slate-900">Send Delivery Receipt</h4>
+                <p className="text-[11px] text-slate-500">WhatsApp receipt for final payment</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => openWhatsAppNotification(job, shopName)}
+              className="py-1.5 px-3 bg-white border border-slate-300 text-slate-800 rounded-full text-xs font-bold flex items-center space-x-1 active:bg-slate-100 shadow-2xs"
+            >
+              <MessageSquare className="w-3.5 h-3.5 text-iosBlue" />
+              <span>WhatsApp</span>
+            </button>
           </div>
         )}
 

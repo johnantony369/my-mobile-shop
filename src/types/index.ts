@@ -80,3 +80,25 @@ export interface StockItem extends SyncMetadata {
   notes?: string;
   createdAt: number;
 }
+
+export interface BillItem {
+  name: string;
+  qty: number;
+  price: number;
+  stockId?: number;
+}
+
+export interface Bill extends SyncMetadata {
+  id?: number;
+  invoiceNo: string; // e.g. INV-0001
+  date: string; // 'YYYY-MM-DD'
+  customerName?: string;
+  customerPhone?: string;
+  items: BillItem[];
+  subtotal: number;
+  discount: number;
+  total: number;
+  paymentMethod: PaymentMethod;
+  entryId?: number; // linked Day Book entry
+  createdAt: number;
+}

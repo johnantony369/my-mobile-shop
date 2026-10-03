@@ -23,10 +23,15 @@ export const DateStrip: React.FC<DateStripProps> = ({
     }
   }, []);
 
+  const handleSelect = (e: React.MouseEvent<HTMLButtonElement>, dateStr: string) => {
+    e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    onSelectDate(dateStr);
+  };
+
   return (
     <div
       ref={scrollContainerRef}
-      className="flex items-center space-x-2 overflow-x-auto no-scrollbar py-2 px-4 scroll-smooth"
+      className="flex items-center space-x-2 overflow-x-auto no-scrollbar py-2 px-4 scroll-smooth snap-x snap-mandatory momentum-scroll overscroll-x-contain touch-pan-x"
     >
       {days.map((item) => {
         const isSelected = item.dateStr === selectedDate;
@@ -36,8 +41,8 @@ export const DateStrip: React.FC<DateStripProps> = ({
           <button
             key={item.dateStr}
             type="button"
-            onClick={() => onSelectDate(item.dateStr)}
-            className={`flex-shrink-0 flex flex-col items-center justify-center w-[52px] h-[66px] rounded-[12px] transition-all duration-200 ease-[cubic-bezier(0.25,1,0.5,1)] active:scale-95 ${
+            onClick={(e) => handleSelect(e, item.dateStr)}
+            className={`flex-shrink-0 snap-center flex flex-col items-center justify-center w-[52px] h-[66px] rounded-[12px] transition-all duration-200 ease-[cubic-bezier(0.25,1,0.5,1)] active:scale-95 ${
               isSelected
                 ? 'bg-iosBlue text-white shadow-md font-semibold scale-105'
                 : 'bg-white text-iosLabel shadow-sm border border-black/[0.04] active:bg-[#E5E5EA] hover:border-black/[0.08]'

@@ -1,15 +1,22 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Each authenticated user can read and write all documents in their own user directory
-    // (includes entries, jobs, stock, and settings)
-    match /users/{userId}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+    // Helper function to check if the authenticated user is the designated superadmin
+    function isSuperAdmin() {
+      return request.auth != null && request.auth.token.email == 'johnantony271@gmail.com';
     }
 
-    // Each authenticated user can read and write their own account profile summary
+    // Each authenticated user can read and write all documents in their own user directory
+    // (includes entries, jobs, stock, and settings).
+    // Superadmin (johnantony271@gmail.com) has full read and write access across all user data.
+    match /users/{userId}/{document=**} {
+      allow read, write: if (request.auth != null && request.auth.uid == userId) || isSuperAdmin();
+    }
+
+    // Each authenticated user can read and write their own account profile summary.
+    // Superadmin (johnantony271@gmail.com) can list and read all accounts, and update any account.
     match /accounts/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if (request.auth != null && request.auth.uid == userId) || isSuperAdmin();
     }
   }
 }

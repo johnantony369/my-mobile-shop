@@ -115,12 +115,12 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
 
       {/* Sheet Content */}
       <div
-        className={`relative z-10 w-full max-w-lg mx-auto bg-white rounded-t-[24px] shadow-2xl flex flex-col transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] transform ${
+        className={`relative z-10 w-full max-w-lg mx-auto max-h-[90vh] max-h-[90dvh] bg-white rounded-t-[24px] shadow-2xl flex flex-col overflow-hidden transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] transform ${
           animate ? 'translate-y-0' : 'translate-y-full'
         } pb-[calc(env(safe-area-inset-bottom)+14px)]`}
       >
         {/* Grab Handle & Close button */}
-        <div className="relative pt-3 pb-1 flex items-center justify-center">
+        <div className="shrink-0 relative pt-3 pb-1 flex items-center justify-center">
           <div className="w-10 h-1.5 bg-[#C7C7CC] rounded-full" />
           <button
             type="button"
@@ -133,7 +133,7 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
         </div>
 
         {/* Modal Body */}
-        <div className="px-5 pt-1 pb-3 space-y-4">
+        <div className="flex-1 min-h-0 overflow-y-auto px-5 pt-1 pb-3 space-y-4 momentum-scroll overscroll-contain">
           {/* App Logo & Title */}
           <div className="text-center pt-1">
             <img

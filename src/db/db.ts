@@ -1,6 +1,7 @@
 import Dexie, { Table } from 'dexie';
-import { Entry, AppSettings, DaySummary, Job, Language, StockItem } from '../types';
+import { Entry, AppSettings, DaySummary, Job, Language, StockItem, Bill, BillItem, PaymentMethod } from '../types';
 import { getLocalDateString } from '../utils/date';
+import { computeBillTotals, formatInvoiceNo, summarizeBillItems } from '../utils/billing';
 
 export function generateCloudId(): string {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
@@ -14,6 +15,7 @@ export class ShopDatabase extends Dexie {
   settings!: Table<AppSettings, number>;
   jobs!: Table<Job, number>;
   stock!: Table<StockItem, number>;
+  bills!: Table<Bill, number>;
 
   constructor() {
     super('MyMobileShopDB');
@@ -60,6 +62,14 @@ export class ShopDatabase extends Dexie {
         if (!item.updatedAt) item.updatedAt = item.createdAt ? new Date(item.createdAt).toISOString() : new Date().toISOString();
         if (!item.syncStatus) item.syncStatus = 'pending';
       });
+    });
+
+    this.version(5).stores({
+      entries: '++id, cloudId, type, amount, date, createdAt, updatedAt, syncStatus, paymentMethod, repairId',
+      settings: '++id, cloudId, updatedAt, syncStatus',
+      jobs: '++id, cloudId, status, phone, customerName, model, receivedAt, readyAt, deliveredAt, bookEntryId, updatedAt, syncStatus',
+      stock: '++id, cloudId, name, category, sellingPrice, quantity, sku, createdAt, updatedAt, syncStatus',
+      bills: '++id, cloudId, invoiceNo, date, createdAt, updatedAt, syncStatus',
     });
 
     // Hooks to ensure new records receive sync fields automatically
@@ -109,6 +119,12 @@ export class ShopDatabase extends Dexie {
         return { ...modifications, updatedAt: new Date().toISOString(), syncStatus: modifications.syncStatus || 'pending' };
       }
       return undefined;
+    });
+
+    this.bills.hook('creating', (_primKey, obj) => {
+      if (!obj.cloudId) obj.cloudId = generateCloudId();
+      if (!obj.updatedAt) obj.updatedAt = new Date().toISOString();
+      if (!obj.syncStatus) obj.syncStatus = 'pending';
     });
   }
 }
@@ -211,6 +227,60 @@ export async function adjustStockQuantity(id: number, delta: number): Promise<nu
     syncStatus: 'pending',
   });
   return newQty;
+}
+
+export async function getNextInvoiceNo(): Promise<string> {
+  const count = await db.bills.count();
+  return formatInvoiceNo(count + 1);
+}
+
+export interface CreateBillInput {
+  customerName?: string;
+  customerPhone?: string;
+  items: BillItem[];
+  discount: number;
+  paymentMethod: PaymentMethod;
+  date: string;
+}
+
+/**
+ * Saves a bill, creates the linked Day Book "In" entry, and deducts stock
+ * for product items, all in one transaction.
+ */
+export async function createBill(input: CreateBillInput): Promise<Bill> {
+  const { subtotal, total } = computeBillTotals(input.items, input.discount);
+  return db.transaction('rw', db.bills, db.entries, db.stock, async () => {
+    const invoiceNo = await getNextInvoiceNo();
+    const now = Date.now();
+    const entryId = await db.entries.add({
+      type: 'in',
+      amount: total,
+      item: summarizeBillItems(input.items),
+      customerName: input.customerName?.trim() || undefined,
+      note: invoiceNo,
+      paymentMethod: input.paymentMethod,
+      date: input.date,
+      createdAt: now,
+    });
+    const bill: Bill = {
+      invoiceNo,
+      date: input.date,
+      customerName: input.customerName?.trim() || undefined,
+      customerPhone: input.customerPhone?.trim() || undefined,
+      items: input.items,
+      subtotal,
+      discount: Math.max(0, input.discount || 0),
+      total,
+      paymentMethod: input.paymentMethod,
+      entryId: entryId as number,
+      createdAt: now,
+    };
+    const id = await db.bills.add(bill);
+    for (const it of input.items) {
+      if (it.stockId) await adjustStockQuantity(it.stockId, -it.qty);
+    }
+    return { ...bill, id: id as number };
+  });
 }
 
 export function computeSummary(entries: Entry[]): DaySummary {

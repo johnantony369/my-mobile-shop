@@ -4,8 +4,10 @@ import { BottomSheet } from '../components/BottomSheet';
 import { Job, Language, StockItem } from '../types';
 import { t } from '../i18n';
 import { db, cleanIndianPhone, isValidIndianPhone } from '../db/db';
+import { getLocalDateString } from '../utils/date';
+import { openWhatsAppNotification, buildIntakeSlipMessage } from '../utils/repairs';
 import { StockPickerSheet } from '../components/StockPickerSheet';
-import { Wrench, X, Check } from 'lucide-react';
+import { Wrench, X, Check, MessageSquare } from 'lucide-react';
 
 interface AddEditJobSheetProps {
   isOpen: boolean;
@@ -13,6 +15,7 @@ interface AddEditJobSheetProps {
   onSaved: (jobId: number) => void;
   jobToEdit: Job | null;
   language: Language;
+  shopName?: string;
 }
 
 export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
@@ -21,6 +24,7 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
   onSaved,
   jobToEdit,
   language,
+  shopName = 'My Mobile Shop',
 }) => {
   const [customerName, setCustomerName] = useState('');
   const [phone, setPhone] = useState('');
@@ -32,6 +36,7 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
   const [imei, setImei] = useState('');
   const [phoneError, setPhoneError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const [sendWhatsAppSlip, setSendWhatsAppSlip] = useState(true);
 
   // Stock picker state
   const [isStockPickerOpen, setIsStockPickerOpen] = useState(false);
@@ -167,6 +172,41 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
           finalAmount: null,
           bookEntryId: null,
         });
+
+        // If advance was paid, record cash entry in today's Day Book so closing balance matches
+        if (parsedAdvance > 0) {
+          const today = getLocalDateString();
+          await db.entries.add({
+            type: 'in',
+            amount: parsedAdvance,
+            paymentMethod: 'cash',
+            item: `Advance — Repair: ${trimmedModel}`,
+            customerName: trimmedName,
+            note: `Advance for job #${id} (${trimmedComplaint})`,
+            repairId: id,
+            date: today,
+            createdAt: Date.now(),
+          });
+        }
+
+        // Send WhatsApp intake slip if selected
+        if (sendWhatsAppSlip) {
+          const newJob: Job = {
+            id,
+            customerName: trimmedName,
+            phone: cleanedPhone,
+            model: trimmedModel,
+            complaint: trimmedComplaint,
+            estimate: parsedEstimate,
+            advance: parsedAdvance,
+            status: 'received',
+            expectedDate: expectedDate || undefined,
+            imei: imei.trim() || undefined,
+            receivedAt: Date.now(),
+          };
+          openWhatsAppNotification(newJob, shopName, buildIntakeSlipMessage(newJob, shopName));
+        }
+
         onSaved(id);
       }
       onClose();
@@ -181,8 +221,18 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title={jobToEdit ? t('edit_job', language) : t('new_job_btn', language)}
+      footer={
+        <button
+          type="submit"
+          form="add-job-form"
+          onClick={() => handleSave()}
+          className="w-full h-12 bg-iosBlue text-white rounded-[12px] font-semibold text-[16px] active:opacity-85 shadow-md shadow-iosBlue/20 transition-opacity"
+        >
+          {jobToEdit ? t('update_job', language) : t('save_job', language)}
+        </button>
+      }
     >
-      <form onSubmit={handleSave} className="space-y-3.5 pt-1">
+      <form id="add-job-form" onSubmit={handleSave} className="space-y-3.5 pt-1">
         {formError && (
           <div className="bg-red-50 text-iosRed p-2.5 rounded-[10px] text-xs font-medium">
             {formError}
@@ -258,13 +308,13 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
               className="text-xs font-semibold text-iosBlue hover:underline flex items-center space-x-1 active:opacity-75"
             >
               <Wrench className="w-3.5 h-3.5" />
-              <span>⚡ Pick from Stock ({stockItems.length})</span>
+              <span>Pick from Stock ({stockItems.length})</span>
             </button>
           </div>
 
           {/* Quick chips of services & repair parts */}
           {stockItems.length > 0 && (
-            <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
+            <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar momentum-scroll overscroll-x-contain touch-pan-x text-xs">
               {stockItems.slice(0, 8).map((si) => {
                 const isSelected = selectedStockItem?.id === si.id;
                 return (
@@ -278,7 +328,7 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
                         : 'bg-white text-gray-700 border-gray-200/80 hover:border-purple-500'
                     }`}
                   >
-                    <span>{si.category === 'service' ? '🛠️' : '📦'}</span>
+
                     <span className="font-semibold">{si.name}</span>
                     <span className={isSelected ? 'text-purple-100' : 'text-gray-400'}>
                       (₹{si.sellingPrice})
@@ -393,15 +443,21 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
           </div>
         </div>
 
-        {/* Submit button */}
-        <div className="pt-2">
-          <button
-            type="submit"
-            className="w-full h-12 bg-iosBlue text-white rounded-[12px] font-semibold text-[16px] active:opacity-85 shadow-md shadow-iosBlue/20 transition-opacity"
-          >
-            {jobToEdit ? t('update_job', language) : t('save_job', language)}
-          </button>
-        </div>
+        {/* Send WhatsApp Job Slip Toggle (For new jobs) */}
+        {!jobToEdit && (
+          <label className="flex items-center space-x-2.5 p-3 bg-green-50/70 border border-green-200/80 rounded-[12px] cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={sendWhatsAppSlip}
+              onChange={(e) => setSendWhatsAppSlip(e.target.checked)}
+              className="w-4 h-4 rounded text-iosGreen focus:ring-iosGreen border-gray-300"
+            />
+            <div className="flex-1 flex items-center space-x-1.5 text-xs text-green-900 font-medium">
+              <MessageSquare className="w-3.5 h-3.5 text-iosGreen flex-shrink-0" />
+              <span>Send WhatsApp Job Card to customer on save</span>
+            </div>
+          </label>
+        )}
       </form>
 
       {/* Stock Picker Sheet */}

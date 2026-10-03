@@ -60,8 +60,8 @@ export const DeliverySheet: React.FC<DeliverySheetProps> = ({
     }
   };
 
-  const handleConfirm = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleConfirm = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (isNaN(parsedFinal) || parsedFinal < 0 || parsedFinal > 9999999) {
       setError(t('amount_error', language));
       return;
@@ -70,16 +70,17 @@ export const DeliverySheet: React.FC<DeliverySheetProps> = ({
     try {
       const today = getLocalDateString();
       let bookEntryId: number | null = null;
+      const amountToRecord = advance > 0 ? Math.max(0, parsedFinal - advance) : parsedFinal;
 
-      // If addToBook is checked and amount > 0, create Book entry
-      if (addToBook && parsedFinal > 0) {
+      // If addToBook is checked and amount > 0, create Book entry for the money actually collected today
+      if (addToBook && amountToRecord > 0) {
         bookEntryId = await db.entries.add({
           type: 'in',
-          amount: parsedFinal,
+          amount: amountToRecord,
           paymentMethod,
-          item: `Repair — ${job.model}`,
+          item: advance > 0 ? `Repair Balance — ${job.model}` : `Repair — ${job.model}`,
           customerName: job.customerName,
-          note: job.complaint,
+          note: advance > 0 ? `Balance collected (Total: ₹${parsedFinal} - ₹${advance} advance)` : job.complaint,
           repairId: job.id,
           date: today,
           createdAt: Date.now(),
@@ -109,8 +110,18 @@ export const DeliverySheet: React.FC<DeliverySheetProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title={t('delivery_sheet_title', language)}
+      footer={
+        <button
+          type="submit"
+          form="delivery-form"
+          onClick={() => handleConfirm()}
+          className="w-full h-12 bg-iosGreen text-white rounded-[12px] font-semibold text-[16px] active:opacity-85 shadow-md shadow-iosGreen/20 transition-opacity"
+        >
+          {t('delivery_confirm_btn', language)}
+        </button>
+      }
     >
-      <form onSubmit={handleConfirm} className="space-y-4 pt-1">
+      <form id="delivery-form" onSubmit={handleConfirm} className="space-y-4 pt-1">
         {/* Model & Customer summary */}
         <div className="bg-blue-50/60 rounded-[12px] p-3 border border-blue-100 flex items-center justify-between">
           <div>
@@ -201,24 +212,18 @@ export const DeliverySheet: React.FC<DeliverySheetProps> = ({
           />
           <div className="flex-1">
             <span className="text-[15px] font-semibold text-black block">
-              {t('add_to_book_checkbox', language)}
+              {advance > 0
+                ? `Add balance (${formatINR(Math.max(0, balance))}) to Book`
+                : t('add_to_book_checkbox', language)}
             </span>
             <span className="text-xs text-[#8E8E93]">
-              {t('summary_in', language)} ({paymentMethod.toUpperCase()})
+              {advance > 0
+                ? `Advance of ${formatINR(advance)} was already recorded earlier`
+                : `${t('summary_in', language)} (${paymentMethod.toUpperCase()})`}
             </span>
           </div>
           <CheckCircle2 className={`w-5 h-5 ${addToBook ? 'text-iosBlue' : 'text-gray-300'}`} />
         </label>
-
-        {/* Confirm Button */}
-        <div className="pt-2">
-          <button
-            type="submit"
-            className="w-full h-12 bg-iosGreen text-white rounded-[12px] font-semibold text-[16px] active:opacity-85 shadow-md shadow-iosGreen/20 transition-opacity"
-          >
-            {t('delivery_confirm_btn', language)}
-          </button>
-        </div>
       </form>
     </BottomSheet>
   );

@@ -1,3 +1,4 @@
+import { FloatingAction } from '../components/FloatingAction';
 import React, { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, calculateDaysInShop } from '../db/db';
@@ -301,7 +302,7 @@ export const RepairsScreen: React.FC<RepairsScreenProps> = ({
       </div>
 
       {/* Floating New Job Button */}
-      <div className="fixed bottom-[calc(env(safe-area-inset-bottom)+66px)] right-5 z-30">
+      <FloatingAction>
         <button
           type="button"
           onClick={() => {
@@ -330,7 +331,7 @@ export const RepairsScreen: React.FC<RepairsScreenProps> = ({
             </>
           )}
         </button>
-      </div>
+      </FloatingAction>
 
       {/* Add / Edit Sheet */}
       <AddEditJobSheet
@@ -338,6 +339,7 @@ export const RepairsScreen: React.FC<RepairsScreenProps> = ({
         onClose={() => setIsAddEditOpen(false)}
         jobToEdit={jobToEdit}
         language={language}
+        shopName={shopName}
         onSaved={async (id) => {
           const fresh = await db.jobs.get(id);
           if (fresh) setSelectedJob(fresh);

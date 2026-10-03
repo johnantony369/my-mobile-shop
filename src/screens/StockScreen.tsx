@@ -1,3 +1,4 @@
+import { FloatingAction } from '../components/FloatingAction';
 import React, { useState, useMemo, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, softDeleteStockItem, adjustStockQuantity } from '../db/db';
@@ -576,7 +577,7 @@ export const StockScreen: React.FC<StockScreenProps> = ({
       </div>
 
       {/* Floating Add Item Button */}
-      <div className="fixed bottom-[calc(env(safe-area-inset-bottom)+66px)] right-5 sm:right-[max(1.25rem,calc((100vw-32rem)/2+1.25rem))] z-30">
+      <FloatingAction>
         <button
           type="button"
           onClick={() => {
@@ -604,7 +605,7 @@ export const StockScreen: React.FC<StockScreenProps> = ({
             </>
           )}
         </button>
-      </div>
+      </FloatingAction>
 
       {/* Add / Edit Sheet Modal */}
       {isAddSheetOpen && (
