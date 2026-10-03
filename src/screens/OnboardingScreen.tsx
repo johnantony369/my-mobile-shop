@@ -36,7 +36,8 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
     }
 
     try {
-      await initAppSettings(trimmed, language, repairsChoice === 'yes');
+      const uid = auth?.currentUser?.uid;
+      await initAppSettings(trimmed, language, repairsChoice === 'yes', true, uid);
       onComplete();
     } catch (err) {
       console.error('Error saving initial settings:', err);

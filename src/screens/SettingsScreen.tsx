@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { AppSettings, Language } from '../types';
 import { t } from '../i18n';
-import { db, updateAppSettings } from '../db/db';
+import { updateAppSettings, clearLocalDatabase } from '../db/db';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { checkCode, formatActivationCode, getTrialDaysRemaining } from '../utils/activation';
 import { exportBackup, importBackup, isBackupNeeded } from '../utils/backup';
@@ -32,9 +32,9 @@ import {
   Crown,
   Phone,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { PaywallModal } from '../components/PaywallModal';
 import { isSuperAdmin, hasFullAccess } from '../utils/admin';
-import { AdminDashboardModal } from '../components/AdminDashboardModal';
 import { LegalModal } from '../components/LegalModal';
 import { linkGoogleAccount } from '../firebase/auth';
 import { LinkPhoneModal } from '../components/LinkPhoneModal';
@@ -166,6 +166,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   onRefreshSettings,
   onOpenPaywall,
 }) => {
+  const navigate = useNavigate();
   const [shopName, setShopName] = useState(settings.shopName);
   const [isSavedNotice, setIsSavedNotice] = useState(false);
 
@@ -188,7 +189,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const { user, isConfigured, syncState, lastSyncTime, syncError, triggerSync, signOut, reloadUser } = useAuth();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isSignOutModalOpen, setIsSignOutModalOpen] = useState(false);
-  const [isAdminDashboardOpen, setIsAdminDashboardOpen] = useState(false);
   const [isLegalModalOpen, setIsLegalModalOpen] = useState(false);
   const [isLinkPhoneModalOpen, setIsLinkPhoneModalOpen] = useState(false);
   const [isLinkingGoogle, setIsLinkingGoogle] = useState(false);
@@ -235,9 +235,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const handleSignOutConfirm = async () => {
     if (user) {
       await signOut();
+    } else {
+      await clearLocalDatabase();
     }
-    // Also clear settings to allow re-onboarding / new shop setup if desired
-    await db.settings.clear();
     setIsSignOutModalOpen(false);
     onRefreshSettings();
     window.location.reload();
@@ -328,7 +328,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   };
 
   return (
-    <div className="min-h-screen pb-28 pt-2">
+    <div className="flex flex-col min-h-screen overflow-y-auto pb-28 pt-2">
       <div className="max-w-lg mx-auto px-4 space-y-4">
         {/* Large Title */}
         <h1 className="text-[32px] font-extrabold text-black tracking-tight mb-2">
@@ -455,7 +455,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
             <button
               type="button"
-              onClick={() => setIsAdminDashboardOpen(true)}
+              onClick={() => navigate('/admin')}
               className="mt-3.5 w-full py-2.5 px-4 bg-purple-600 hover:bg-purple-500 text-white rounded-[12px] font-bold text-xs flex items-center justify-center gap-2 shadow-md shadow-purple-600/30 active:scale-[0.98] transition-all"
             >
               <Crown className="w-4 h-4 text-amber-300" />
@@ -986,7 +986,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       <ConfirmModal
         isOpen={isSignOutModalOpen}
         title="Sign Out?"
-        message="Your local shop records will remain safely saved on this device after signing out."
+        message="Your shop records are safely backed up to your cloud account. Signing out will clear local data on this device so another account can sign in securely."
         confirmLabel="Sign Out"
         cancelLabel={t('cancel_action', language)}
         isDestructive={false}
@@ -1009,12 +1009,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         language={language}
         onActivated={onRefreshSettings}
         trialDaysRemaining={trialDays}
-      />
-
-      {/* Superadmin Dashboard Modal */}
-      <AdminDashboardModal
-        isOpen={isAdminDashboardOpen}
-        onClose={() => setIsAdminDashboardOpen(false)}
       />
 
       {/* Legal & Privacy Modal */}

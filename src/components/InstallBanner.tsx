@@ -79,37 +79,42 @@ export const InstallGuideModal: React.FC<{
       )}
 
       {platform === 'android' && (
-        <ol className="space-y-3.5 text-sm text-[#3A3A3C] pt-1">
-          <li className="flex items-start gap-3">
-            <span className="w-6 h-6 rounded-full bg-iosBlue text-white text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
-              1
-            </span>
-            <span>
-              In Chrome / browser, tap the menu{' '}
-              <span className="inline-flex items-center gap-0.5 font-semibold text-black bg-gray-100 px-1.5 py-0.5 rounded">
-                <MoreVertical className="w-3.5 h-3.5" /> (3 dots)
-              </span>{' '}
-              in the top right
-            </span>
-          </li>
-          <li className="flex items-start gap-3">
-            <span className="w-6 h-6 rounded-full bg-iosBlue text-white text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
-              2
-            </span>
-            <span>
-              Tap <strong className="text-black">"Install app"</strong> or{' '}
-              <strong className="text-black">"Add to Home screen"</strong>
-            </span>
-          </li>
-          <li className="flex items-start gap-3">
-            <span className="w-6 h-6 rounded-full bg-iosBlue text-white text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
-              3
-            </span>
-            <span>
-              Tap <strong className="text-iosBlue">"Install"</strong> to add it to your apps list
-            </span>
-          </li>
-        </ol>
+        <div className="space-y-3 pt-1">
+          <ol className="space-y-3 text-sm text-[#3A3A3C]">
+            <li className="flex items-start gap-3">
+              <span className="w-6 h-6 rounded-full bg-iosBlue text-white text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
+                1
+              </span>
+              <span>
+                In Chrome / browser, tap the menu{' '}
+                <span className="inline-flex items-center gap-0.5 font-semibold text-black bg-gray-100 px-1.5 py-0.5 rounded">
+                  <MoreVertical className="w-3.5 h-3.5" /> (3 dots)
+                </span>{' '}
+                in the top right
+              </span>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="w-6 h-6 rounded-full bg-iosBlue text-white text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
+                2
+              </span>
+              <span>
+                Tap <strong className="text-black">"Install app"</strong> or{' '}
+                <strong className="text-black">"Add to Home screen"</strong>
+              </span>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="w-6 h-6 rounded-full bg-iosBlue text-white text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
+                3
+              </span>
+              <span>
+                Tap <strong className="text-iosBlue">"Install"</strong> to add it to your apps list
+              </span>
+            </li>
+          </ol>
+          <div className="bg-amber-50 border border-amber-200/60 rounded-xl p-2.5 text-xs text-amber-900 leading-relaxed font-medium">
+            💡 <strong>Note:</strong> If you opened this link inside WhatsApp or another app, tap the 3 dots and choose <strong>"Open in Chrome"</strong> first.
+          </div>
+        </div>
       )}
 
       {platform === 'desktop' && (

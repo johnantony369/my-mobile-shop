@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db, updateAppSettings } from './db/db';
+import { db, updateAppSettings, clearLocalDatabase } from './db/db';
 import { TabBar, TabType } from './components/TabBar';
 import { BookScreen } from './screens/BookScreen';
 import { StockScreen } from './screens/StockScreen';
@@ -88,8 +88,31 @@ export default function App() {
   const [checkingCloud, setCheckingCloud] = useState(false);
   const [checkedCloudUid, setCheckedCloudUid] = useState<string | null>(null);
 
+  const isMismatched = Boolean(
+    user &&
+    settingsList &&
+    settingsList.length > 0 &&
+    settingsList[0].ownerUid &&
+    settingsList[0].ownerUid !== user.uid
+  );
+
   useEffect(() => {
-    if (user && settingsList !== undefined && settingsList.length === 0 && checkedCloudUid !== user.uid) {
+    if (!user || settingsList === undefined) return;
+
+    if (isMismatched) {
+      clearLocalDatabase().then(() => {
+        setCheckingCloud(true);
+        pullCloudChanges(user.uid)
+          .catch(err => console.warn('Could not pull cloud changes in App:', err))
+          .finally(() => {
+            setCheckedCloudUid(user.uid);
+            setCheckingCloud(false);
+          });
+      });
+      return;
+    }
+
+    if (settingsList.length === 0 && checkedCloudUid !== user.uid) {
       setCheckingCloud(true);
       pullCloudChanges(user.uid)
         .catch(err => console.warn('Could not pull cloud changes in App:', err))
@@ -98,7 +121,7 @@ export default function App() {
           setCheckingCloud(false);
         });
     }
-  }, [user, settingsList, checkedCloudUid]);
+  }, [user, settingsList, checkedCloudUid, isMismatched]);
 
   const currentSettings = settingsList && settingsList[0];
   const showStock = currentSettings ? currentSettings.showStock !== false : true;
@@ -146,8 +169,8 @@ export default function App() {
     );
   }
 
-  // Show loading spinner while determining auth state or pulling cloud data for existing user
-  if (authLoading || (user && settingsList?.length === 0 && (checkingCloud || checkedCloudUid !== user.uid))) {
+  // Show loading spinner while determining auth state, handling account switch, or pulling cloud data
+  if (authLoading || isMismatched || (user && settingsList?.length === 0 && (checkingCloud || checkedCloudUid !== user.uid))) {
     return (
       <div className="min-h-screen bg-iosBg flex flex-col items-center justify-center p-6 text-center select-none">
         <div className="w-9 h-9 border-3 border-iosBlue border-t-transparent rounded-full animate-spin mb-4" />

@@ -9,6 +9,7 @@ import {
   confirmOtp
 } from '../firebase/auth';
 import { pullCloudChanges } from '../firebase/sync';
+import { clearLocalDatabase, getAppSettings } from '../db/db';
 import { ConfirmationResult, RecaptchaVerifier } from 'firebase/auth';
 import {
   Store,
@@ -76,15 +77,17 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
       let userObj;
       if (mode === 'register') {
         userObj = await registerWithPassword(cleanId, password);
-        localStorage.setItem('mms_authenticated', 'true');
-        localStorage.setItem('mms_user_id', userObj.uid);
-        setSuccessMsg('Account created successfully!');
       } else {
         userObj = await loginWithPassword(cleanId, password);
-        localStorage.setItem('mms_authenticated', 'true');
-        localStorage.setItem('mms_user_id', userObj.uid);
-        setSuccessMsg('Logged in successfully!');
       }
+      const previousUid = localStorage.getItem('mms_user_id');
+      const localSettings = await getAppSettings();
+      if ((previousUid && previousUid !== userObj.uid) || (localSettings?.ownerUid && localSettings.ownerUid !== userObj.uid)) {
+        await clearLocalDatabase();
+      }
+      localStorage.setItem('mms_authenticated', 'true');
+      localStorage.setItem('mms_user_id', userObj.uid);
+      setSuccessMsg(mode === 'register' ? 'Account created successfully!' : 'Logged in successfully!');
       try {
         await pullCloudChanges(userObj.uid);
       } catch (syncErr) {
@@ -113,6 +116,11 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
     try {
       setLoading(true);
       const u = await loginWithGoogle();
+      const previousUid = localStorage.getItem('mms_user_id');
+      const localSettings = await getAppSettings();
+      if ((previousUid && previousUid !== u.uid) || (localSettings?.ownerUid && localSettings.ownerUid !== u.uid)) {
+        await clearLocalDatabase();
+      }
       localStorage.setItem('mms_authenticated', 'true');
       localStorage.setItem('mms_user_id', u.uid);
       setSuccessMsg('Logged in successfully!');
@@ -178,6 +186,11 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
     try {
       setLoading(true);
       const u = await confirmOtp(confirmationRef.current, otpCode);
+      const previousUid = localStorage.getItem('mms_user_id');
+      const localSettings = await getAppSettings();
+      if ((previousUid && previousUid !== u.uid) || (localSettings?.ownerUid && localSettings.ownerUid !== u.uid)) {
+        await clearLocalDatabase();
+      }
       localStorage.setItem('mms_authenticated', 'true');
       localStorage.setItem('mms_user_id', u.uid);
       setSuccessMsg('Logged in successfully!');

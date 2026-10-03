@@ -140,4 +140,28 @@ describe('Firebase Sync Engine Reconciliation', () => {
     const local = await db.entries.get(id);
     expect(local).toBeUndefined();
   });
+
+  it('inserts new remote bill into local Dexie', async () => {
+    const { reconcileRemoteBills } = await import('../src/firebase/sync');
+    const remoteBill = {
+      cloudId: 'cloud-bill-1',
+      invoiceNo: 'INV-1001',
+      date: '2026-09-29',
+      items: [{ name: 'Screen Guard', qty: 1, price: 150 }],
+      subtotal: 150,
+      discount: 0,
+      total: 150,
+      createdAt: 1727600000000,
+      updatedAt: '2026-09-29T10:00:00.000Z',
+      syncStatus: 'synced' as const,
+    };
+
+    const count = await reconcileRemoteBills([remoteBill]);
+    expect(count).toBe(1);
+
+    const localBill = await db.bills.where('cloudId').equals('cloud-bill-1').first();
+    expect(localBill).toBeDefined();
+    expect(localBill?.invoiceNo).toBe('INV-1001');
+    expect(localBill?.total).toBe(150);
+  });
 });

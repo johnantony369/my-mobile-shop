@@ -30,6 +30,7 @@ if (isFirebaseConfigured()) {
     auth = getAuth(app);
     dbFirestore = getFirestore(app);
     googleProvider = new GoogleAuthProvider();
+    googleProvider.setCustomParameters({ prompt: 'select_account' });
   } catch (err) {
     console.warn('Failed to initialize Firebase SDK:', err);
   }

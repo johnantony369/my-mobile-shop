@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { User, onAuthStateChanged } from 'firebase/auth';
 import { logout } from './auth';
 import { auth, isFirebaseConfigured } from './config';
-import { startAutoSync, syncNow, SyncState } from './sync';
+import { startAutoSync, syncNow, SyncState, pushPendingChanges } from './sync';
+import { clearLocalDatabase } from '../db/db';
 
 export interface UseAuthReturn {
   user: User | null;
@@ -36,9 +37,14 @@ export function useAuth(): UseAuthReturn {
     let authReady = false;
 
     // 1. Listen for auth changes (sign in, sign out, user switch)
-    const unsubscribe = onAuthStateChanged(auth, currentUser => {
+    const unsubscribe = onAuthStateChanged(auth, async currentUser => {
       if (!isMounted) return;
       if (currentUser) {
+        const previousUid = localStorage.getItem('mms_user_id');
+        if (previousUid && previousUid !== currentUser.uid) {
+          console.warn(`Account switched from ${previousUid} to ${currentUser.uid}. Clearing local database.`);
+          await clearLocalDatabase();
+        }
         setUser(currentUser);
         localStorage.setItem('mms_authenticated', 'true');
         localStorage.setItem('mms_user_id', currentUser.uid);
@@ -55,10 +61,15 @@ export function useAuth(): UseAuthReturn {
     // 2. Wait for authStateReady() so persisted credentials from IndexedDB are completely restored
     if (typeof auth.authStateReady === 'function') {
       auth.authStateReady()
-        .then(() => {
+        .then(async () => {
           if (!isMounted) return;
           authReady = true;
           if (auth?.currentUser) {
+            const previousUid = localStorage.getItem('mms_user_id');
+            if (previousUid && previousUid !== auth.currentUser.uid) {
+              console.warn(`Account switched in authStateReady from ${previousUid} to ${auth.currentUser.uid}. Clearing local database.`);
+              await clearLocalDatabase();
+            }
             setUser(auth.currentUser);
             localStorage.setItem('mms_authenticated', 'true');
             localStorage.setItem('mms_user_id', auth.currentUser.uid);
@@ -121,8 +132,18 @@ export function useAuth(): UseAuthReturn {
   }, [user]);
 
   const signOut = useCallback(async () => {
+    try {
+      if (auth?.currentUser && typeof navigator !== 'undefined' && navigator.onLine) {
+        await pushPendingChanges(auth.currentUser.uid).catch(err => {
+          console.warn('Pre-signout sync push failed:', err);
+        });
+      }
+    } catch (err) {
+      console.warn('Pre-signout sync error:', err);
+    }
     localStorage.removeItem('mms_authenticated');
     localStorage.removeItem('mms_user_id');
+    await clearLocalDatabase();
     await logout();
     setUser(null);
     setSyncState('idle');

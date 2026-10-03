@@ -20,9 +20,27 @@ interface UsePWAInstallReturn {
 }
 
 /** BeforeInstallPromptEvent is not in standard TypeScript lib yet */
-interface BeforeInstallPromptEvent extends Event {
+export interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
+
+/** Global store for the beforeinstallprompt event so it is never missed if fired early */
+let globalDeferredPrompt: BeforeInstallPromptEvent | null = null;
+const promptListeners = new Set<(prompt: BeforeInstallPromptEvent | null) => void>();
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeinstallprompt', (e: Event) => {
+    // Prevent Chromium from showing default ambient mini-infobar so our custom install UI controls the flow
+    e.preventDefault();
+    globalDeferredPrompt = e as BeforeInstallPromptEvent;
+    promptListeners.forEach(listener => listener(globalDeferredPrompt));
+  });
+
+  window.addEventListener('appinstalled', () => {
+    globalDeferredPrompt = null;
+    promptListeners.forEach(listener => listener(null));
+  });
 }
 
 export function detectPlatform(): InstallPlatform {
@@ -49,7 +67,9 @@ export function detectIsInstalled(): boolean {
 }
 
 export function usePWAInstall(): UsePWAInstallReturn {
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(
+    () => globalDeferredPrompt
+  );
   const [isInstalled, setIsInstalled] = useState<boolean>(detectIsInstalled);
   const [dismissed, setDismissed] = useState<boolean>(() => {
     try {
@@ -60,7 +80,23 @@ export function usePWAInstall(): UsePWAInstallReturn {
   });
 
   const platform = detectPlatform();
-  const canInstall = !!deferredPrompt;
+  const canInstall = Boolean(deferredPrompt || globalDeferredPrompt);
+
+  // Synchronize with global prompt store
+  useEffect(() => {
+    const listener = (prompt: BeforeInstallPromptEvent | null) => {
+      setDeferredPrompt(prompt);
+    };
+    promptListeners.add(listener);
+
+    if (globalDeferredPrompt && !deferredPrompt) {
+      setDeferredPrompt(globalDeferredPrompt);
+    }
+
+    return () => {
+      promptListeners.delete(listener);
+    };
+  }, [deferredPrompt]);
 
   // Clean up any stale permanent suppression from previous versions
   useEffect(() => {
@@ -77,14 +113,18 @@ export function usePWAInstall(): UsePWAInstallReturn {
 
     const handler = (e: Event) => {
       e.preventDefault();
+      globalDeferredPrompt = e as BeforeInstallPromptEvent;
       setDeferredPrompt(e as BeforeInstallPromptEvent);
+      promptListeners.forEach(l => l(globalDeferredPrompt));
     };
     window.addEventListener('beforeinstallprompt', handler);
 
     // Listen for the app being installed (clears the prompt and marks as installed)
     const installedHandler = () => {
       setIsInstalled(true);
+      globalDeferredPrompt = null;
       setDeferredPrompt(null);
+      promptListeners.forEach(l => l(null));
     };
     window.addEventListener('appinstalled', installedHandler);
 
@@ -112,17 +152,24 @@ export function usePWAInstall(): UsePWAInstallReturn {
   }, []);
 
   const triggerInstall = async () => {
-    if (!deferredPrompt) return;
+    const promptToUse = deferredPrompt || globalDeferredPrompt;
+    if (!promptToUse) return;
     try {
-      await deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
+      if (deferredPrompt) {
+        await deferredPrompt.prompt();
+      } else {
+        await promptToUse.prompt();
+      }
+      const { outcome } = await promptToUse.userChoice;
       if (outcome === 'accepted') {
         setIsInstalled(true);
       }
     } catch (err) {
       console.error('Error triggering PWA install:', err);
     } finally {
+      globalDeferredPrompt = null;
       setDeferredPrompt(null);
+      promptListeners.forEach(l => l(null));
     }
   };
 

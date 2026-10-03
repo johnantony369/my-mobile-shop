@@ -20,6 +20,7 @@ export default defineConfig({
         background_color: '#F2F2F7',
         display: 'standalone',
         orientation: 'portrait',
+        prefer_related_applications: false,
         icons: [
           {
             src: '/icon-192.png',

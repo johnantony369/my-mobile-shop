@@ -136,14 +136,40 @@ export async function getAppSettings(): Promise<AppSettings | undefined> {
   return all[0];
 }
 
+export async function clearLocalDatabase(): Promise<void> {
+  try {
+    await db.transaction('rw', [db.entries, db.settings, db.jobs, db.stock, db.bills], async () => {
+      await db.entries.clear();
+      await db.settings.clear();
+      await db.jobs.clear();
+      if (db.stock) await db.stock.clear();
+      if (db.bills) await db.bills.clear();
+    });
+  } catch (err) {
+    console.warn('Error clearing local database in transaction, falling back to individual clears:', err);
+    await Promise.allSettled([
+      db.entries.clear(),
+      db.settings.clear(),
+      db.jobs.clear(),
+      db.stock ? db.stock.clear() : Promise.resolve(),
+      db.bills ? db.bills.clear() : Promise.resolve(),
+    ]);
+  }
+}
+
 export async function initAppSettings(
   shopName: string,
   language: Language = 'en',
   showRepairs: boolean = false,
-  showStock: boolean = true
+  showStock: boolean = true,
+  ownerUid?: string
 ): Promise<AppSettings> {
   const existing = await getAppSettings();
   if (existing) {
+    if (ownerUid && !existing.ownerUid) {
+      await updateAppSettings({ ownerUid });
+      return { ...existing, ownerUid };
+    }
     return existing;
   }
   const now = new Date().toISOString();
@@ -155,6 +181,7 @@ export async function initAppSettings(
     lastBackupAt: null,
     showRepairs,
     showStock,
+    ownerUid,
     cloudId: generateCloudId(),
     updatedAt: now,
     syncStatus: 'pending',
