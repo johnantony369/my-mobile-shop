@@ -243,7 +243,7 @@ export const StockPickerSheet: React.FC<StockPickerSheetProps> = ({
 
                     <div className="text-right shrink-0">
                       <span className="text-[15px] font-bold text-black block">
-                        ₹{formatINR(item.sellingPrice)}
+                        {formatINR(item.sellingPrice)}
                       </span>
                       <span className="text-[10px] text-iosBlue font-medium opacity-0 group-hover:opacity-100 transition-opacity">
                         Tap to select →

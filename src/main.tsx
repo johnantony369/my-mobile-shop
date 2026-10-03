@@ -19,6 +19,17 @@ const updateSW = registerSW({
   },
 });
 
+// Auto-reload the app when the new Service Worker takes control
+if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+  let refreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!refreshing) {
+      refreshing = true;
+      window.location.reload();
+    }
+  });
+}
+
 // Periodically check for a new service worker (every 60 minutes).
 // This covers long-running sessions where the user never closes the tab.
 const SW_CHECK_INTERVAL_MS = 60 * 60 * 1000;

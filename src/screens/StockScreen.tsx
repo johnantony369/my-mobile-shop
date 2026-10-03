@@ -466,11 +466,11 @@ export const StockScreen: React.FC<StockScreenProps> = ({
                     {/* Price Block */}
                     <div className="text-right shrink-0">
                       <span className="text-[16px] font-extrabold text-black block tracking-tight leading-tight">
-                        ₹{formatINR(item.sellingPrice)}
+                        {formatINR(item.sellingPrice)}
                       </span>
                       {hasCost && (
                         <span className="text-[10px] text-gray-400 block font-medium">
-                          Cost: ₹{formatINR(item.costPrice!)}
+                          Cost: {formatINR(item.costPrice!)}
                         </span>
                       )}
                     </div>
@@ -504,7 +504,7 @@ export const StockScreen: React.FC<StockScreenProps> = ({
                     {margin !== null && (
                       <span className="text-[10px] text-emerald-700 font-semibold bg-emerald-50/60 border border-emerald-200/60 px-2 py-0.5 rounded-full flex items-center gap-0.5">
                         <TrendingUp className="w-2.5 h-2.5 text-iosGreen" />
-                        <span>Profit: ₹{formatINR(margin)}</span>
+                        <span>Profit: {formatINR(margin)}</span>
                       </span>
                     )}
                   </div>

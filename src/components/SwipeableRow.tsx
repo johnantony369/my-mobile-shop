@@ -6,6 +6,7 @@ interface SwipeableRowProps {
   onEdit: () => void;
   onDelete: () => void;
   onTap: () => void;
+  onLongPress?: () => void;
   editLabel?: string;
   deleteLabel?: string;
 }
@@ -15,6 +16,7 @@ export const SwipeableRow: React.FC<SwipeableRowProps> = ({
   onEdit,
   onDelete,
   onTap,
+  onLongPress,
   editLabel = 'Edit',
   deleteLabel = 'Delete',
 }) => {
@@ -25,6 +27,8 @@ export const SwipeableRow: React.FC<SwipeableRowProps> = ({
   const isDragging = useRef(false);
   const hasMoved = useRef(false);
   const isHorizontalSwipe = useRef<boolean | null>(null);
+  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
+  const isLongPressTriggered = useRef(false);
 
   const ACTIONS_WIDTH = 140; // width of both buttons combined
 
@@ -36,6 +40,26 @@ export const SwipeableRow: React.FC<SwipeableRowProps> = ({
     isDragging.current = true;
     hasMoved.current = false;
     isHorizontalSwipe.current = null;
+    isLongPressTriggered.current = false;
+
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+    longPressTimer.current = setTimeout(() => {
+      if (!hasMoved.current && !isOpen) {
+        isLongPressTriggered.current = true;
+        if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+          try {
+            navigator.vibrate(50);
+          } catch {
+            // ignore vibrate errors
+          }
+        }
+        if (onLongPress) {
+          onLongPress();
+        } else {
+          onDelete();
+        }
+      }
+    }, 500);
   };
 
   const handleTouchMove = (e: React.TouchEvent | React.MouseEvent) => {
@@ -44,6 +68,13 @@ export const SwipeableRow: React.FC<SwipeableRowProps> = ({
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
     const diffX = clientX - startX.current;
     const diffY = clientY - startY.current;
+
+    if (Math.abs(diffX) > 8 || Math.abs(diffY) > 8) {
+      if (longPressTimer.current) {
+        clearTimeout(longPressTimer.current);
+        longPressTimer.current = null;
+      }
+    }
 
     // Directional lock: If movement is primarily vertical, release and let page scroll naturally
     if (isHorizontalSwipe.current === null) {
@@ -74,6 +105,18 @@ export const SwipeableRow: React.FC<SwipeableRowProps> = ({
   };
 
   const handleTouchEnd = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+
+    if (isLongPressTriggered.current) {
+      isLongPressTriggered.current = false;
+      isDragging.current = false;
+      isHorizontalSwipe.current = null;
+      return;
+    }
+
     if (!isDragging.current && isHorizontalSwipe.current === false) return;
     isDragging.current = false;
     isHorizontalSwipe.current = null;
@@ -148,9 +191,26 @@ export const SwipeableRow: React.FC<SwipeableRowProps> = ({
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
+        onTouchCancel={() => {
+          if (longPressTimer.current) clearTimeout(longPressTimer.current);
+          isDragging.current = false;
+        }}
         onMouseDown={handleTouchStart}
         onMouseMove={handleTouchMove}
         onMouseUp={handleTouchEnd}
+        onMouseLeave={() => {
+          if (longPressTimer.current) clearTimeout(longPressTimer.current);
+          isDragging.current = false;
+        }}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          if (longPressTimer.current) clearTimeout(longPressTimer.current);
+          if (onLongPress) {
+            onLongPress();
+          } else {
+            onDelete();
+          }
+        }}
       >
         {children}
       </div>

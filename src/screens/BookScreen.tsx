@@ -46,7 +46,12 @@ export const BookScreen: React.FC<BookScreenProps> = ({
   ) ?? [];
 
   // Sort newest first so freshly created transactions appear immediately at the top
-  const sortedEntries = [...entries].sort((a, b) => b.createdAt - a.createdAt);
+  const sortedEntries = [...entries].sort((a, b) => {
+    const timeA = typeof a.createdAt === 'number' ? a.createdAt : (a.createdAt ? new Date(a.createdAt).getTime() : 0);
+    const timeB = typeof b.createdAt === 'number' ? b.createdAt : (b.createdAt ? new Date(b.createdAt).getTime() : 0);
+    if (timeB !== timeA) return timeB - timeA;
+    return (b.id ?? 0) - (a.id ?? 0);
+  });
   const summary = computeSummary(sortedEntries);
 
   const isToday = selectedDate === getLocalDateString();
@@ -231,6 +236,7 @@ export const BookScreen: React.FC<BookScreenProps> = ({
           setRefreshKey((k) => k + 1);
         }}
         entryToEdit={entryToEdit}
+        onDelete={(entry) => setEntryToDelete(entry)}
         defaultDate={selectedDate}
         language={language}
         isReadOnly={isReadOnly}

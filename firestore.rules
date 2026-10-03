@@ -3,7 +3,10 @@ service cloud.firestore {
   match /databases/{database}/documents {
     // Helper function to check if the authenticated user is the designated superadmin
     function isSuperAdmin() {
-      return request.auth != null && request.auth.token.email == 'johnantony271@gmail.com';
+      return request.auth != null && (
+        request.auth.token.email == 'johnantony271@gmail.com' ||
+        (request.auth.token.keys().hasAny(['email']) && request.auth.token.email.lower() == 'johnantony271@gmail.com')
+      );
     }
 
     // Each authenticated user can read and write all documents in their own user directory

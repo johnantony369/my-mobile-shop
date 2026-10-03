@@ -7,12 +7,13 @@ import { t } from '../i18n';
 import { db, adjustStockQuantity } from '../db/db';
 import { getLocalDateString } from '../utils/date';
 import { StockPickerSheet } from '../components/StockPickerSheet';
-import { Package, X, Check } from 'lucide-react';
+import { Package, X, Check, Trash2 } from 'lucide-react';
 
 interface AddEditSheetProps {
   isOpen: boolean;
   onClose: () => void;
   onSaved: (savedDate?: string) => void;
+  onDelete?: (entry: Entry) => void;
   entryToEdit: Entry | null;
   defaultDate: string;
   language: Language;
@@ -23,6 +24,7 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
   isOpen,
   onClose,
   onSaved,
+  onDelete,
   entryToEdit,
   defaultDate,
   language,
@@ -417,6 +419,24 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
             />
           </div>
         </div>
+
+        {/* 7. Delete Entry Option (Only visible when editing an existing entry) */}
+        {entryToEdit && onDelete && (
+          <div className="pt-2 border-t border-gray-100">
+            <button
+              type="button"
+              onClick={() => {
+                const target = entryToEdit;
+                onClose();
+                onDelete(target);
+              }}
+              className="w-full py-2.5 rounded-[12px] bg-red-50 text-iosRed font-semibold text-[14px] border border-red-200/80 hover:bg-red-100 flex items-center justify-center space-x-1.5 active:opacity-75 transition-colors"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span>{t('delete_action', language)} Entry</span>
+            </button>
+          </div>
+        )}
       </form>
 
       {/* Stock Picker Sheet */}

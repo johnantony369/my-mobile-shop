@@ -72,6 +72,7 @@ export const EntryList: React.FC<EntryListProps> = ({
               onEdit={() => onEdit(entry)}
               onDelete={() => onDelete(entry)}
               onTap={() => onEdit(entry)}
+              onLongPress={() => onDelete(entry)}
               editLabel={t('edit_action', language)}
               deleteLabel={t('delete_action', language)}
             >

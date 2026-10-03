@@ -44,13 +44,13 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
   const [isStockPickerOpen, setIsStockPickerOpen] = useState(false);
   const [selectedStockItem, setSelectedStockItem] = useState<StockItem | null>(null);
 
-  // Live query for active stock items
-  const stockItems = useLiveQuery(
+  // Live query for active service items (only services for job complaints)
+  const serviceItems = useLiveQuery(
     async () => {
       try {
         if (!db.stock) return [];
         const items = await db.stock.toArray();
-        return items.filter((i) => !i.deletedAt && i.syncStatus !== 'deleted');
+        return items.filter((i) => !i.deletedAt && i.syncStatus !== 'deleted' && i.category === 'service');
       } catch {
         return [];
       }
@@ -330,14 +330,14 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
               className="text-xs font-semibold text-iosBlue hover:underline flex items-center space-x-1 active:opacity-75"
             >
               <Wrench className="w-3.5 h-3.5" />
-              <span>Pick from Stock ({stockItems.length})</span>
+              <span>Pick from Services ({serviceItems.length})</span>
             </button>
           </div>
 
-          {/* Quick chips of services & repair parts */}
-          {stockItems.length > 0 && (
+          {/* Quick chips of services & repair labour */}
+          {serviceItems.length > 0 && (
             <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar momentum-scroll overscroll-x-contain touch-pan-x text-xs">
-              {stockItems.slice(0, 8).map((si) => {
+              {serviceItems.slice(0, 8).map((si) => {
                 const isSelected = selectedStockItem?.id === si.id;
                 return (
                   <button
@@ -488,7 +488,7 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
         onClose={() => setIsStockPickerOpen(false)}
         onSelect={handleSelectStockItem}
         language={language}
-        title="Select Service or Part"
+        title="Select Service"
         defaultFilter="service"
       />
     </BottomSheet>

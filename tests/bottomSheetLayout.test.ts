@@ -51,4 +51,24 @@ describe('BottomSheet Layout & Submit Accessibility', () => {
     expect(content).toContain('footer={');
     expect(content).toMatch(/<button[\s\S]*?delivery_confirm_btn[\s\S]*?<\/button>/);
   });
+
+  it('AddEditSheet offers Delete Entry option when editing an existing entry', () => {
+    const filePath = path.resolve(__dirname, '../src/screens/AddEditSheet.tsx');
+    const content = fs.readFileSync(filePath, 'utf-8');
+
+    expect(content).toContain('onDelete?: (entry: Entry) => void');
+    expect(content).toContain('entryToEdit && onDelete');
+    expect(content).toContain('delete_action');
+  });
+
+  it('SwipeableRow and EntryList support long-press action for delete confirmation', () => {
+    const swipePath = path.resolve(__dirname, '../src/components/SwipeableRow.tsx');
+    const listPath = path.resolve(__dirname, '../src/components/EntryList.tsx');
+    const swipeContent = fs.readFileSync(swipePath, 'utf-8');
+    const listContent = fs.readFileSync(listPath, 'utf-8');
+
+    expect(swipeContent).toContain('onLongPress?: () => void');
+    expect(swipeContent).toContain('longPressTimer');
+    expect(listContent).toContain('onLongPress={() => onDelete(entry)}');
+  });
 });
