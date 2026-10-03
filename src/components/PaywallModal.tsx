@@ -13,7 +13,8 @@ import {
   X,
 } from 'lucide-react';
 
-const RAZORPAY_PAYMENT_URL = 'https://rzp.io/rzp/sm5XWYc';
+const RAZORPAY_MONTHLY_URL = 'https://rzp.io/rzp/LHFKoCZ';
+const RAZORPAY_YEARLY_URL = 'https://rzp.io/rzp/2ZGyPsBK';
 
 interface PaywallModalProps {
   isOpen: boolean;
@@ -70,7 +71,8 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
   if (!rendered) return null;
 
   const handleOpenRazorpay = () => {
-    window.open(RAZORPAY_PAYMENT_URL, '_blank', 'noopener,noreferrer');
+    const url = selectedPlan === 'yearly' ? RAZORPAY_YEARLY_URL : RAZORPAY_MONTHLY_URL;
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
