@@ -1,5 +1,5 @@
 import { FloatingAction } from '../components/FloatingAction';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, calculateDaysInShop, softDeleteJob } from '../db/db';
 import { Job, Language } from '../types';
@@ -34,12 +34,22 @@ export const RepairsScreen: React.FC<RepairsScreenProps> = ({
   language,
   shopName,
   isReadOnly,
-  isActivated,
+  isActivated: _isActivated,
   trialDays: _trialDays,
   onOpenPaywall,
 }) => {
   const [currentSegment, setCurrentSegment] = useState<RepairSegment>('active');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  // Scroll listener for sticky header
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 40);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
   
   // Sheet states
   const [isAddEditOpen, setIsAddEditOpen] = useState(false);
@@ -117,38 +127,70 @@ export const RepairsScreen: React.FC<RepairsScreenProps> = ({
   };
 
   return (
-    <div className="min-h-screen pb-28 pt-2">
-      <div className="max-w-lg mx-auto px-4">
-        {/* Header Title with Big Shop Name */}
-        <div className="pt-2 pb-1 mb-2">
-          <div className="flex items-center justify-between gap-3">
-            <h1 className="text-[28px] sm:text-[30px] font-black text-black tracking-tight leading-tight truncate flex-1 min-w-0">
+    <div className="min-h-screen pb-28">
+      {/* Sticky top navigation bar for collapsed title */}
+      <div
+        className={`sticky top-0 z-30 transition-all duration-200 ${
+          isScrolled
+            ? 'bg-white/95 backdrop-blur-md shadow-sm border-b border-[#E5E5EA] py-2.5'
+            : 'bg-transparent py-1'
+        }`}
+      >
+        <div className="max-w-lg mx-auto px-4 flex items-center justify-between">
+          <span
+            className={`text-[17px] font-bold text-black transition-opacity duration-200 ${
+              isScrolled ? 'opacity-100' : 'opacity-0 pointer-events-none'
+            }`}
+          >
+            Repairs & Service
+          </span>
+          {isScrolled && (
+            <button
+              type="button"
+              onClick={() => {
+                if (isReadOnly && onOpenPaywall) {
+                  onOpenPaywall();
+                } else {
+                  setJobToEdit(null);
+                  setIsAddEditOpen(true);
+                }
+              }}
+              className="bg-iosBlue text-white text-xs font-semibold px-3 py-1.5 rounded-full flex items-center space-x-1 shadow-xs active:scale-95 transition-all"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>{t('new_job_btn', language)}</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="max-w-lg mx-auto px-4 space-y-3.5">
+        {/* Large Header Title & Action */}
+        <div className="pt-2 flex items-start justify-between">
+          <div>
+            <span className="text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wider block">
               {shopName || 'My Mobile Shop'}
+            </span>
+            <h1 className="text-[32px] font-extrabold text-black tracking-tight leading-tight">
+              Repairs
             </h1>
-            <div className="shrink-0 flex items-center space-x-1.5">
-              {!isActivated && onOpenPaywall && (
-                <button
-                  type="button"
-                  onClick={onOpenPaywall}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold active:scale-95 transition-all shadow-xs border ${
-                    isReadOnly
-                      ? 'bg-red-50 text-iosRed border-red-200 animate-pulse'
-                      : 'bg-gradient-to-r from-amber-50 to-yellow-50 text-amber-900 border-amber-200/90 hover:from-amber-100 hover:to-yellow-100'
-                  }`}
-                >
-                  <img src="/icon-192.png" alt="Pro" className="w-3.5 h-3.5 rounded-xs object-cover" />
-                  <span>
-                    {isReadOnly
-                      ? 'Unlock Pro'
-                      : 'Upgrade to Pro'}
-                  </span>
-                </button>
-              )}
-              <span className="text-xs font-bold text-iosBlue bg-blue-50 px-2.5 py-1 rounded-full border border-blue-100">
-                {t('tab_repairs', language)}
-              </span>
-            </div>
           </div>
+          <button
+            type="button"
+            onClick={() => {
+              if (isReadOnly && onOpenPaywall) {
+                onOpenPaywall();
+              } else {
+                setJobToEdit(null);
+                setIsAddEditOpen(true);
+              }
+            }}
+            disabled={isReadOnly}
+            className="mt-1 bg-iosBlue hover:bg-blue-600 active:scale-95 text-white font-semibold text-[14px] px-4 py-2.5 rounded-full shadow-md shadow-iosBlue/25 flex items-center space-x-1.5 transition-all select-none"
+          >
+            <Plus className="w-4 h-4 stroke-[2.5]" />
+            <span>{t('new_job_btn', language)}</span>
+          </button>
         </div>
 
         {/* Search Bar */}
@@ -225,14 +267,10 @@ export const RepairsScreen: React.FC<RepairsScreenProps> = ({
                     setIsAddEditOpen(true);
                   }
                 }}
-                className={`mt-4 inline-flex items-center space-x-1.5 px-4 py-2 text-sm font-semibold rounded-full shadow-sm active:opacity-80 transition-opacity ${
-                  isReadOnly
-                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white'
-                    : 'bg-iosBlue text-white'
-                }`}
+                className="mt-4 inline-flex items-center space-x-1.5 px-4 py-2 text-sm font-semibold rounded-full shadow-sm active:opacity-80 transition-opacity bg-iosBlue text-white"
               >
-                {isReadOnly ? <img src="/icon-192.png" alt="Pro" className="w-4 h-4 rounded-xs object-cover" /> : <Plus className="w-4 h-4" />}
-                <span>{isReadOnly ? 'Unlock Pro' : t('new_job_btn', language)}</span>
+                <Plus className="w-4 h-4" />
+                <span>{t('new_job_btn', language)}</span>
               </button>
             )}
           </div>
@@ -319,23 +357,10 @@ export const RepairsScreen: React.FC<RepairsScreenProps> = ({
               setIsAddEditOpen(true);
             }
           }}
-          className={`h-13 px-5 py-3 rounded-full flex items-center space-x-2 font-bold text-[15px] shadow-lg active:scale-95 transition-all duration-150 ${
-            isReadOnly
-              ? 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-amber-500/35'
-              : 'bg-iosBlue text-white shadow-iosBlue/35 hover:bg-blue-600'
-          }`}
+          className="h-13 px-5 py-3 rounded-full flex items-center space-x-2 font-bold text-[15px] shadow-lg active:scale-95 transition-all duration-150 bg-iosBlue text-white shadow-iosBlue/35 hover:bg-blue-600"
         >
-          {isReadOnly ? (
-            <>
-              <img src="/icon-192.png" alt="Pro" className="w-5 h-5 rounded-md object-cover" />
-              <span>Unlock Pro</span>
-            </>
-          ) : (
-            <>
-              <Plus className="w-5 h-5 stroke-[2.5]" />
-              <span>{t('new_job_btn', language)}</span>
-            </>
-          )}
+          <Plus className="w-5 h-5 stroke-[2.5]" />
+          <span>{t('new_job_btn', language)}</span>
         </button>
       </FloatingAction>
 

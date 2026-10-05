@@ -597,23 +597,10 @@ export const StockScreen: React.FC<StockScreenProps> = ({
               handleOpenAdd(currentFilter === 'service' ? 'service' : 'product');
             }
           }}
-          className={`h-13 px-5 py-3 rounded-full flex items-center space-x-2 font-bold text-[15px] shadow-lg active:scale-95 transition-all duration-150 ${
-            isReadOnly
-              ? 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-amber-500/35'
-              : 'bg-iosBlue text-white shadow-iosBlue/35 hover:bg-blue-600'
-          }`}
+          className="h-13 px-5 py-3 rounded-full flex items-center space-x-2 font-bold text-[15px] shadow-lg active:scale-95 transition-all duration-150 bg-iosBlue text-white shadow-iosBlue/35 hover:bg-blue-600"
         >
-          {isReadOnly ? (
-            <>
-              <img src="/icon-192.png" alt="Pro" className="w-5 h-5 rounded-md object-cover" />
-              <span>Unlock Pro</span>
-            </>
-          ) : (
-            <>
-              <Plus className="w-5 h-5 stroke-[2.5]" />
-              <span>Add Item</span>
-            </>
-          )}
+          <Plus className="w-5 h-5 stroke-[2.5]" />
+          <span>Add Item</span>
         </button>
       </FloatingAction>
       )}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, computeSummary } from '../db/db';
 import { Language } from '../types';
@@ -21,14 +21,24 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
   language,
   shopName,
   showRepairs = false,
-  isActivated,
-  onOpenPaywall,
+  isActivated: _isActivated,
+  onOpenPaywall: _onOpenPaywall,
 }) => {
   const today = new Date();
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
   const [currentMonth, setCurrentMonth] = useState(today.getMonth() + 1); // 1-12
 
   const monthStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  // Scroll listener for sticky header
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 40);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Fetch entries for this month from Dexie
   const entries = useLiveQuery(
@@ -114,28 +124,55 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
   };
 
   return (
-    <div className="min-h-screen pb-24 pt-2">
-      <div className="max-w-lg mx-auto px-4">
-        {/* Header with Big Shop Name */}
-        <div className="pt-2 mb-2 flex items-center justify-between gap-3">
-          <h1 className="text-[28px] sm:text-[30px] font-black text-black tracking-tight leading-tight truncate flex-1 min-w-0">
-            {shopName || 'My Mobile Shop'}
-          </h1>
-          <div className="shrink-0 flex items-center space-x-1.5">
-            {!isActivated && onOpenPaywall && (
-              <button
-                type="button"
-                onClick={onOpenPaywall}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-xs border border-amber-600 active:scale-95 transition-all"
-              >
-                <img src="/icon-192.png" alt="Pro" className="w-3.5 h-3.5 rounded-xs object-cover" />
-                <span>PRO</span>
-              </button>
-            )}
-            <span className="text-xs font-bold text-iosBlue bg-blue-50 px-2.5 py-1 rounded-full border border-blue-100">
-              {t('reports_header', language)}
+    <div className="min-h-screen pb-24">
+      {/* Sticky top navigation bar for collapsed title */}
+      <div
+        className={`sticky top-0 z-30 transition-all duration-200 ${
+          isScrolled
+            ? 'bg-white/95 backdrop-blur-md shadow-sm border-b border-[#E5E5EA] py-2.5'
+            : 'bg-transparent py-1'
+        }`}
+      >
+        <div className="max-w-lg mx-auto px-4 flex items-center justify-between">
+          <span
+            className={`text-[17px] font-bold text-black transition-opacity duration-200 ${
+              isScrolled ? 'opacity-100' : 'opacity-0 pointer-events-none'
+            }`}
+          >
+            Reports & Analytics
+          </span>
+          {isScrolled && (
+            <button
+              type="button"
+              onClick={handleExportCSV}
+              className="bg-iosBlue text-white text-xs font-semibold px-3 py-1.5 rounded-full flex items-center space-x-1 shadow-xs active:scale-95 transition-all"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>CSV</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="max-w-lg mx-auto px-4 space-y-3.5">
+        {/* Large Header Title & Action */}
+        <div className="pt-2 flex items-start justify-between">
+          <div>
+            <span className="text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wider block">
+              {shopName || 'My Mobile Shop'}
             </span>
+            <h1 className="text-[32px] font-extrabold text-black tracking-tight leading-tight">
+              Reports
+            </h1>
           </div>
+          <button
+            type="button"
+            onClick={handleExportCSV}
+            className="mt-1 bg-iosBlue hover:bg-blue-600 active:scale-95 text-white font-semibold text-[14px] px-4 py-2.5 rounded-full shadow-md shadow-iosBlue/25 flex items-center space-x-1.5 transition-all select-none"
+          >
+            <Download className="w-4 h-4 stroke-[2.5]" />
+            <span>Export CSV</span>
+          </button>
         </div>
 
         {/* Month Selector Pill */}
