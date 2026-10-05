@@ -20,6 +20,17 @@ interface AddEditSheetProps {
   isReadOnly?: boolean;
 }
 
+export function validateCreditEntry(
+  type: string,
+  paymentMethod: string,
+  customerName?: string
+): string | null {
+  if (type === 'in' && paymentMethod === 'credit' && (!customerName || !customerName.trim())) {
+    return 'Customer name is required for credit entries';
+  }
+  return null;
+}
+
 export const AddEditSheet: React.FC<AddEditSheetProps> = ({
   isOpen,
   onClose,
@@ -137,6 +148,14 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
     if (isNaN(parsedAmount) || parsedAmount <= 0 || parsedAmount > 9999999) {
       setError(t('amount_error', language));
       amountInputRef.current?.focus();
+      isSubmittingRef.current = false;
+      setIsSubmitting(false);
+      return;
+    }
+
+    const creditError = validateCreditEntry(type, paymentMethod, customerName);
+    if (creditError) {
+      setError(creditError);
       isSubmittingRef.current = false;
       setIsSubmitting(false);
       return;
@@ -265,6 +284,7 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
                 { value: 'cash', label: t('cash', language) },
                 { value: 'upi', label: t('upi', language) },
                 { value: 'card', label: t('card', language) },
+                { value: 'credit', label: 'Credit' },
               ]}
             />
           </div>
@@ -376,10 +396,13 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
           )}
         </div>
 
-        {/* 5. Optional: Customer Name */}
+        {/* 5. Customer Name (Required if Credit, Optional otherwise) */}
         <div className="space-y-1">
           <label className="text-xs font-medium text-[#8E8E93] ml-1">
             {t('customer_label', language)}
+            {type === 'in' && paymentMethod === 'credit' && (
+              <span className="text-amber-600 font-bold ml-1">* (Required for Credit)</span>
+            )}
           </label>
           <input
             type="text"
