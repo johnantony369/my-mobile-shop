@@ -114,6 +114,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
       cashTotal: summary.cashTotal,
       upiTotal: summary.upiTotal,
       cardTotal: summary.cardTotal,
+      creditTotal: summary.creditTotal,
     });
     await shareSummary(text, `${shopName} - ${monthDisplay}`);
   };
@@ -281,7 +282,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
           <h3 className="text-xs font-semibold text-[#8E8E93] uppercase tracking-wider mb-3">
             {t('payment_breakdown_title', language)}
           </h3>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <div className="bg-gray-50 rounded-[10px] p-2.5 text-center">
               <span className="text-xs font-medium text-[#8E8E93] block">Cash</span>
               <span className="text-[15px] font-bold text-black mt-0.5 block">
@@ -298,6 +299,12 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
               <span className="text-xs font-medium text-purple-600 block">Card</span>
               <span className="text-[15px] font-bold text-purple-700 mt-0.5 block">
                 {formatINR(summary.cardTotal)}
+              </span>
+            </div>
+            <div className="bg-amber-50/70 rounded-[10px] p-2.5 text-center border border-amber-200/50">
+              <span className="text-xs font-medium text-amber-800 block">Credit</span>
+              <span className="text-[15px] font-bold text-amber-900 mt-0.5 block">
+                {formatINR(summary.creditTotal)}
               </span>
             </div>
           </div>
