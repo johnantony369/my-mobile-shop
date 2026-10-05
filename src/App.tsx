@@ -10,6 +10,7 @@ import { SettingsScreen } from './screens/SettingsScreen';
 import { OnboardingScreen } from './screens/OnboardingScreen';
 import { getTrialDaysRemaining } from './utils/activation';
 import { isSuperAdmin, hasFullAccess } from './utils/admin';
+import { isProCurrentlyActive } from './utils/proPlan';
 import { requestPersistentStorage } from './utils/storage';
 import { useAuth } from './firebase/useAuth';
 import { LoginModal } from './components/LoginModal';
@@ -190,7 +191,7 @@ export default function App() {
   const settings = settingsList[0];
   const language: Language = 'en';
   const trialDays = getTrialDaysRemaining(settings.firstLaunchDate);
-  const isActivated = hasFullAccess(!!settings.activated, user);
+  const isActivated = hasFullAccess(isProCurrentlyActive(settings), user);
   const isReadOnly = !isActivated && trialDays <= 0;
 
   return (

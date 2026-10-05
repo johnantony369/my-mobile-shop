@@ -1,5 +1,5 @@
 import Dexie, { Table } from 'dexie';
-import { Entry, AppSettings, DaySummary, Job, Language, StockItem, Bill, BillItem, PaymentMethod } from '../types';
+import { Entry, AppSettings, DaySummary, Job, Language, StockItem, Bill, BillItem, PaymentMethod, PurchaseItem } from '../types';
 import { getLocalDateString } from '../utils/date';
 import { computeBillTotals, formatInvoiceNo, summarizeBillItems } from '../utils/billing';
 
@@ -16,6 +16,7 @@ export class ShopDatabase extends Dexie {
   jobs!: Table<Job, number>;
   stock!: Table<StockItem, number>;
   bills!: Table<Bill, number>;
+  purchases!: Table<PurchaseItem, number>;
 
   constructor() {
     super('MyMobileShopDB');
@@ -72,11 +73,38 @@ export class ShopDatabase extends Dexie {
       bills: '++id, cloudId, invoiceNo, date, createdAt, updatedAt, syncStatus',
     });
 
+    this.version(6).stores({
+      entries: '++id, cloudId, type, amount, date, createdAt, updatedAt, syncStatus, paymentMethod, repairId',
+      settings: '++id, cloudId, updatedAt, syncStatus',
+      jobs: '++id, cloudId, status, phone, customerName, model, receivedAt, readyAt, deliveredAt, bookEntryId, updatedAt, syncStatus',
+      stock: '++id, cloudId, name, category, sellingPrice, quantity, sku, createdAt, updatedAt, syncStatus',
+      bills: '++id, cloudId, invoiceNo, date, createdAt, updatedAt, syncStatus',
+      purchases: '++id, cloudId, name, isPurchased, createdAt, updatedAt, syncStatus',
+    });
+
+    this.purchases.hook('creating', (_primKey, obj) => {
+      if (!obj.cloudId) obj.cloudId = generateCloudId();
+      if (!obj.updatedAt) obj.updatedAt = new Date().toISOString();
+      if (!obj.syncStatus) obj.syncStatus = 'pending';
+    });
+    this.purchases.hook('updating', (modifications: Partial<PurchaseItem>) => {
+      if (!modifications.updatedAt) {
+        return { ...modifications, updatedAt: new Date().toISOString(), syncStatus: modifications.syncStatus || 'pending' };
+      }
+      return undefined;
+    });
+
     // Hooks to ensure new records receive sync fields automatically
     this.entries.hook('creating', (_primKey, obj) => {
       if (!obj.cloudId) obj.cloudId = generateCloudId();
       if (!obj.updatedAt) obj.updatedAt = new Date().toISOString();
       if (!obj.syncStatus) obj.syncStatus = 'pending';
+      if (!obj.createdAt) {
+        obj.createdAt = Date.now();
+      } else if (typeof (obj.createdAt as any) === 'string') {
+        const parsed = new Date(obj.createdAt).getTime();
+        obj.createdAt = isNaN(parsed) ? Date.now() : parsed;
+      }
     });
     this.entries.hook('updating', (modifications: Partial<Entry>) => {
       if (!modifications.updatedAt) {
@@ -138,12 +166,13 @@ export async function getAppSettings(): Promise<AppSettings | undefined> {
 
 export async function clearLocalDatabase(): Promise<void> {
   try {
-    await db.transaction('rw', [db.entries, db.settings, db.jobs, db.stock, db.bills], async () => {
+    await db.transaction('rw', [db.entries, db.settings, db.jobs, db.stock, db.bills, db.purchases], async () => {
       await db.entries.clear();
       await db.settings.clear();
       await db.jobs.clear();
       if (db.stock) await db.stock.clear();
       if (db.bills) await db.bills.clear();
+      if (db.purchases) await db.purchases.clear();
     });
   } catch (err) {
     console.warn('Error clearing local database in transaction, falling back to individual clears:', err);
@@ -153,6 +182,7 @@ export async function clearLocalDatabase(): Promise<void> {
       db.jobs.clear(),
       db.stock ? db.stock.clear() : Promise.resolve(),
       db.bills ? db.bills.clear() : Promise.resolve(),
+      db.purchases ? db.purchases.clear() : Promise.resolve(),
     ]);
   }
 }
@@ -369,4 +399,30 @@ export function calculateDaysInShop(receivedAt: number): number {
   const diffMs = Math.max(0, Date.now() - receivedAt);
   const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
   return Math.max(1, days + 1); // Day 1 on same day
+}
+
+export async function addPurchaseItem(name: string, quantity: number = 1, note?: string): Promise<number | undefined> {
+  const trimmed = name.trim();
+  if (!trimmed) return undefined;
+  return db.purchases.add({
+    name: trimmed,
+    quantity: Math.max(1, Math.floor(quantity) || 1),
+    note: note?.trim() || undefined,
+    isPurchased: false,
+    createdAt: Date.now(),
+  });
+}
+
+export async function togglePurchaseItem(id: number, isPurchased: boolean): Promise<void> {
+  await db.purchases.update(id, { isPurchased });
+}
+
+export async function deletePurchaseItem(id: number): Promise<void> {
+  await db.purchases.delete(id);
+}
+
+export async function clearPurchasedItems(): Promise<number> {
+  const ids = await db.purchases.filter((p) => p.isPurchased).primaryKeys();
+  await db.purchases.bulkDelete(ids);
+  return ids.length;
 }

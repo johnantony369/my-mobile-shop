@@ -32,16 +32,24 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
 
   // Fetch entries for this month from Dexie
   const entries = useLiveQuery(
-    () =>
-      db.entries
+    async () => {
+      const items = await db.entries
         .where('date')
         .between(`${monthStr}-01`, `${monthStr}-31`, true, true)
-        .toArray(),
+        .toArray();
+      return items.filter((e) => !e.deletedAt && e.syncStatus !== 'deleted');
+    },
     [monthStr]
   ) ?? [];
 
   // Query delivered repairs in current month
-  const allJobs = useLiveQuery(() => db.jobs.toArray()) ?? [];
+  const allJobs = useLiveQuery(
+    async () => {
+      const jobs = await db.jobs.toArray();
+      return jobs.filter((j) => !j.deletedAt && j.syncStatus !== 'deleted');
+    },
+    []
+  ) ?? [];
   const deliveredRepairsThisMonth = allJobs.filter((j) => {
     if (j.status !== 'delivered' || !j.deliveredAt) return false;
     const d = new Date(j.deliveredAt);

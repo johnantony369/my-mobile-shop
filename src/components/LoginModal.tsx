@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   loginWithPassword,
   registerWithPassword,
@@ -246,7 +247,7 @@ export function LoginModal({
     }
   };
 
-  return (
+  const modalElement = (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/65 backdrop-blur-sm animate-fadeIn">
       <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-sm p-6 sm:p-7 shadow-2xl relative border border-slate-200 dark:border-slate-800">
         {/* Close Button */}
@@ -545,4 +546,9 @@ export function LoginModal({
       />
     </div>
   );
+
+  if (typeof document !== 'undefined') {
+    return createPortal(modalElement, document.body);
+  }
+  return modalElement;
 }

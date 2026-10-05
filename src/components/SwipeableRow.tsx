@@ -43,48 +43,55 @@ export const SwipeableRow: React.FC<SwipeableRowProps> = ({
     isLongPressTriggered.current = false;
 
     if (longPressTimer.current) clearTimeout(longPressTimer.current);
-    longPressTimer.current = setTimeout(() => {
-      if (!hasMoved.current && !isOpen) {
-        isLongPressTriggered.current = true;
-        if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-          try {
-            navigator.vibrate(50);
-          } catch {
-            // ignore vibrate errors
+    if (onLongPress) {
+      longPressTimer.current = setTimeout(() => {
+        if (!hasMoved.current && !isOpen && isHorizontalSwipe.current !== false) {
+          isLongPressTriggered.current = true;
+          if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+            try {
+              navigator.vibrate(50);
+            } catch {
+              // ignore vibrate errors
+            }
           }
-        }
-        if (onLongPress) {
           onLongPress();
-        } else {
-          onDelete();
         }
-      }
-    }, 500);
+      }, 500);
+    }
   };
 
   const handleTouchMove = (e: React.TouchEvent | React.MouseEvent) => {
-    if (!isDragging.current) return;
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
     const diffX = clientX - startX.current;
     const diffY = clientY - startY.current;
 
-    if (Math.abs(diffX) > 8 || Math.abs(diffY) > 8) {
+    // Any movement cancels long press timer immediately
+    if (Math.abs(diffX) > 4 || Math.abs(diffY) > 4) {
       if (longPressTimer.current) {
         clearTimeout(longPressTimer.current);
         longPressTimer.current = null;
       }
     }
 
-    // Directional lock: If movement is primarily vertical, release and let page scroll naturally
+    // If already determined to be a vertical scroll, allow native page scrolling and abort swipe
+    if (isHorizontalSwipe.current === false) return;
+    if (!isDragging.current) return;
+
+    // Directional lock:
     if (isHorizontalSwipe.current === null) {
-      if (Math.abs(diffY) > 6 && Math.abs(diffY) >= Math.abs(diffX)) {
+      // If movement is predominantly vertical, lock out horizontal swiping completely
+      if (Math.abs(diffY) > 4 && Math.abs(diffY) >= Math.abs(diffX)) {
         isHorizontalSwipe.current = false;
         isDragging.current = false;
+        setOffsetX(0);
         return;
       }
-      if (Math.abs(diffX) > 6 && Math.abs(diffX) > Math.abs(diffY)) {
+      // If movement is predominantly horizontal and passes threshold, lock into swipe
+      if (Math.abs(diffX) > 8 && Math.abs(diffX) > Math.abs(diffY)) {
         isHorizontalSwipe.current = true;
+      } else {
+        return;
       }
     }
 
@@ -207,8 +214,6 @@ export const SwipeableRow: React.FC<SwipeableRowProps> = ({
           if (longPressTimer.current) clearTimeout(longPressTimer.current);
           if (onLongPress) {
             onLongPress();
-          } else {
-            onDelete();
           }
         }}
       >

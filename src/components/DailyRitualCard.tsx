@@ -37,7 +37,8 @@ export const DailyRitualCard: React.FC<DailyRitualCardProps> = ({
       .equals(yDate)
       .toArray()
       .then((entries: Entry[]) => {
-        const sum = computeSummary(entries);
+        const active = entries.filter((e) => !e.deletedAt && e.syncStatus !== 'deleted');
+        const sum = computeSummary(active);
         setSummary(sum);
         setIsVisible(true);
       })

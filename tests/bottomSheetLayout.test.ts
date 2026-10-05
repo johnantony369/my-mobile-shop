@@ -61,14 +61,14 @@ describe('BottomSheet Layout & Submit Accessibility', () => {
     expect(content).toContain('delete_action');
   });
 
-  it('SwipeableRow and EntryList support long-press action for delete confirmation', () => {
+  it('SwipeableRow supports swipe actions with vertical scroll protection', () => {
     const swipePath = path.resolve(__dirname, '../src/components/SwipeableRow.tsx');
     const listPath = path.resolve(__dirname, '../src/components/EntryList.tsx');
     const swipeContent = fs.readFileSync(swipePath, 'utf-8');
     const listContent = fs.readFileSync(listPath, 'utf-8');
 
-    expect(swipeContent).toContain('onLongPress?: () => void');
-    expect(swipeContent).toContain('longPressTimer');
-    expect(listContent).toContain('onLongPress={() => onDelete(entry)}');
+    expect(swipeContent).toContain('isHorizontalSwipe');
+    expect(swipeContent).toContain('diffY');
+    expect(listContent).toContain('SwipeableRow');
   });
 });

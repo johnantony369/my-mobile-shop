@@ -164,4 +164,24 @@ describe('Firebase Sync Engine Reconciliation', () => {
     expect(localBill?.invoiceNo).toBe('INV-1001');
     expect(localBill?.total).toBe(150);
   });
+
+  it('softDeleteEntry marks entry as deleted so pushPendingChanges sends tombstone', async () => {
+    const { softDeleteEntry } = await import('../src/db/db');
+    const id = await db.entries.add({
+      cloudId: 'cloud-entry-to-soft-delete',
+      type: 'in',
+      amount: 500,
+      date: '2026-10-05',
+      createdAt: 1727600000000,
+      updatedAt: '2026-10-05T10:00:00.000Z',
+      syncStatus: 'synced',
+    });
+
+    await softDeleteEntry(id);
+
+    const entry = await db.entries.get(id);
+    expect(entry).toBeDefined();
+    expect(entry?.syncStatus).toBe('deleted');
+    expect(entry?.deletedAt).toBeDefined();
+  });
 });

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { User, ConfirmationResult, RecaptchaVerifier } from 'firebase/auth';
 import { createRecaptchaVerifier, sendLinkPhoneOtp, confirmLinkPhoneOtp } from '../firebase/auth';
 import { X, Phone, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
@@ -114,7 +115,7 @@ export const LinkPhoneModal: React.FC<LinkPhoneModalProps> = ({
     }
   };
 
-  return (
+  const modalElement = (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
@@ -247,4 +248,9 @@ export const LinkPhoneModal: React.FC<LinkPhoneModalProps> = ({
       </div>
     </div>
   );
+
+  if (typeof document !== 'undefined') {
+    return createPortal(modalElement, document.body);
+  }
+  return modalElement;
 };

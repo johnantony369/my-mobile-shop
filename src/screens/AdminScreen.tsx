@@ -22,10 +22,19 @@ import {
 import {
   ShopAccountSummary,
   fetchAllAccounts,
-  toggleAccountPro,
+  setAccountPlan,
   formatBytes,
 } from '../firebase/admin';
 import { useAuth } from '../firebase/useAuth';
+import { ProPlanDialog } from '../components/ProPlanDialog';
+import { ConfirmModal } from '../components/ConfirmModal';
+import {
+  ProPlan,
+  PRO_PLAN_LABELS,
+  isProCurrentlyActive,
+  isProExpired,
+  formatProExpiry,
+} from '../utils/proPlan';
 
 export const AdminScreen: React.FC = () => {
   const navigate = useNavigate();
@@ -38,6 +47,8 @@ export const AdminScreen: React.FC = () => {
   const [filterMode, setFilterMode] = useState<'all' | 'pro' | 'free'>('all');
   const [actionLoadingUid, setActionLoadingUid] = useState<string | null>(null);
   const [actionSuccessMsg, setActionSuccessMsg] = useState<string | null>(null);
+  const [planDialogAccount, setPlanDialogAccount] = useState<ShopAccountSummary | null>(null);
+  const [revokeAccount, setRevokeAccount] = useState<ShopAccountSummary | null>(null);
 
   const loadAccounts = async () => {
     try {
@@ -57,26 +68,25 @@ export const AdminScreen: React.FC = () => {
     loadAccounts();
   }, []);
 
-  const handleTogglePro = async (account: ShopAccountSummary) => {
-    const nextStatus = !account.activated;
-    const confirmMsg = nextStatus
-      ? `Activate Lifetime Pro for "${account.shopName}" (${account.email || account.phoneNumber || 'User'})?`
-      : `Revoke Pro access for "${account.shopName}"?`;
-
-    if (!window.confirm(confirmMsg)) return;
-
+  /** Grants a plan (or revokes when plan is null) and updates the list in place. */
+  const applyPlan = async (account: ShopAccountSummary, plan: ProPlan | null) => {
     try {
       setActionLoadingUid(account.uid);
-      await toggleAccountPro(account.uid, nextStatus);
+      const currentExpiry = isProCurrentlyActive(account) ? account.proExpiresAt : null;
+      const result = await setAccountPlan(account.uid, plan, currentExpiry);
       setAccounts(prev =>
-        prev.map(acc =>
-          acc.uid === account.uid ? { ...acc, activated: nextStatus } : acc
-        )
+        prev.map(acc => (acc.uid === account.uid ? { ...acc, ...result } : acc))
       );
       setActionSuccessMsg(
-        `Successfully ${nextStatus ? 'activated' : 'revoked'} Pro for ${account.shopName || 'Shop'}!`
+        plan
+          ? `${PRO_PLAN_LABELS[plan]} Pro activated for ${account.shopName || 'Shop'}${
+              result.proExpiresAt ? ` until ${formatProExpiry(result.proExpiresAt)}` : ''
+            }!`
+          : `Pro revoked for ${account.shopName || 'Shop'}.`
       );
       setTimeout(() => setActionSuccessMsg(null), 3500);
+      setPlanDialogAccount(null);
+      setRevokeAccount(null);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       alert(`Action failed: ${msg}`);
@@ -85,10 +95,10 @@ export const AdminScreen: React.FC = () => {
     }
   };
 
-  // Metrics aggregation
+  // Metrics aggregation (an expired monthly/yearly plan counts as Free)
   const metrics = useMemo(() => {
     const totalShops = accounts.length;
-    const proShops = accounts.filter(a => a.activated).length;
+    const proShops = accounts.filter(a => isProCurrentlyActive(a)).length;
     const freeShops = totalShops - proShops;
     const totalEntries = accounts.reduce((acc, cur) => acc + (cur.entryCount || 0), 0);
     const totalJobs = accounts.reduce((acc, cur) => acc + (cur.jobCount || 0), 0);
@@ -116,8 +126,8 @@ export const AdminScreen: React.FC = () => {
         acc.uid.toLowerCase().includes(query);
 
       if (!matchQuery) return false;
-      if (filterMode === 'pro') return acc.activated;
-      if (filterMode === 'free') return !acc.activated;
+      if (filterMode === 'pro') return isProCurrentlyActive(acc);
+      if (filterMode === 'free') return !isProCurrentlyActive(acc);
       return true;
     });
   }, [accounts, searchQuery, filterMode]);
@@ -376,6 +386,7 @@ export const AdminScreen: React.FC = () => {
 
             {filteredAccounts.map(account => {
               const isItemLoading = actionLoadingUid === account.uid;
+              const isProActive = isProCurrentlyActive(account);
               const formattedDate = account.lastActiveAt
                 ? new Date(account.lastActiveAt).toLocaleString([], {
                     dateStyle: 'medium',
@@ -399,10 +410,16 @@ export const AdminScreen: React.FC = () => {
                       <h2 className="text-base font-black text-slate-900 truncate">
                         {account.shopName || 'Unnamed Shop'}
                       </h2>
-                      {account.activated ? (
+                      {isProActive ? (
                         <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-xs">
                           <Sparkles className="w-3 h-3 text-emerald-500" />
-                          Lifetime PRO
+                          {PRO_PLAN_LABELS[account.proPlan ?? 'lifetime']} PRO
+                          {account.proExpiresAt && ` · until ${formatProExpiry(account.proExpiresAt)}`}
+                        </span>
+                      ) : isProExpired(account) ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-200">
+                          {account.proPlan ? PRO_PLAN_LABELS[account.proPlan] : 'Pro'} expired{' '}
+                          {formatProExpiry(account.proExpiresAt)}
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
@@ -482,26 +499,33 @@ export const AdminScreen: React.FC = () => {
                       </a>
                     )}
 
-                    {/* Pro Toggle Button */}
+                    {/* Activate / change plan */}
                     <button
                       type="button"
-                      onClick={() => handleTogglePro(account)}
+                      onClick={() => setPlanDialogAccount(account)}
                       disabled={isItemLoading}
-                      className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm ${
-                        account.activated
-                          ? 'bg-red-50 hover:bg-red-100 active:bg-red-200 text-red-600 border border-red-200'
-                          : 'bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white shadow-emerald-500/20'
-                      }`}
+                      className="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white shadow-emerald-500/20 disabled:opacity-60"
                     >
                       {isItemLoading ? (
                         <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                      ) : account.activated ? (
-                        <ShieldCheck className="w-3.5 h-3.5" />
                       ) : (
                         <Crown className="w-3.5 h-3.5" />
                       )}
-                      <span>{account.activated ? 'Revoke Pro' : 'Activate Pro'}</span>
+                      <span>{isProActive ? 'Change Plan' : 'Activate Pro'}</span>
                     </button>
+
+                    {/* Revoke (only while Pro is switched on) */}
+                    {account.activated && (
+                      <button
+                        type="button"
+                        onClick={() => setRevokeAccount(account)}
+                        disabled={isItemLoading}
+                        className="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm bg-red-50 hover:bg-red-100 active:bg-red-200 text-red-600 border border-red-200 disabled:opacity-60"
+                      >
+                        <ShieldCheck className="w-3.5 h-3.5" />
+                        <span>Revoke</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               );
@@ -509,6 +533,24 @@ export const AdminScreen: React.FC = () => {
           </div>
         )}
       </main>
+
+      <ProPlanDialog
+        account={planDialogAccount}
+        busy={!!planDialogAccount && actionLoadingUid === planDialogAccount.uid}
+        onClose={() => setPlanDialogAccount(null)}
+        onConfirm={plan => planDialogAccount && applyPlan(planDialogAccount, plan)}
+      />
+
+      <ConfirmModal
+        isOpen={!!revokeAccount}
+        title="Revoke Pro?"
+        message={`${revokeAccount?.shopName || 'This shop'} will lose Pro access and return to the free trial rules.`}
+        confirmLabel="Revoke"
+        cancelLabel="Cancel"
+        isDestructive={true}
+        onConfirm={() => revokeAccount && applyPlan(revokeAccount, null)}
+        onCancel={() => setRevokeAccount(null)}
+      />
     </div>
   );
 };

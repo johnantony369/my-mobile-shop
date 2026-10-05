@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db, computeSummary } from '../db/db';
+import { db, computeSummary, softDeleteEntry } from '../db/db';
 import { Entry, Language } from '../types';
 import { getLocalDateString, formatHeaderDate } from '../utils/date';
 import { t } from '../i18n';
@@ -41,7 +41,10 @@ export const BookScreen: React.FC<BookScreenProps> = ({
 
   // Live query for the selected date's entries from IndexedDB
   const entries = useLiveQuery(
-    () => db.entries.where('date').equals(selectedDate).toArray(),
+    async () => {
+      const items = await db.entries.where('date').equals(selectedDate).toArray();
+      return items.filter((e) => !e.deletedAt && e.syncStatus !== 'deleted');
+    },
     [selectedDate, refreshKey]
   ) ?? [];
 
@@ -78,7 +81,7 @@ export const BookScreen: React.FC<BookScreenProps> = ({
 
   const handleConfirmDelete = async () => {
     if (entryToDelete && entryToDelete.id) {
-      await db.entries.delete(entryToDelete.id);
+      await softDeleteEntry(entryToDelete.id);
       setEntryToDelete(null);
     }
   };

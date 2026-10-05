@@ -1,7 +1,7 @@
 import { FloatingAction } from '../components/FloatingAction';
 import React, { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db, calculateDaysInShop } from '../db/db';
+import { db, calculateDaysInShop, softDeleteJob } from '../db/db';
 import { Job, Language } from '../types';
 import { t } from '../i18n';
 import { SegmentedControl } from '../components/SegmentedControl';
@@ -48,8 +48,14 @@ export const RepairsScreen: React.FC<RepairsScreenProps> = ({
   const [deliveryJob, setDeliveryJob] = useState<Job | null>(null);
   const [jobToDelete, setJobToDelete] = useState<Job | null>(null);
 
-  // Live query for all jobs
-  const allJobs = useLiveQuery(() => db.jobs.toArray()) ?? [];
+  // Live query for all active jobs
+  const allJobs = useLiveQuery(
+    async () => {
+      const jobs = await db.jobs.toArray();
+      return jobs.filter((j) => !j.deletedAt && j.syncStatus !== 'deleted');
+    },
+    []
+  ) ?? [];
 
   // Ready jobs count
   const readyCount = allJobs.filter((j) => j.status === 'ready').length;
@@ -102,7 +108,7 @@ export const RepairsScreen: React.FC<RepairsScreenProps> = ({
 
   const handleDeleteJob = async () => {
     if (jobToDelete && jobToDelete.id) {
-      await db.jobs.delete(jobToDelete.id);
+      await softDeleteJob(jobToDelete.id);
       setJobToDelete(null);
       if (selectedJob?.id === jobToDelete.id) {
         setSelectedJob(null);

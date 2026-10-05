@@ -4,9 +4,9 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db, softDeleteStockItem, adjustStockQuantity } from '../db/db';
 import { StockItem, StockCategory, Language } from '../types';
 import { formatINR } from '../i18n';
-import { seedDefaultStockItems } from '../utils/seedData';
 import { AddEditStockSheet } from './AddEditStockSheet';
 import { ConfirmModal } from '../components/ConfirmModal';
+import { PurchaseListView } from '../components/PurchaseListView';
 import {
   Package,
   Wrench,
@@ -16,7 +16,6 @@ import {
   AlertTriangle,
   Edit2,
   Trash2,
-  Sparkles,
   Boxes,
   X,
   TrendingUp,
@@ -46,7 +45,9 @@ export const StockScreen: React.FC<StockScreenProps> = ({
   const [itemToEdit, setItemToEdit] = useState<StockItem | null>(null);
   const [itemToDelete, setItemToDelete] = useState<StockItem | null>(null);
   const [defaultAddCategory, setDefaultAddCategory] = useState<StockCategory>('product');
-  const [isSeeding, setIsSeeding] = useState(false);
+  const [view, setView] = useState<'stock' | 'purchase'>('stock');
+  const pendingPurchaseCount =
+    useLiveQuery(() => db.purchases.filter((p) => !p.isPurchased).count(), []) ?? 0;
 
   // Scroll listener for sticky header
   useEffect(() => {
@@ -154,17 +155,6 @@ export const StockScreen: React.FC<StockScreenProps> = ({
     await adjustStockQuantity(id, delta);
   };
 
-  const handleSeedDefaults = async () => {
-    setIsSeeding(true);
-    try {
-      await seedDefaultStockItems();
-    } catch (err) {
-      console.error('Failed to load default items:', err);
-    } finally {
-      setIsSeeding(false);
-    }
-  };
-
   return (
     <div className="min-h-screen pb-28">
       {/* Sticky top navigation bar for collapsed title */}
@@ -207,6 +197,7 @@ export const StockScreen: React.FC<StockScreenProps> = ({
               Stock
             </h1>
           </div>
+          {view === 'stock' && (
           <button
             type="button"
             onClick={() => handleOpenAdd('product')}
@@ -216,8 +207,33 @@ export const StockScreen: React.FC<StockScreenProps> = ({
             <Plus className="w-4 h-4 stroke-[2.5]" />
             <span>Add Item</span>
           </button>
+          )}
         </div>
 
+        {/* View Toggle: Stock / Purchase List */}
+        <div className="flex bg-[#E9E9EB] rounded-[12px] p-1">
+          <button
+            type="button"
+            onClick={() => setView('stock')}
+            className={`flex-1 py-2 rounded-[9px] text-[13px] font-semibold transition-all ${
+              view === 'stock' ? 'bg-white text-black shadow-xs' : 'text-gray-500'
+            }`}
+          >
+            Stock ({allStockItems.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setView('purchase')}
+            className={`flex-1 py-2 rounded-[9px] text-[13px] font-semibold transition-all ${
+              view === 'purchase' ? 'bg-white text-black shadow-xs' : 'text-gray-500'
+            }`}
+          >
+            Purchase List ({pendingPurchaseCount})
+          </button>
+        </div>
+
+        {view === 'stock' ? (
+        <>
         {/* Quick Summary Cards Carousel */}
         <div className="flex gap-2.5 overflow-x-auto no-scrollbar scroll-smooth snap-x snap-mandatory momentum-scroll overscroll-x-contain touch-pan-x pb-1 -mx-4 px-4 sm:mx-0 sm:px-0">
           {/* Card 1: Total Products */}
@@ -401,17 +417,6 @@ export const StockScreen: React.FC<StockScreenProps> = ({
                 <span>Add First Item</span>
               </button>
 
-              {allStockItems.length === 0 && (
-                <button
-                  type="button"
-                  onClick={handleSeedDefaults}
-                  disabled={isSeeding}
-                  className="w-full sm:w-auto px-4 py-2.5 bg-amber-50 border border-amber-300 text-amber-800 rounded-full text-xs font-semibold active:scale-95 transition-all flex items-center justify-center space-x-1.5"
-                >
-                  <Sparkles className="w-4 h-4 text-amber-600" />
-                  <span>{isSeeding ? 'Loading...' : 'Load 15+ Mobile Shop Essentials'}</span>
-                </button>
-              )}
             </div>
           </div>
         ) : (
@@ -574,9 +579,14 @@ export const StockScreen: React.FC<StockScreenProps> = ({
             })}
           </div>
         )}
+        </>
+        ) : (
+          <PurchaseListView isReadOnly={isReadOnly} onOpenPaywall={onOpenPaywall} />
+        )}
       </div>
 
       {/* Floating Add Item Button */}
+      {view === 'stock' && (
       <FloatingAction>
         <button
           type="button"
@@ -606,6 +616,7 @@ export const StockScreen: React.FC<StockScreenProps> = ({
           )}
         </button>
       </FloatingAction>
+      )}
 
       {/* Add / Edit Sheet Modal */}
       {isAddSheetOpen && (

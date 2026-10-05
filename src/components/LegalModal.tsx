@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, ShieldCheck, FileText, Lock, Database, Mail } from 'lucide-react';
 
 interface LegalModalProps {
@@ -16,7 +17,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
 
   if (!isOpen) return null;
 
-  return (
+  const content = (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
       <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-lg max-h-[85vh] flex flex-col shadow-2xl relative border border-slate-200 dark:border-slate-800 overflow-hidden">
         {/* Header */}
@@ -211,4 +212,9 @@ export const LegalModal: React.FC<LegalModalProps> = ({
       </div>
     </div>
   );
+
+  if (typeof document !== 'undefined') {
+    return createPortal(content, document.body);
+  }
+  return content;
 };

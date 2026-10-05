@@ -50,6 +50,8 @@ export interface AppSettings extends SyncMetadata {
   language: Language;
   firstLaunchDate: string; // 'YYYY-MM-DD' or ISO
   activated: boolean;
+  proPlan?: 'monthly' | 'yearly' | 'lifetime' | null; // plan granted when activated
+  proExpiresAt?: string | null; // ISO expiry for monthly/yearly; null/absent = lifetime
   lastBackupAt: string | null;
   showRepairs: boolean; // toggle for repairs module
   showStock?: boolean; // toggle for stock/inventory module
@@ -79,6 +81,15 @@ export interface StockItem extends SyncMetadata {
   sku?: string; // Barcode or item code
   lowStockThreshold?: number; // Alert threshold when quantity is low (default 5)
   notes?: string;
+  createdAt: number;
+}
+
+export interface PurchaseItem extends SyncMetadata {
+  id?: number;
+  name: string;
+  quantity: number;
+  note?: string;
+  isPurchased: boolean;
   createdAt: number;
 }
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Language } from '../types';
 import { t } from '../i18n';
 import { checkCode, formatActivationCode } from '../utils/activation';
@@ -90,7 +91,7 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
 
     setIsActivating(true);
     if (checkCode(code)) {
-      await updateAppSettings({ activated: true });
+      await updateAppSettings({ activated: true, proPlan: 'lifetime', proExpiresAt: null });
       setActivationSuccess(true);
       setCodeError(null);
       if (onActivated) {
@@ -105,7 +106,7 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
     setIsActivating(false);
   };
 
-  return (
+  const sheetElement = (
     <div className="fixed inset-0 z-50 flex flex-col justify-end">
       {/* Backdrop */}
       <div
@@ -328,4 +329,9 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
       </div>
     </div>
   );
+
+  if (typeof document !== 'undefined') {
+    return createPortal(sheetElement, document.body);
+  }
+  return sheetElement;
 };

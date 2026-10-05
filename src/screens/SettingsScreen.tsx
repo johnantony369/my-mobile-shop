@@ -35,6 +35,13 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { PaywallModal } from '../components/PaywallModal';
 import { isSuperAdmin, hasFullAccess } from '../utils/admin';
+import {
+  isProCurrentlyActive,
+  isProExpired,
+  proDaysRemaining,
+  formatProExpiry,
+  PRO_PLAN_LABELS,
+} from '../utils/proPlan';
 import { LegalModal } from '../components/LegalModal';
 import { linkGoogleAccount } from '../firebase/auth';
 import { LinkPhoneModal } from '../components/LinkPhoneModal';
@@ -230,7 +237,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const [devNotice, setDevNotice] = useState<string | null>(null);
 
   const isAdmin = isSuperAdmin(user);
-  const isProActive = hasFullAccess(!!settings.activated || activationSuccess, user);
+  const isProActive = hasFullAccess(isProCurrentlyActive(settings) || activationSuccess, user);
+  const isPlanLapsed = !activationSuccess && isProExpired(settings);
+  const planDaysLeft = proDaysRemaining(settings);
   const trialDays = getTrialDaysRemaining(settings.firstLaunchDate);
   const isExpired = trialDays <= 0 && !isProActive;
   const backupWarning = isBackupNeeded(settings.lastBackupAt);
@@ -264,7 +273,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
   const handleActivate = async () => {
     if (checkCode(activationInput)) {
-      await updateAppSettings({ activated: true });
+      await updateAppSettings({ activated: true, proPlan: 'lifetime', proExpiresAt: null });
       setActivationSuccess(true);
       setActivationError(null);
       onRefreshSettings();
@@ -535,14 +544,37 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           </div>
 
           {isProActive ? (
-            <div className="flex items-center space-x-2.5 p-3 bg-green-50 text-iosGreen rounded-[10px] border border-green-200">
-              <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
-              <span className="text-sm font-semibold">
-                {isAdmin ? 'Activated (Superadmin Lifetime Access)' : t('activated_status', language)}
-              </span>
+            <div className="p-3 bg-green-50 text-iosGreen rounded-[10px] border border-green-200">
+              <div className="flex items-center space-x-2.5">
+                <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
+                <span className="text-sm font-semibold">
+                  {isAdmin ? 'Activated (Superadmin Lifetime Access)' : t('activated_status', language)}
+                </span>
+              </div>
+              {!isAdmin && settings.proPlan && (
+                <p className="text-xs text-iosGreen/90 mt-1.5 ml-[30px]">
+                  {PRO_PLAN_LABELS[settings.proPlan]} plan
+                  {settings.proExpiresAt
+                    ? ` · renews by ${formatProExpiry(settings.proExpiresAt)}${
+                        planDaysLeft !== null && planDaysLeft <= 7
+                          ? ` (${planDaysLeft} day${planDaysLeft === 1 ? '' : 's'} left)`
+                          : ''
+                      }`
+                    : ' · never expires'}
+                </p>
+              )}
             </div>
           ) : (
             <div className="space-y-3">
+              {isPlanLapsed && (
+                <div className="p-3 rounded-[10px] flex items-center space-x-2 bg-red-50 text-iosRed border border-red-200">
+                  <Clock className="w-4 h-4 flex-shrink-0" />
+                  <span className="text-xs font-semibold">
+                    Your {settings.proPlan ? PRO_PLAN_LABELS[settings.proPlan].toLowerCase() : 'Pro'} plan expired on{' '}
+                    {formatProExpiry(settings.proExpiresAt)}. Contact us to renew.
+                  </span>
+                </div>
+              )}
               <div
                 className={`p-3 rounded-[10px] flex items-center space-x-2 ${
                   isExpired

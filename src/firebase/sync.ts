@@ -12,6 +12,7 @@ import { dbFirestore, auth, isFirebaseConfigured } from './config';
 import { Entry, Job, AppSettings, StockItem, Bill } from '../types';
 import { upsertAccountSummary, calculateDataSize } from './admin';
 import { isSuperAdmin } from '../utils/admin';
+import { isProCurrentlyActive } from '../utils/proPlan';
 
 export type SyncState = 'idle' | 'syncing' | 'synced' | 'offline' | 'error';
 
@@ -334,7 +335,9 @@ export async function pushPendingChanges(uid: string): Promise<number> {
       email: currentUser?.email || null,
       phoneNumber: currentUser?.phoneNumber || null,
       shopName: localSettings?.shopName || 'My Mobile Shop',
-      activated: isSuperAdmin(currentUser) || !!localSettings?.activated,
+      activated: isSuperAdmin(currentUser) || isProCurrentlyActive(localSettings),
+      proPlan: localSettings?.proPlan ?? null,
+      proExpiresAt: localSettings?.proExpiresAt ?? null,
       entryCount: totalEntries.length,
       jobCount: totalJobs.length,
       estimatedBytes,
@@ -414,7 +417,9 @@ export async function pullCloudChanges(uid: string): Promise<{ pulledEntries: nu
           shopName: recoveredShopName,
           language: 'en',
           firstLaunchDate: accountData?.createdAt || now.split('T')[0],
-          activated: isSuperAdmin(currentUser) || !!accountData?.activated,
+          activated: isSuperAdmin(currentUser) || isProCurrentlyActive(accountData),
+          proPlan: accountData?.proPlan ?? null,
+          proExpiresAt: accountData?.proExpiresAt ?? null,
           lastBackupAt: now,
           showRepairs: true,
           ownerUid: uid,

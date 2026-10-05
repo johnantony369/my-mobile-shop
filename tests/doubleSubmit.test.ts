@@ -65,4 +65,16 @@ describe('Dual Entry & Double Submission Prevention', () => {
     expect(content).toContain('if (isConfirmingRef.current) return;');
     expect(content).toContain('isConfirmingRef.current = true;');
   });
+
+  it('BookScreen and RepairsScreen use softDelete to prevent resurrection across refresh and sync', () => {
+    const bookFile = path.resolve(__dirname, '../src/screens/BookScreen.tsx');
+    const bookContent = fs.readFileSync(bookFile, 'utf-8');
+    expect(bookContent).toContain('softDeleteEntry');
+    expect(bookContent).not.toMatch(/db\.entries\.delete\(entryToDelete\.id\)/);
+
+    const repairsFile = path.resolve(__dirname, '../src/screens/RepairsScreen.tsx');
+    const repairsContent = fs.readFileSync(repairsFile, 'utf-8');
+    expect(repairsContent).toContain('softDeleteJob');
+    expect(repairsContent).not.toMatch(/db\.jobs\.delete\(jobToDelete\.id\)/);
+  });
 });

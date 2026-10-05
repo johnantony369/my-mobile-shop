@@ -7,6 +7,7 @@ import {
   updateDoc
 } from 'firebase/firestore';
 import { dbFirestore } from './config';
+import { ProPlan, computeProExpiry } from '../utils/proPlan';
 
 export interface ShopAccountSummary {
   uid: string;
@@ -14,6 +15,8 @@ export interface ShopAccountSummary {
   phoneNumber: string | null;
   shopName: string;
   activated: boolean;
+  proPlan?: ProPlan | null;
+  proExpiresAt?: string | null;
   entryCount: number;
   jobCount: number;
   estimatedBytes: number;
@@ -120,17 +123,29 @@ export async function fetchAllAccounts(): Promise<ShopAccountSummary[]> {
 }
 
 /**
- * Toggles lifetime Pro status for a shop account.
+ * Grants a Pro plan (monthly / yearly / lifetime) to a shop account, or revokes
+ * Pro when `plan` is null.
  * Updates both the central `accounts/{uid}` record and the user's `users/{uid}/settings/appSettings` doc.
+ * Renewing a still-running monthly/yearly plan extends it from its current expiry.
+ * Returns the resulting plan state so callers can update their UI.
  */
-export async function toggleAccountPro(uid: string, activated: boolean): Promise<void> {
-  if (!dbFirestore || !uid) return;
+export async function setAccountPlan(
+  uid: string,
+  plan: ProPlan | null,
+  currentExpiresAt?: string | null
+): Promise<{ activated: boolean; proPlan: ProPlan | null; proExpiresAt: string | null }> {
+  const activated = plan !== null;
+  const proExpiresAt = plan ? computeProExpiry(plan, new Date(), currentExpiresAt) : null;
+  const result = { activated, proPlan: plan, proExpiresAt };
+  if (!dbFirestore || !uid) return result;
   const now = new Date().toISOString();
 
   // 1. Update accounts directory
   const accountRef = doc(dbFirestore, 'accounts', uid);
   await updateDoc(accountRef, {
     activated,
+    proPlan: plan,
+    proExpiresAt,
     updatedAt: now,
   });
 
@@ -139,10 +154,14 @@ export async function toggleAccountPro(uid: string, activated: boolean): Promise
     const userSettingsRef = doc(dbFirestore, 'users', uid, 'settings', 'appSettings');
     await setDoc(userSettingsRef, {
       activated,
+      proPlan: plan,
+      proExpiresAt,
       updatedAt: now,
       syncStatus: 'synced',
     }, { merge: true });
   } catch (err) {
     console.warn('Failed to update remote user appSettings:', err);
   }
+
+  return result;
 }
