@@ -82,9 +82,9 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
         </div>
       </div>
 
-      {/* Cash / UPI / Card breakdown row */}
+      {/* Cash / UPI / Card / Credit breakdown row */}
       <div className="mt-3 flex items-center justify-between text-xs">
-        <div className="flex items-center space-x-2 text-[12px] text-[#8E8E93]">
+        <div className="flex flex-wrap items-center gap-1.5 text-[12px] text-[#8E8E93]">
           <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-gray-100 font-medium">
             Cash: <strong className="ml-1 text-black font-bold">{formatINR(summary.cashTotal)}</strong>
           </span>
@@ -94,6 +94,11 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
           <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-purple-50 text-purple-600 font-medium">
             Card: <strong className="ml-1 font-bold">{formatINR(summary.cardTotal)}</strong>
           </span>
+          {summary.creditTotal > 0 && (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200/80 font-medium">
+              Credit: <strong className="ml-1 font-bold">{formatINR(summary.creditTotal)}</strong>
+            </span>
+          )}
         </div>
 
         {/* Mini share button */}
