@@ -10,17 +10,19 @@ export interface ShareDataInput {
   cashTotal: number;
   upiTotal: number;
   cardTotal: number;
+  creditTotal?: number;
 }
 
 export function buildShareSummaryText(data: ShareDataInput): string {
   const shop = data.shopName.trim() || 'My Mobile Shop';
+  const creditPart = data.creditTotal && data.creditTotal > 0 ? ` | Credit ${formatINR(data.creditTotal)}` : '';
   return (
     `Summary — ${shop}\n` +
     `${data.dateStr}\n` +
     `Sales: ${formatINR(data.inTotal)} (${data.inCount} items)\n` +
     `Expenses: ${formatINR(data.outTotal)}\n` +
     `Net: ${formatINR(data.net)}\n` +
-    `Cash ${formatINR(data.cashTotal)} | UPI ${formatINR(data.upiTotal)} | Card ${formatINR(data.cardTotal)}`
+    `Cash ${formatINR(data.cashTotal)} | UPI ${formatINR(data.upiTotal)} | Card ${formatINR(data.cardTotal)}${creditPart}`
   );
 }
 

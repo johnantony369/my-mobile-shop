@@ -1,5 +1,5 @@
 export type EntryType = 'in' | 'out';
-export type PaymentMethod = 'cash' | 'upi' | 'card';
+export type PaymentMethod = 'cash' | 'upi' | 'card' | 'credit';
 export type Language = 'en';
 
 export type SyncStatus = 'synced' | 'pending' | 'deleted';
@@ -66,6 +66,7 @@ export interface DaySummary {
   cashTotal: number;
   upiTotal: number;
   cardTotal: number;
+  creditTotal: number;
 }
 
 export type StockCategory = 'product' | 'service';

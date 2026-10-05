@@ -347,6 +347,7 @@ export function computeSummary(entries: Entry[]): DaySummary {
   let cashTotal = 0;
   let upiTotal = 0;
   let cardTotal = 0;
+  let creditTotal = 0;
 
   for (const entry of entries) {
     const amt = Number(entry.amount) || 0;
@@ -356,6 +357,7 @@ export function computeSummary(entries: Entry[]): DaySummary {
       if (entry.paymentMethod === 'cash') cashTotal += amt;
       else if (entry.paymentMethod === 'upi') upiTotal += amt;
       else if (entry.paymentMethod === 'card') cardTotal += amt;
+      else if (entry.paymentMethod === 'credit') creditTotal += amt;
       else cashTotal += amt;
     } else {
       outTotal += amt;
@@ -370,6 +372,7 @@ export function computeSummary(entries: Entry[]): DaySummary {
     cashTotal,
     upiTotal,
     cardTotal,
+    creditTotal,
   };
 }
 
