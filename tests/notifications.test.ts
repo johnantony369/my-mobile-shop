@@ -81,3 +81,17 @@ describe('Daily Summary Notification Engine', () => {
     });
   });
 });
+
+describe('SettingsScreen Notification UI Contract', () => {
+  it('contains notification toggle, custom time picker, and test button', async () => {
+    const fs = await import('fs');
+    const path = await import('path');
+    const settingsPath = path.resolve(__dirname, '../src/screens/SettingsScreen.tsx');
+    const content = fs.readFileSync(settingsPath, 'utf-8');
+
+    expect(content).toContain('Daily Summary Notification');
+    expect(content).toContain('summaryNotificationTime');
+    expect(content).toContain('Send Test Notification');
+    expect(content).toContain('triggerDailySummaryNotification');
+  });
+});

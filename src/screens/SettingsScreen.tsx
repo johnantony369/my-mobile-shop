@@ -31,6 +31,7 @@ import {
   ChevronRight,
   Crown,
   Phone,
+  Bell,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { PaywallModal } from '../components/PaywallModal';
@@ -46,6 +47,11 @@ import { LegalModal } from '../components/LegalModal';
 import { linkGoogleAccount } from '../firebase/auth';
 import { LinkPhoneModal } from '../components/LinkPhoneModal';
 import { InstallGuideModal } from '../components/InstallBanner';
+import {
+  getNotificationPermission,
+  requestNotificationPermission,
+  triggerDailySummaryNotification,
+} from '../utils/notifications';
 
 /** Standalone sub-component so it has its own state without polluting SettingsScreen */
 const AppUpdatesSection: React.FC<{ language: Language }> = ({ language }) => {
@@ -156,6 +162,130 @@ const AppUpdatesSection: React.FC<{ language: Language }> = ({ language }) => {
           platform={platform}
           onClose={() => setShowGuide(false)}
         />
+      )}
+    </div>
+  );
+};
+
+/** Standalone component for Daily Closing Summary Notification settings */
+const DailyNotificationSection: React.FC<{
+  settings: AppSettings;
+  onRefreshSettings: () => void;
+}> = ({ settings, onRefreshSettings }) => {
+  const [permission, setPermission] = useState(getNotificationPermission());
+  const [testSent, setTestSent] = useState(false);
+  const isSupported = permission !== 'unsupported';
+  const isEnabled = Boolean(settings.notificationsEnabled && permission === 'granted');
+  const currentTime = settings.summaryNotificationTime || '20:30';
+
+  const handleToggle = async () => {
+    if (!isSupported) return;
+    if (permission !== 'granted') {
+      const result = await requestNotificationPermission();
+      setPermission(result);
+      if (result === 'granted') {
+        await updateAppSettings({ notificationsEnabled: true });
+        onRefreshSettings();
+      }
+    } else {
+      await updateAppSettings({ notificationsEnabled: !settings.notificationsEnabled });
+      onRefreshSettings();
+    }
+  };
+
+  const handleTimeChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newTime = e.target.value;
+    await updateAppSettings({ summaryNotificationTime: newTime });
+    onRefreshSettings();
+  };
+
+  const handleSendTest = async () => {
+    if (permission !== 'granted') {
+      const res = await requestNotificationPermission();
+      setPermission(res);
+      if (res !== 'granted') return;
+    }
+    const success = await triggerDailySummaryNotification({ isTest: true, shopName: settings.shopName });
+    if (success) {
+      setTestSent(true);
+      setTimeout(() => setTestSent(false), 3000);
+    }
+  };
+
+  return (
+    <div className="bg-white rounded-[14px] p-4 shadow-sm border border-black/[0.04]">
+      <div className="flex items-center space-x-2 text-xs font-semibold text-[#8E8E93] uppercase tracking-wider mb-3">
+        <Bell className="w-4 h-4 text-iosBlue" />
+        <span>Daily Summary Notification</span>
+      </div>
+
+      {/* Main Toggle Row */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="pr-3">
+          <span className="text-[15px] font-semibold text-black block">
+            Closing Summary
+          </span>
+          <span className="text-xs text-[#8E8E93] block mt-0.5">
+            {isSupported
+              ? permission === 'denied'
+                ? 'Notifications blocked in browser settings'
+                : "Get today's sales, net, & repairs at closing"
+              : 'Notifications not supported on this browser'}
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={handleToggle}
+          disabled={!isSupported || permission === 'denied'}
+          className={`w-12 h-7 rounded-full transition-colors relative flex items-center p-0.5 ${
+            isEnabled ? 'bg-iosGreen' : 'bg-[#E5E5EA]'
+          } ${(!isSupported || permission === 'denied') ? 'opacity-50 cursor-not-allowed' : ''}`}
+          aria-label="Toggle daily summary notification"
+        >
+          <div
+            className={`w-6 h-6 rounded-full bg-white shadow-md transform transition-transform ${
+              isEnabled ? 'translate-x-5' : 'translate-x-0'
+            }`}
+          />
+        </button>
+      </div>
+
+      {/* Custom Time & Test Button Row (visible when enabled) */}
+      {isEnabled && (
+        <>
+          <div className="h-px bg-[#E5E5EA] my-3" />
+          <div className="flex items-center justify-between py-1">
+            <div className="pr-3">
+              <span className="text-xs font-semibold text-black block">
+                Notification Time
+              </span>
+              <span className="text-[11px] text-[#8E8E93] block">
+                Set when your shop wraps up
+              </span>
+            </div>
+            <input
+              type="time"
+              value={currentTime}
+              onChange={handleTimeChange}
+              className="bg-[#F2F2F7] border border-black/[0.08] text-black text-xs font-semibold rounded-[10px] px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-iosBlue/40 cursor-pointer"
+            />
+          </div>
+
+          <div className="h-px bg-[#E5E5EA] my-3" />
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-[#8E8E93]">
+              Preview on device lockscreen
+            </span>
+            <button
+              type="button"
+              onClick={handleSendTest}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-iosBlue rounded-[10px] text-xs font-semibold active:opacity-80 transition-all"
+            >
+              <Bell className="w-3.5 h-3.5" />
+              <span>{testSent ? 'Sent! Check tray' : 'Send Test Notification'}</span>
+            </button>
+          </div>
+        </>
       )}
     </div>
   );
@@ -966,6 +1096,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
         {/* Section: App & Updates */}
         <AppUpdatesSection language={language} />
+
+        {/* Section: Daily Summary Notification */}
+        <DailyNotificationSection settings={settings} onRefreshSettings={onRefreshSettings} />
 
         {/* Section 6: About */}
         <div className="bg-white rounded-[14px] p-4 shadow-sm border border-black/[0.04]">
