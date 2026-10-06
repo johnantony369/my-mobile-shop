@@ -1,5 +1,5 @@
 import Dexie, { Table } from 'dexie';
-import { Entry, AppSettings, DaySummary, Job, Language, StockItem, Bill, BillItem, PaymentMethod, PurchaseItem, JobPhoto } from '../types';
+import { Entry, AppSettings, DaySummary, Job, Language, StockItem, Bill, BillItem, PaymentMethod, PurchaseItem, JobPhoto, UsedDevice } from '../types';
 import { getLocalDateString } from '../utils/date';
 import { computeBillTotals, formatInvoiceNo, summarizeBillItems } from '../utils/billing';
 
@@ -18,6 +18,7 @@ export class ShopDatabase extends Dexie {
   bills!: Table<Bill, number>;
   purchases!: Table<PurchaseItem, number>;
   jobPhotos!: Table<JobPhoto, number>;
+  usedDevices!: Table<UsedDevice, number>;
 
   constructor() {
     super('MyMobileShopDB');
@@ -91,6 +92,30 @@ export class ShopDatabase extends Dexie {
       bills: '++id, cloudId, invoiceNo, date, createdAt, updatedAt, syncStatus',
       purchases: '++id, cloudId, name, isPurchased, createdAt, updatedAt, syncStatus',
       jobPhotos: '++id, photoId, jobCloudId, uploadStatus, createdAt, syncStatus',
+    });
+
+    this.version(8).stores({
+      entries: '++id, cloudId, type, amount, date, createdAt, updatedAt, syncStatus, paymentMethod, repairId',
+      settings: '++id, cloudId, updatedAt, syncStatus',
+      jobs: '++id, cloudId, status, phone, customerName, model, receivedAt, readyAt, deliveredAt, bookEntryId, updatedAt, syncStatus',
+      stock: '++id, cloudId, name, category, sellingPrice, quantity, sku, createdAt, updatedAt, syncStatus',
+      bills: '++id, cloudId, invoiceNo, date, createdAt, updatedAt, syncStatus',
+      purchases: '++id, cloudId, name, isPurchased, createdAt, updatedAt, syncStatus',
+      jobPhotos: '++id, photoId, jobCloudId, uploadStatus, createdAt, syncStatus',
+      usedDevices: '++id, cloudId, imei, serialNumber, deviceCategory, status, brand, model, purchaseDate, createdAt, updatedAt, syncStatus',
+    });
+
+    this.usedDevices.hook('creating', (_primKey, obj) => {
+      if (!obj.cloudId) obj.cloudId = generateCloudId();
+      if (!obj.createdAt) obj.createdAt = Date.now();
+      if (!obj.updatedAt) obj.updatedAt = new Date().toISOString();
+      if (!obj.syncStatus) obj.syncStatus = 'pending';
+    });
+    this.usedDevices.hook('updating', (modifications: Partial<UsedDevice>) => {
+      if (!modifications.updatedAt) {
+        return { ...modifications, updatedAt: new Date().toISOString(), syncStatus: modifications.syncStatus || 'pending' };
+      }
+      return undefined;
     });
 
     this.jobPhotos.hook('creating', (_primKey, obj) => {
@@ -191,7 +216,7 @@ export async function getAppSettings(): Promise<AppSettings | undefined> {
 
 export async function clearLocalDatabase(): Promise<void> {
   try {
-    await db.transaction('rw', [db.entries, db.settings, db.jobs, db.stock, db.bills, db.purchases, db.jobPhotos], async () => {
+    await db.transaction('rw', [db.entries, db.settings, db.jobs, db.stock, db.bills, db.purchases, db.jobPhotos, db.usedDevices], async () => {
       await db.entries.clear();
       await db.settings.clear();
       await db.jobs.clear();
@@ -199,6 +224,7 @@ export async function clearLocalDatabase(): Promise<void> {
       if (db.bills) await db.bills.clear();
       if (db.purchases) await db.purchases.clear();
       if (db.jobPhotos) await db.jobPhotos.clear();
+      if (db.usedDevices) await db.usedDevices.clear();
     });
   } catch (err) {
     console.warn('Error clearing local database in transaction, falling back to individual clears:', err);
@@ -210,6 +236,7 @@ export async function clearLocalDatabase(): Promise<void> {
       db.bills ? db.bills.clear() : Promise.resolve(),
       db.purchases ? db.purchases.clear() : Promise.resolve(),
       db.jobPhotos ? db.jobPhotos.clear() : Promise.resolve(),
+      db.usedDevices ? db.usedDevices.clear() : Promise.resolve(),
     ]);
   }
 }
@@ -548,3 +575,81 @@ export async function deleteJobPhoto(photoId: string): Promise<void> {
     await db.jobPhotos.delete(item.id);
   }
 }
+
+export async function addUsedDevice(
+  device: Omit<UsedDevice, 'id'>,
+  createDayBookEntry: boolean = false
+): Promise<number> {
+  const deviceId = await db.usedDevices.add(device as UsedDevice);
+
+  if (createDayBookEntry && device.purchasePrice > 0) {
+    const idInfo = device.imei ? `IMEI: ${device.imei}` : device.serialNumber ? `S/N: ${device.serialNumber}` : '';
+    const noteSuffix = idInfo ? ` (${idInfo})` : '';
+    const categoryName = device.deviceCategory ? device.deviceCategory.toUpperCase() : 'DEVICE';
+    await db.entries.add({
+      type: 'out',
+      amount: device.purchasePrice,
+      item: `Buyback: ${device.brand} ${device.model}`,
+      customerName: device.sellerName,
+      note: `Used ${categoryName} intake: ${device.brand} ${device.model}${noteSuffix}`,
+      paymentMethod: 'cash',
+      date: device.purchaseDate || getLocalDateString(),
+      createdAt: Date.now(),
+    });
+  }
+
+  return deviceId;
+}
+
+export async function updateUsedDevice(
+  id: number,
+  changes: Partial<UsedDevice>
+): Promise<void> {
+  await db.usedDevices.update(id, changes);
+}
+
+export async function markUsedDeviceSold(
+  id: number,
+  saleData: {
+    soldPrice: number;
+    buyerName?: string;
+    buyerPhone?: string;
+    soldDate: string;
+  },
+  createDayBookEntry: boolean = false
+): Promise<void> {
+  const device = await db.usedDevices.get(id);
+  if (!device) return;
+
+  await db.usedDevices.update(id, {
+    status: 'sold',
+    soldPrice: saleData.soldPrice,
+    buyerName: saleData.buyerName,
+    buyerPhone: saleData.buyerPhone,
+    soldDate: saleData.soldDate,
+  });
+
+  if (createDayBookEntry && saleData.soldPrice > 0) {
+    const idInfo = device.imei ? `IMEI: ${device.imei}` : device.serialNumber ? `S/N: ${device.serialNumber}` : '';
+    const noteSuffix = idInfo ? ` (${idInfo})` : '';
+    const categoryName = device.deviceCategory ? device.deviceCategory.toUpperCase() : 'DEVICE';
+    await db.entries.add({
+      type: 'in',
+      amount: saleData.soldPrice,
+      item: `Sale: ${device.brand} ${device.model}`,
+      customerName: saleData.buyerName || 'Pre-Owned Buyer',
+      note: `Sold used ${categoryName}: ${device.brand} ${device.model}${noteSuffix}`,
+      paymentMethod: 'cash',
+      date: saleData.soldDate || getLocalDateString(),
+      createdAt: Date.now(),
+    });
+  }
+}
+
+export async function softDeleteUsedDevice(id: number): Promise<void> {
+  await db.usedDevices.update(id, {
+    deletedAt: new Date().toISOString(),
+    syncStatus: 'deleted',
+  });
+}
+

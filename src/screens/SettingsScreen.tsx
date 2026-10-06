@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { AppSettings, Language } from '../types';
 import { t } from '../i18n';
-import { updateAppSettings, clearLocalDatabase } from '../db/db';
+import { updateAppSettings, clearLocalDatabase, cleanIndianPhone, isValidIndianPhone } from '../db/db';
+import { compressImageFile } from '../utils/image';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { checkCode, formatActivationCode, getTrialDaysRemaining } from '../utils/activation';
 import { exportBackup, importBackup, isBackupNeeded } from '../utils/backup';
@@ -32,8 +33,11 @@ import {
   Crown,
   Phone,
   Bell,
+  BarChart3,
+  Camera,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { ReportsScreen } from './ReportsScreen';
 import { PaywallModal } from '../components/PaywallModal';
 import { isSuperAdmin, hasFullAccess } from '../utils/admin';
 import {
@@ -310,6 +314,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const [shopName, setShopName] = useState(settings.shopName);
   const [shopAddress, setShopAddress] = useState(settings.shopAddress || '');
   const [isSavedNotice, setIsSavedNotice] = useState(false);
+  const [showReports, setShowReports] = useState(false);
 
   // Paywall state
   const [isLocalPaywallOpen, setIsLocalPaywallOpen] = useState(false);
@@ -473,6 +478,19 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     setTimeout(() => setDevNotice(null), 3000);
   };
 
+  if (showReports) {
+    return (
+      <ReportsScreen
+        language={language}
+        shopName={settings.shopName}
+        showRepairs={settings.showRepairs}
+        isActivated={settings.activated}
+        onOpenPaywall={onOpenPaywall}
+        onBack={() => setShowReports(false)}
+      />
+    );
+  }
+
   return (
     <div className="flex flex-col min-h-screen overflow-y-auto pb-28 pt-2">
       <div className="max-w-lg mx-auto px-4 space-y-4">
@@ -542,6 +560,28 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             <CheckCircle2 className="w-6 h-6 text-white shrink-0" />
           </div>
         )}
+
+        {/* Reports & Analytics Row */}
+        <button
+          type="button"
+          onClick={() => setShowReports(true)}
+          className="w-full bg-white rounded-[14px] p-4 shadow-sm border border-black/[0.04] flex items-center justify-between text-left hover:bg-slate-50 active:scale-[0.99] transition-all"
+        >
+          <div className="flex items-center space-x-3.5">
+            <div className="w-10 h-10 rounded-xl bg-blue-50 text-iosBlue flex items-center justify-center shrink-0">
+              <BarChart3 className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-[15px] font-bold text-black tracking-tight">
+                Reports & Analytics
+              </h3>
+              <p className="text-xs text-[#8E8E93] mt-0.5">
+                Monthly revenue, day-by-day cash flow & repair stats
+              </p>
+            </div>
+          </div>
+          <ChevronRight className="w-5 h-5 text-[#8E8E93] shrink-0" />
+        </button>
 
         {/* Section 1: Shop Name */}
         <div className="bg-white rounded-[14px] p-4 shadow-sm border border-black/[0.04]">

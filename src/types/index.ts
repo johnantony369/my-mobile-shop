@@ -49,6 +49,7 @@ export interface PublicRepairTrack {
   shopName: string;
   shopAddress?: string;
   shopPhone?: string;
+  shopLogo?: string;
   customerName?: string;
   model: string;
   complaint: string;
@@ -76,6 +77,8 @@ export interface AppSettings extends SyncMetadata {
   id?: number;
   shopName: string;
   shopAddress?: string;
+  shopPhone?: string; // 10-digit WhatsApp/call contact number
+  shopLogo?: string; // compressed dataUrl avatar
   language: Language;
   firstLaunchDate: string; // 'YYYY-MM-DD' or ISO
   activated: boolean;
@@ -159,3 +162,40 @@ export interface JobPhoto extends SyncMetadata {
   uploadedAt?: number;
   uploadStatus: 'pending' | 'uploading' | 'uploaded' | 'failed';
 }
+
+export type UsedDeviceStatus = 'in_stock' | 'sold';
+
+export type DeviceCategory = 'phone' | 'laptop' | 'tablet' | 'smartwatch' | 'earbuds' | 'other';
+
+export interface UsedDevice extends SyncMetadata {
+  id?: number;
+  deviceCategory?: DeviceCategory;
+  brand: string;
+  model: string;
+  imei?: string; // 15 digits validated for phones
+  serialNumber?: string; // For non-phone gadgets (laptops, watches, earbuds, etc.)
+  color?: string;
+  storage?: string;
+  accessories?: string[]; // e.g. ['Box', 'Charger', 'Bill']
+  purchasePrice: number;
+  sellingPrice?: number;
+  purchaseDate: string; // 'YYYY-MM-DD'
+  notes?: string;
+
+  // Seller KYC
+  sellerName: string;
+  sellerPhone: string;
+  sellerGovtIdType?: string; // Aadhaar, Driving License, Voter ID, PAN, Other
+  sellerGovtIdNumber?: string;
+  sellerIdPhotoUrl?: string; // compressed base64 / dataUrl (< 120KB)
+
+  // Status & Resale details
+  status: UsedDeviceStatus;
+  soldPrice?: number;
+  soldDate?: string;
+  buyerName?: string;
+  buyerPhone?: string;
+
+  createdAt: number; // timestamp ms
+}
+

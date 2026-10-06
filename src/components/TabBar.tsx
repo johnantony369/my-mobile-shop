@@ -1,9 +1,9 @@
 import React from 'react';
-import { BookOpen, Package, Wrench, BarChart3, Settings } from 'lucide-react';
+import { BookOpen, Package, Wrench, LayoutGrid, Settings } from 'lucide-react';
 import { Language } from '../types';
 import { t } from '../i18n';
 
-export type TabType = 'book' | 'stock' | 'repairs' | 'reports' | 'settings';
+export type TabType = 'book' | 'stock' | 'repairs' | 'tools' | 'settings';
 
 interface TabBarProps {
   currentTab: TabType;
@@ -13,6 +13,7 @@ interface TabBarProps {
   showStock?: boolean;
   readyCount?: number;
   lowStockCount?: number;
+  usedStockCount?: number;
 }
 
 export const TabBar: React.FC<TabBarProps> = ({
@@ -23,6 +24,7 @@ export const TabBar: React.FC<TabBarProps> = ({
   showStock = true,
   readyCount = 0,
   lowStockCount = 0,
+  usedStockCount = 0,
 }) => {
   const tabs = [
     {
@@ -55,11 +57,11 @@ export const TabBar: React.FC<TabBarProps> = ({
         ]
       : []),
     {
-      id: 'reports' as TabType,
-      label: t('tab_reports', language),
-      icon: BarChart3,
-      badge: 0,
-      badgeColor: 'bg-iosGreen',
+      id: 'tools' as TabType,
+      label: 'Tools',
+      icon: LayoutGrid,
+      badge: usedStockCount,
+      badgeColor: 'bg-purple-600',
     },
     {
       id: 'settings' as TabType,

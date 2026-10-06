@@ -2,11 +2,12 @@ import { FloatingAction } from '../components/FloatingAction';
 import React, { useState, useMemo, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, softDeleteStockItem, adjustStockQuantity } from '../db/db';
-import { StockItem, StockCategory, Language } from '../types';
+import { StockItem, StockCategory, Language, UsedDevice } from '../types';
 import { formatINR } from '../i18n';
 import { AddEditStockSheet } from './AddEditStockSheet';
 import { ConfirmModal } from '../components/ConfirmModal';
-import { PurchaseListView } from '../components/PurchaseListView';
+import { UsedPhonesView } from './UsedPhonesView';
+import { AddEditUsedPhoneSheet } from './AddEditUsedPhoneSheet';
 import {
   Package,
   Wrench,
@@ -45,9 +46,23 @@ export const StockScreen: React.FC<StockScreenProps> = ({
   const [itemToEdit, setItemToEdit] = useState<StockItem | null>(null);
   const [itemToDelete, setItemToDelete] = useState<StockItem | null>(null);
   const [defaultAddCategory, setDefaultAddCategory] = useState<StockCategory>('product');
-  const [view, setView] = useState<'stock' | 'purchase'>('stock');
-  const pendingPurchaseCount =
-    useLiveQuery(() => db.purchases.filter((p) => !p.isPurchased).count(), []) ?? 0;
+  const [view, setView] = useState<'stock' | 'preowned'>('stock');
+  const [isAddPreownedOpen, setIsAddPreownedOpen] = useState(false);
+  const [editingPreowned, setEditingPreowned] = useState<UsedDevice | null>(null);
+
+  const preownedCount =
+    useLiveQuery(
+      async () => {
+        try {
+          if (!db.usedDevices) return 0;
+          const items = await db.usedDevices.toArray();
+          return items.filter((d) => !d.deletedAt && d.syncStatus !== 'deleted' && d.status === 'in_stock').length;
+        } catch {
+          return 0;
+        }
+      },
+      []
+    ) ?? 0;
 
   // Scroll listener for sticky header
   useEffect(() => {
@@ -176,11 +191,20 @@ export const StockScreen: React.FC<StockScreenProps> = ({
           {isScrolled && (
             <button
               type="button"
-              onClick={() => handleOpenAdd('product')}
-              className="bg-iosBlue text-white text-xs font-semibold px-3 py-1.5 rounded-full flex items-center space-x-1 shadow-xs active:scale-95 transition-all"
+              onClick={() => {
+                if (view === 'stock') {
+                  handleOpenAdd('product');
+                } else {
+                  setEditingPreowned(null);
+                  setIsAddPreownedOpen(true);
+                }
+              }}
+              className={`${
+                view === 'stock' ? 'bg-iosBlue' : 'bg-purple-600'
+              } text-white text-xs font-semibold px-3 py-1.5 rounded-full flex items-center space-x-1 shadow-xs active:scale-95 transition-all`}
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>Add</span>
+              <span>{view === 'stock' ? 'Add' : 'Intake'}</span>
             </button>
           )}
         </div>
@@ -197,20 +221,33 @@ export const StockScreen: React.FC<StockScreenProps> = ({
               Stock
             </h1>
           </div>
-          {view === 'stock' && (
-          <button
-            type="button"
-            onClick={() => handleOpenAdd('product')}
-            disabled={isReadOnly}
-            className="mt-1 bg-iosBlue hover:bg-blue-600 active:scale-95 text-white font-semibold text-[14px] px-4 py-2.5 rounded-full shadow-md shadow-iosBlue/25 flex items-center space-x-1.5 transition-all select-none"
-          >
-            <Plus className="w-4 h-4 stroke-[2.5]" />
-            <span>Add Item</span>
-          </button>
+          {view === 'stock' ? (
+            <button
+              type="button"
+              onClick={() => handleOpenAdd('product')}
+              disabled={isReadOnly}
+              className="mt-1 bg-iosBlue hover:bg-blue-600 active:scale-95 text-white font-semibold text-[14px] px-4 py-2.5 rounded-full shadow-md shadow-iosBlue/25 flex items-center space-x-1.5 transition-all select-none"
+            >
+              <Plus className="w-4 h-4 stroke-[2.5]" />
+              <span>Add Item</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                setEditingPreowned(null);
+                setIsAddPreownedOpen(true);
+              }}
+              disabled={isReadOnly}
+              className="mt-1 bg-purple-600 hover:bg-purple-700 active:scale-95 text-white font-semibold text-[14px] px-4 py-2.5 rounded-full shadow-md shadow-purple-600/25 flex items-center space-x-1.5 transition-all select-none"
+            >
+              <Plus className="w-4 h-4 stroke-[2.5]" />
+              <span>New Intake</span>
+            </button>
           )}
         </div>
 
-        {/* View Toggle: Stock / Purchase List */}
+        {/* View Toggle: Stock / Pre-Owned */}
         <div className="flex bg-[#E9E9EB] rounded-[12px] p-1">
           <button
             type="button"
@@ -219,16 +256,16 @@ export const StockScreen: React.FC<StockScreenProps> = ({
               view === 'stock' ? 'bg-white text-black shadow-xs' : 'text-gray-500'
             }`}
           >
-            Stock ({allStockItems.length})
+            New Stock ({allStockItems.length})
           </button>
           <button
             type="button"
-            onClick={() => setView('purchase')}
+            onClick={() => setView('preowned')}
             className={`flex-1 py-2 rounded-[9px] text-[13px] font-semibold transition-all ${
-              view === 'purchase' ? 'bg-white text-black shadow-xs' : 'text-gray-500'
+              view === 'preowned' ? 'bg-white text-black shadow-xs' : 'text-gray-500'
             }`}
           >
-            Purchase List ({pendingPurchaseCount})
+            Pre-Owned ({preownedCount})
           </button>
         </div>
 
@@ -581,29 +618,44 @@ export const StockScreen: React.FC<StockScreenProps> = ({
         )}
         </>
         ) : (
-          <PurchaseListView isReadOnly={isReadOnly} onOpenPaywall={onOpenPaywall} />
+          <UsedPhonesView
+            shopName={shopName}
+            onOpenAdd={() => {
+              setEditingPreowned(null);
+              setIsAddPreownedOpen(true);
+            }}
+            onEditDevice={(device) => {
+              setEditingPreowned(device);
+              setIsAddPreownedOpen(true);
+            }}
+          />
         )}
       </div>
 
-      {/* Floating Add Item Button */}
-      {view === 'stock' && (
+      {/* Floating Action Button */}
       <FloatingAction>
         <button
           type="button"
           onClick={() => {
             if (isReadOnly && onOpenPaywall) {
               onOpenPaywall();
-            } else {
+            } else if (view === 'stock') {
               handleOpenAdd(currentFilter === 'service' ? 'service' : 'product');
+            } else {
+              setEditingPreowned(null);
+              setIsAddPreownedOpen(true);
             }
           }}
-          className="h-13 px-5 py-3 rounded-full flex items-center space-x-2 font-bold text-[15px] shadow-lg active:scale-95 transition-all duration-150 bg-iosBlue text-white shadow-iosBlue/35 hover:bg-blue-600"
+          className={`h-13 px-5 py-3 rounded-full flex items-center space-x-2 font-bold text-[15px] shadow-lg active:scale-95 transition-all duration-150 text-white ${
+            view === 'stock'
+              ? 'bg-iosBlue shadow-iosBlue/35 hover:bg-blue-600'
+              : 'bg-purple-600 shadow-purple-600/35 hover:bg-purple-700'
+          }`}
         >
           <Plus className="w-5 h-5 stroke-[2.5]" />
-          <span>Add Item</span>
+          <span>{view === 'stock' ? 'Add Item' : 'New Intake'}</span>
         </button>
       </FloatingAction>
-      )}
 
       {/* Add / Edit Sheet Modal */}
       {isAddSheetOpen && (
@@ -616,6 +668,17 @@ export const StockScreen: React.FC<StockScreenProps> = ({
           defaultCategory={defaultAddCategory}
         />
       )}
+
+      {/* Add / Edit Pre-Owned Sheet Modal */}
+      <AddEditUsedPhoneSheet
+        isOpen={isAddPreownedOpen}
+        onClose={() => {
+          setIsAddPreownedOpen(false);
+          setEditingPreowned(null);
+        }}
+        deviceToEdit={editingPreowned}
+        shopName={shopName}
+      />
 
       {/* Confirm Delete Modal */}
       <ConfirmModal

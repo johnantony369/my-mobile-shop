@@ -15,6 +15,7 @@ interface ReportsScreenProps {
   showRepairs?: boolean;
   isActivated?: boolean;
   onOpenPaywall?: () => void;
+  onBack?: () => void;
 }
 
 export const ReportsScreen: React.FC<ReportsScreenProps> = ({
@@ -23,6 +24,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
   showRepairs = false,
   isActivated: _isActivated,
   onOpenPaywall: _onOpenPaywall,
+  onBack,
 }) => {
   const today = new Date();
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
@@ -136,13 +138,25 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
         }`}
       >
         <div className="max-w-lg mx-auto px-4 flex items-center justify-between">
-          <span
-            className={`text-[17px] font-bold text-black transition-opacity duration-200 ${
-              isScrolled ? 'opacity-100' : 'opacity-0 pointer-events-none'
-            }`}
-          >
-            Reports & Analytics
-          </span>
+          <div className="flex items-center space-x-1">
+            {onBack && (
+              <button
+                type="button"
+                onClick={onBack}
+                className="flex items-center text-iosBlue text-[15px] font-medium active:opacity-60 -ml-1 mr-1.5"
+              >
+                <ChevronLeft className="w-5 h-5 -mr-0.5" />
+                <span>Settings</span>
+              </button>
+            )}
+            <span
+              className={`text-[17px] font-bold text-black transition-opacity duration-200 ${
+                isScrolled ? 'opacity-100' : 'opacity-0 pointer-events-none'
+              }`}
+            >
+              Reports & Analytics
+            </span>
+          </div>
           {isScrolled && (
             <button
               type="button"
@@ -157,8 +171,19 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
       </div>
 
       <div className="max-w-lg mx-auto px-4 space-y-3.5">
+        {onBack && !isScrolled && (
+          <button
+            type="button"
+            onClick={onBack}
+            className="flex items-center text-iosBlue text-[15px] font-medium active:opacity-60 pt-1 -ml-1 transition-all"
+          >
+            <ChevronLeft className="w-5 h-5 -mr-0.5" />
+            <span>Settings</span>
+          </button>
+        )}
+
         {/* Large Header Title & Action */}
-        <div className="pt-2 flex items-start justify-between">
+        <div className="pt-1 flex items-start justify-between">
           <div>
             <span className="text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wider block">
               {shopName || 'My Mobile Shop'}

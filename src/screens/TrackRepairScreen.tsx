@@ -79,9 +79,17 @@ export const TrackRepairView: React.FC<TrackRepairViewProps> = ({
       <header className="sticky top-0 z-20 bg-white/90 backdrop-blur-md border-b border-black/[0.06] py-3.5 px-4 shadow-2xs">
         <div className="max-w-md mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 rounded-full bg-blue-50 text-iosBlue flex items-center justify-center font-bold text-xs shadow-2xs">
-              <Wrench className="w-4 h-4" />
-            </div>
+            {repair.shopLogo ? (
+              <img
+                src={repair.shopLogo}
+                alt={repair.shopName}
+                className="w-8 h-8 rounded-full object-cover shadow-2xs border border-black/[0.06]"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-blue-50 text-iosBlue flex items-center justify-center font-bold text-xs shadow-2xs">
+                <Wrench className="w-4 h-4" />
+              </div>
+            )}
             <div>
               <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block leading-none">
                 Live Repair Tracker
@@ -417,9 +425,17 @@ export const TrackRepairView: React.FC<TrackRepairViewProps> = ({
         {/* Shop Contact Card */}
         <div className="bg-white rounded-[20px] p-5 shadow-sm border border-black/[0.04]">
           <div className="flex items-center space-x-3 mb-3.5">
-            <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 shrink-0">
-              <Store className="w-5 h-5 text-iosBlue" />
-            </div>
+            {repair.shopLogo ? (
+              <img
+                src={repair.shopLogo}
+                alt={repair.shopName}
+                className="w-10 h-10 rounded-full object-cover shrink-0 border border-black/[0.06]"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 shrink-0">
+                <Store className="w-5 h-5 text-iosBlue" />
+              </div>
+            )}
             <div>
               <h3 className="text-[15px] font-bold text-slate-900 leading-tight">
                 {repair.shopName || 'Mobile Repair Center'}

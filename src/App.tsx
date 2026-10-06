@@ -5,7 +5,7 @@ import { TabBar, TabType } from './components/TabBar';
 import { BookScreen } from './screens/BookScreen';
 import { StockScreen } from './screens/StockScreen';
 import { RepairsScreen } from './screens/RepairsScreen';
-import { ReportsScreen } from './screens/ReportsScreen';
+import { ToolsScreen } from './screens/ToolsScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { OnboardingScreen } from './screens/OnboardingScreen';
 import { getTrialDaysRemaining } from './utils/activation';
@@ -81,6 +81,23 @@ export default function App() {
         ).length;
       } catch (err) {
         console.warn('Error querying low stock count:', err);
+        return 0;
+      }
+    },
+    []
+  ) ?? 0;
+
+  // Safe live query for active in-stock used devices count
+  const usedStockCount = useLiveQuery(
+    async () => {
+      try {
+        if (!db.usedDevices) return 0;
+        const devices = await db.usedDevices.toArray();
+        return devices.filter(
+          (d) => !d.deletedAt && d.syncStatus !== 'deleted' && d.status === 'in_stock'
+        ).length;
+      } catch (err) {
+        console.warn('Error querying used stock count:', err);
         return 0;
       }
     },
@@ -244,11 +261,13 @@ export default function App() {
             onOpenPaywall={() => setIsPaywallOpen(true)}
           />
         )}
-        {currentTab === 'reports' && (
-          <ReportsScreen
+        {currentTab === 'tools' && (
+          <ToolsScreen
             language={language}
             shopName={settings.shopName}
-            showRepairs={showRepairs}
+            shopPhone={settings.shopAddress}
+            shopAddress={settings.shopAddress}
+            isReadOnly={isReadOnly}
             isActivated={isActivated}
             onOpenPaywall={() => setIsPaywallOpen(true)}
           />
@@ -276,6 +295,7 @@ export default function App() {
         showStock={showStock}
         readyCount={readyJobsCount}
         lowStockCount={lowStockCount}
+        usedStockCount={usedStockCount}
       />
 
       {/* Premium Paywall Modal */}
