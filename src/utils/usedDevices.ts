@@ -76,16 +76,16 @@ export function calculateEMI(
   };
 }
 
-export function getDeviceCategoryIcon(category?: string): string {
+export function getDeviceCategoryLabel(category?: string): string {
   switch (category) {
-    case 'laptop': return '💻';
-    case 'tablet': return '📟';
-    case 'smartwatch': return '⌚';
-    case 'earbuds': return '🎧';
-    case 'other': return '🔌';
+    case 'laptop': return 'Laptop';
+    case 'tablet': return 'Tablet';
+    case 'smartwatch': return 'Watch';
+    case 'earbuds': return 'Audio';
+    case 'other': return 'Gadget';
     case 'phone':
     default:
-      return '📱';
+      return 'Phone';
   }
 }
 
@@ -111,20 +111,19 @@ export function formatWhatsAppDeclaration(
     ? ` (${device.sellerGovtIdType}: ${device.sellerGovtIdNumber})`
     : '';
 
-  const icon = getDeviceCategoryIcon(device.deviceCategory);
-  const identifierLine = device.imei
-    ? `🔢 *IMEI:* ${device.imei}\n`
+  const idText = device.imei
+    ? `• IMEI: ${device.imei}\n`
     : device.serialNumber
-    ? `🔢 *Serial No:* ${device.serialNumber}\n`
+    ? `• Serial No: ${device.serialNumber}\n`
     : '';
 
   return (
-    `📋 *DEVICE SALE & OWNERSHIP TRANSFER DECLARATION*\n\n` +
+    `*DEVICE SALE & OWNERSHIP TRANSFER DECLARATION*\n\n` +
     `I, *${device.sellerName}*${idStr}, declare that I am the sole and lawful owner of the following device:\n\n` +
-    `${icon} *Device:* ${device.brand} ${device.model}\n` +
-    identifierLine +
-    `💰 *Agreed Sale Amount:* ${formatINR(device.purchasePrice)}\n` +
-    `📅 *Date of Sale:* ${device.purchaseDate}\n\n` +
+    `• Device: ${device.brand} ${device.model}\n` +
+    idText +
+    `• Agreed Sale Amount: ${formatINR(device.purchasePrice)}\n` +
+    `• Date of Sale: ${device.purchaseDate}\n\n` +
     `I confirm that I have sold this device to *${shopName}* in sound working condition. I hereby declare that this device is not stolen, not lost, and is free of any police report, loan default, or finance lock.\n\n` +
     `_Please reply "CONFIRMED" or "YES" to acknowledge this transfer._`
   );
@@ -141,15 +140,14 @@ export function formatWhatsAppStockCatalog(
 ): string {
   const inStock = devices.filter((d) => d.status === 'in_stock' && !d.deletedAt && d.syncStatus !== 'deleted');
 
-  let text = `📱 *PRE-OWNED PHONES & GADGETS IN STOCK — ${shopName}*\n`;
-  text += `🔥 Tested & 100% Genuine with Store Warranty!\n\n`;
+  let text = `*PRE-OWNED STOCK — ${shopName}*\n`;
+  text += `Tested & 100% Genuine with Store Warranty\n\n`;
 
   if (inStock.length === 0) {
     text += `Currently all pre-owned stock is sold out. New stock arriving soon!\n\n`;
   } else {
     inStock.forEach((device, index) => {
-      const icon = getDeviceCategoryIcon(device.deviceCategory);
-      text += `${index + 1}️⃣ ${icon} *${device.brand} ${device.model}*\n`;
+      text += `${index + 1}. *${device.brand} ${device.model}*\n`;
       const specs = [];
       if (device.storage) specs.push(device.storage);
       if (device.color) specs.push(device.color);
@@ -161,9 +159,9 @@ export function formatWhatsAppStockCatalog(
     });
   }
 
-  text += `⚡ Visit our shop to test before you buy!\n`;
-  if (shopAddress) text += `📍 Address: ${shopAddress}\n`;
-  if (shopPhone) text += `📞 Call/WhatsApp: ${shopPhone}\n`;
+  text += `Visit our shop to test before you buy.\n`;
+  if (shopAddress) text += `Address: ${shopAddress}\n`;
+  if (shopPhone) text += `Call/WhatsApp: ${shopPhone}\n`;
 
   return text.trim();
 }
@@ -176,16 +174,15 @@ export function formatWhatsAppDeviceQuotation(
   shopName: string,
   shopPhone?: string
 ): string {
-  const icon = getDeviceCategoryIcon(device.deviceCategory);
-  let text = `${icon} *${device.brand} ${device.model}* — Available at *${shopName}*\n\n`;
-  if (device.storage) text += `💾 Storage: ${device.storage}\n`;
-  if (device.color) text += `🎨 Color: ${device.color}\n`;
+  let text = `*${device.brand} ${device.model}* — Available at *${shopName}*\n\n`;
+  if (device.storage) text += `Storage: ${device.storage}\n`;
+  if (device.color) text += `Color: ${device.color}\n`;
   if (device.accessories && device.accessories.length > 0) {
-    text += `📦 Includes: ${device.accessories.join(', ')}\n`;
+    text += `Includes: ${device.accessories.join(', ')}\n`;
   }
-  text += `💰 Price: *${formatINR(device.sellingPrice || device.purchasePrice)}*\n\n`;
-  text += `✅ Fully verified & tested with testing warranty.\n`;
-  if (shopPhone) text += `📞 Call/WhatsApp: ${shopPhone}`;
+  text += `Price: *${formatINR(device.sellingPrice || device.purchasePrice)}*\n\n`;
+  text += `Fully verified & tested with testing warranty.\n`;
+  if (shopPhone) text += `Call/WhatsApp: ${shopPhone}`;
 
   return text.trim();
 }
@@ -198,12 +195,12 @@ export function formatWhatsAppEMIQuote(
   shopName: string
 ): string {
   return (
-    `🧮 *PHONE FINANCING / EMI QUOTATION*\n` +
+    `*PHONE FINANCING / EMI QUOTATION*\n` +
     `Store: *${shopName}*\n\n` +
-    `📱 Phone Price: ${formatINR(calc.price)}\n` +
-    `💵 Down Payment: ${formatINR(calc.downPayment)}\n` +
-    `📅 Loan Tenure: ${calc.tenureMonths} months\n` +
-    `⚡ Estimated EMI: *${formatINR(calc.monthlyEMI)} / month*\n\n` +
+    `• Device Price: ${formatINR(calc.price)}\n` +
+    `• Down Payment: ${formatINR(calc.downPayment)}\n` +
+    `• Loan Tenure: ${calc.tenureMonths} months\n` +
+    `• Estimated EMI: *${formatINR(calc.monthlyEMI)} / month*\n\n` +
     `_Finance approval subject to ID & documentation._`
   );
 }

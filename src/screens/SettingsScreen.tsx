@@ -313,6 +313,11 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const navigate = useNavigate();
   const [shopName, setShopName] = useState(settings.shopName);
   const [shopAddress, setShopAddress] = useState(settings.shopAddress || '');
+  const [shopPhone, setShopPhone] = useState(settings.shopPhone || '');
+  const [shopLogo, setShopLogo] = useState<string | null>(settings.shopLogo || null);
+  const [isCompressingLogo, setIsCompressingLogo] = useState(false);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
   const [isSavedNotice, setIsSavedNotice] = useState(false);
   const [showReports, setShowReports] = useState(false);
 
@@ -394,13 +399,46 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const handleSaveShopName = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!shopName.trim()) return;
+    setPhoneError(null);
+
+    let cleanedPhone: string | undefined = undefined;
+    if (shopPhone.trim()) {
+      cleanedPhone = cleanIndianPhone(shopPhone);
+      if (!isValidIndianPhone(cleanedPhone)) {
+        setPhoneError('Please enter a valid 10-digit WhatsApp number');
+        return;
+      }
+    }
+
     await updateAppSettings({
       shopName: shopName.trim(),
       shopAddress: shopAddress.trim() || undefined,
+      shopPhone: cleanedPhone || undefined,
+      shopLogo: shopLogo || undefined,
     });
     setIsSavedNotice(true);
     setTimeout(() => setIsSavedNotice(false), 2500);
     onRefreshSettings();
+  };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsCompressingLogo(true);
+    try {
+      const { dataUrl } = await compressImageFile(file, 400, 0.8);
+      setShopLogo(dataUrl);
+    } catch (err) {
+      console.error('Failed to compress logo:', err);
+    } finally {
+      setIsCompressingLogo(false);
+      if (logoInputRef.current) logoInputRef.current.value = '';
+    }
+  };
+
+  const handleRemoveLogo = () => {
+    setShopLogo(null);
+    if (logoInputRef.current) logoInputRef.current.value = '';
   };
 
 
@@ -590,7 +628,62 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             <span>{t('section_shop_info', language)}</span>
           </div>
 
-          <form onSubmit={handleSaveShopName} className="space-y-3">
+          <form onSubmit={handleSaveShopName} className="space-y-3.5">
+            {/* Shop Logo Picker */}
+            <div>
+              <label className="text-xs text-[#8E8E93] block mb-1.5">
+                Shop Logo (Appears on Bills &amp; Live Tracking)
+              </label>
+              <div className="flex items-center space-x-3">
+                <div className="relative w-14 h-14 rounded-2xl bg-[#F2F2F7] border border-black/[0.06] flex items-center justify-center overflow-hidden shrink-0 shadow-2xs">
+                  {shopLogo ? (
+                    <img
+                      src={shopLogo}
+                      alt="Shop Logo"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <Store className="w-6 h-6 text-[#8E8E93]" />
+                  )}
+                  {isCompressingLogo && (
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <input
+                    ref={logoInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleLogoUpload}
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => logoInputRef.current?.click()}
+                    disabled={isCompressingLogo}
+                    className="px-3.5 py-1.5 bg-[#F2F2F7] hover:bg-slate-200 active:scale-95 text-slate-800 text-xs font-semibold rounded-full border border-black/[0.06] flex items-center space-x-1.5 transition-all shadow-2xs"
+                  >
+                    <Camera className="w-3.5 h-3.5 text-iosBlue" />
+                    <span>{shopLogo ? 'Change Logo' : 'Upload Logo'}</span>
+                  </button>
+
+                  {shopLogo && (
+                    <button
+                      type="button"
+                      onClick={handleRemoveLogo}
+                      className="p-1.5 text-slate-400 hover:text-red-500 rounded-full hover:bg-red-50 active:scale-95 transition-all"
+                      title="Remove Logo"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
             <div>
               <label className="text-xs text-[#8E8E93] block mb-1">
                 {t('onboarding_shop_name_label', language)}
@@ -603,9 +696,39 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               />
             </div>
 
+            {/* WhatsApp Contact Number */}
             <div>
               <label className="text-xs text-[#8E8E93] block mb-1">
-                Shop Address (Appears on Bills & Invoices)
+                WhatsApp &amp; Support Number
+              </label>
+              <div className="relative">
+                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 flex items-center space-x-1.5 pointer-events-none">
+                  <Phone className="w-4 h-4 text-iosBlue" />
+                  <span className="text-xs font-bold text-slate-500">+91</span>
+                </div>
+                <input
+                  type="tel"
+                  maxLength={10}
+                  value={shopPhone}
+                  onChange={(e) => {
+                    setShopPhone(e.target.value.replace(/\D/g, ''));
+                    if (phoneError) setPhoneError(null);
+                  }}
+                  placeholder="9876543210"
+                  className="w-full bg-[#F2F2F7] rounded-[10px] pl-16 pr-3.5 py-2.5 text-[15px] font-medium text-black focus:outline-none focus:ring-2 focus:ring-iosBlue/40 border border-black/[0.04]"
+                />
+              </div>
+              {phoneError && (
+                <p className="text-xs text-red-500 mt-1 font-medium">{phoneError}</p>
+              )}
+              <span className="text-[11px] text-[#8E8E93] block mt-1">
+                Customers can call or message this number directly from live repair tracking slips
+              </span>
+            </div>
+
+            <div>
+              <label className="text-xs text-[#8E8E93] block mb-1">
+                Shop Address (Appears on Bills &amp; Invoices)
               </label>
               <textarea
                 rows={2}

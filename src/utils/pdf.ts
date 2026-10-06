@@ -6,6 +6,8 @@ export interface GenerateBillPDFOptions {
   bill: Bill;
   shopName: string;
   shopAddress?: string;
+  shopPhone?: string;
+  shopLogo?: string;
 }
 
 const formatPDFCurrency = (amount: number): string => {
@@ -15,7 +17,7 @@ const formatPDFCurrency = (amount: number): string => {
   })}`;
 };
 
-export function generateBillPDF({ bill, shopName, shopAddress }: GenerateBillPDFOptions): jsPDF {
+export function generateBillPDF({ bill, shopName, shopAddress, shopPhone, shopLogo }: GenerateBillPDFOptions): jsPDF {
   // A5 format: 148mm x 210mm in portrait
   const doc = new jsPDF({
     orientation: 'portrait',
@@ -28,7 +30,15 @@ export function generateBillPDF({ bill, shopName, shopAddress }: GenerateBillPDF
   const contentWidth = pageWidth - margin * 2;
   let cursorY = margin;
 
-  // 1. Header: Shop Name & Address
+  // 1. Header: Shop Name, Phone, Address & Logo
+  if (shopLogo && shopLogo.startsWith('data:image')) {
+    try {
+      doc.addImage(shopLogo, 'JPEG', pageWidth - margin - 18, margin, 18, 18);
+    } catch {
+      // Graceful fallback if image cannot be decoded
+    }
+  }
+
   const name = shopName.trim() || 'My Mobile Shop';
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(16);
@@ -36,12 +46,21 @@ export function generateBillPDF({ bill, shopName, shopAddress }: GenerateBillPDF
   doc.text(name, margin, cursorY + 4);
   cursorY += 7;
 
+  if (shopPhone && shopPhone.trim()) {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.5);
+    doc.setTextColor(71, 85, 105);
+    doc.text(`WhatsApp / Tel: +91 ${shopPhone.trim()}`, margin, cursorY + 2);
+    cursorY += 4.5;
+  }
+
   if (shopAddress && shopAddress.trim()) {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8.5);
     doc.setTextColor(100, 116, 139); // Slate-500
-    const addressLines = doc.splitTextToSize(shopAddress.trim(), contentWidth);
-    doc.text(addressLines, margin, cursorY + 3);
+    const textWidth = shopLogo ? contentWidth - 22 : contentWidth;
+    const addressLines = doc.splitTextToSize(shopAddress.trim(), textWidth);
+    doc.text(addressLines, margin, cursorY + 2);
     cursorY += addressLines.length * 4 + 2;
   } else {
     cursorY += 2;

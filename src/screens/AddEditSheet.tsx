@@ -183,6 +183,8 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
       bill: activeBill,
       shopName: effectiveShopName,
       shopAddress: effectiveShopAddress,
+      shopPhone: settings?.shopPhone,
+      shopLogo: settings?.shopLogo,
     });
   };
 

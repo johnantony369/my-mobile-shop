@@ -148,6 +148,8 @@ export const BillSheet: React.FC<BillSheetProps> = ({
       bill: savedBill,
       shopName: effectiveShopName,
       shopAddress: effectiveShopAddress,
+      shopPhone: settings?.shopPhone,
+      shopLogo: settings?.shopLogo,
     });
   };
 
