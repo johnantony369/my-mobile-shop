@@ -2,7 +2,12 @@ import { Job } from '../types';
 import { cleanIndianPhone } from '../db/db';
 import { formatINR } from '../i18n';
 
-export function buildIntakeSlipMessage(job: Job, shopName: string): string {
+export function buildTrackingUrl(cloudId: string, origin?: string): string {
+  const base = origin || (typeof window !== 'undefined' ? window.location.origin : '');
+  return `${base.replace(/\/$/, '')}/track/${cloudId}`;
+}
+
+export function buildIntakeSlipMessage(job: Job, shopName: string, trackingUrl?: string): string {
   const shop = shopName.trim() || 'My Mobile Shop';
   const est = job.estimate !== undefined && job.estimate > 0 ? formatINR(job.estimate) : 'To be estimated';
   const adv = job.advance ? formatINR(job.advance) : formatINR(0);
@@ -19,11 +24,16 @@ export function buildIntakeSlipMessage(job: Job, shopName: string): string {
   msg += `Balance Due: ${balance}\n`;
   if (job.expectedDate) msg += `Est. Date: ${job.expectedDate}\n`;
   msg += `Status: Received for Repair\n\n`;
+
+  if (trackingUrl) {
+    msg += `🔍 Track live repair progress:\n${trackingUrl}\n\n`;
+  }
+
   msg += `We will notify you once ready. Thank you for choosing ${shop}!`;
   return msg;
 }
 
-export function buildReadyNotificationMessage(job: Job, shopName: string): string {
+export function buildReadyNotificationMessage(job: Job, shopName: string, trackingUrl?: string): string {
   const shop = shopName.trim() || 'My Mobile Shop';
   const balance = (job.estimate || 0) - (job.advance || 0);
 
@@ -32,11 +42,16 @@ export function buildReadyNotificationMessage(job: Job, shopName: string): strin
   if (balance > 0) {
     msg += `Balance Due: ${formatINR(balance)}\n`;
   }
+
+  if (trackingUrl) {
+    msg += `🔍 Track status:\n${trackingUrl}\n`;
+  }
+
   msg += `Please collect it from: ${shop}\nThank you!`;
   return msg;
 }
 
-export function buildDeliveredSlipMessage(job: Job, shopName: string): string {
+export function buildDeliveredSlipMessage(job: Job, shopName: string, trackingUrl?: string): string {
   const shop = shopName.trim() || 'My Mobile Shop';
   const paid = job.finalAmount !== null && job.finalAmount !== undefined
     ? formatINR(job.finalAmount)
@@ -48,18 +63,23 @@ export function buildDeliveredSlipMessage(job: Job, shopName: string): string {
   msg += `Issue: ${job.complaint}\n`;
   msg += `Total Amount Paid: ${paid}\n`;
   msg += `Status: Delivered\n\n`;
+
+  if (trackingUrl) {
+    msg += `🔍 View repair summary:\n${trackingUrl}\n\n`;
+  }
+
   msg += `Thank you for visiting ${shop}!`;
   return msg;
 }
 
-export function buildJobNotificationMessage(job: Job, shopName: string): string {
+export function buildJobNotificationMessage(job: Job, shopName: string, trackingUrl?: string): string {
   if (job.status === 'ready') {
-    return buildReadyNotificationMessage(job, shopName);
+    return buildReadyNotificationMessage(job, shopName, trackingUrl);
   }
   if (job.status === 'delivered') {
-    return buildDeliveredSlipMessage(job, shopName);
+    return buildDeliveredSlipMessage(job, shopName, trackingUrl);
   }
-  return buildIntakeSlipMessage(job, shopName);
+  return buildIntakeSlipMessage(job, shopName, trackingUrl);
 }
 
 export function openWhatsAppNotification(job: Job, shopName: string, customMessage?: string): void {

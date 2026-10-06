@@ -9,7 +9,7 @@ import {
 } from 'firebase/firestore';
 import { db, getAppSettings, generateCloudId } from '../db/db';
 import { dbFirestore, auth, isFirebaseConfigured } from './config';
-import { Entry, Job, AppSettings, StockItem, Bill } from '../types';
+import { Entry, Job, AppSettings, StockItem, Bill, PublicRepairTrack } from '../types';
 import { upsertAccountSummary, calculateDataSize } from './admin';
 import { isSuperAdmin } from '../utils/admin';
 import { isProCurrentlyActive } from '../utils/proPlan';
@@ -27,6 +27,45 @@ export function cleanForFirestore<T extends Record<string, any>>(obj: T): Record
     }
   }
   return clean;
+}
+
+export function buildPublicRepairTrack(job: Job, settings?: AppSettings | null): PublicRepairTrack {
+  return {
+    cloudId: job.cloudId || '',
+    shopName: settings?.shopName || 'Mobile Repair Center',
+    shopAddress: settings?.shopAddress || undefined,
+    customerName: job.customerName,
+    model: job.model,
+    complaint: job.complaint,
+    status: job.status,
+    receivedAt: job.receivedAt,
+    readyAt: job.readyAt,
+    deliveredAt: job.deliveredAt,
+    expectedDate: job.expectedDate,
+    estimate: job.estimate,
+    advance: job.advance,
+    balanceDue: Math.max(0, (job.estimate || 0) - (job.advance || 0)),
+    finalAmount: job.finalAmount,
+    updatedAt: job.updatedAt || new Date().toISOString(),
+  };
+}
+
+export async function pushSinglePublicRepair(job: Job): Promise<void> {
+  if (!isFirebaseConfigured() || !dbFirestore || !job.cloudId) return;
+  try {
+    const settings = await getAppSettings();
+    const publicDocRef = doc(dbFirestore, 'public_repairs', job.cloudId);
+    if (job.syncStatus === 'deleted') {
+      const { deleteDoc } = await import('firebase/firestore');
+      await deleteDoc(publicDocRef);
+    } else {
+      const { setDoc } = await import('firebase/firestore');
+      const publicTrack = buildPublicRepairTrack(job, settings);
+      await setDoc(publicDocRef, cleanForFirestore(publicTrack), { merge: true });
+    }
+  } catch (err) {
+    console.warn('Could not push single public repair tracking update:', err);
+  }
 }
 
 export async function reconcileRemoteEntries(remoteEntries: Entry[]): Promise<number> {
@@ -214,10 +253,12 @@ export async function pushPendingChanges(uid: string): Promise<number> {
   // 2. Pending / Deleted jobs
   const allJobs = await db.jobs.toArray();
   const dirtyJobs = allJobs.filter(j => j.syncStatus !== 'synced');
+  const localSettings = await getAppSettings();
 
   for (const job of dirtyJobs) {
     if (!job.cloudId) continue;
     const docRef = doc(dbFirestore, 'users', uid, 'jobs', job.cloudId);
+    const publicDocRef = doc(dbFirestore, 'public_repairs', job.cloudId);
 
     if (job.syncStatus === 'deleted') {
       const now = new Date().toISOString();
@@ -228,15 +269,18 @@ export async function pushPendingChanges(uid: string): Promise<number> {
         updatedAt: now,
         syncStatus: 'synced',
       }), { merge: true });
+      currentBatch.delete(publicDocRef);
       if (job.id) await db.jobs.delete(job.id);
-      batchOps++;
+      batchOps += 2;
       pushedCount++;
       await commitBatchIfNeeded();
     } else {
       const { id, ...dataToSync } = job;
       currentBatch.set(docRef, cleanForFirestore({ ...dataToSync, syncStatus: 'synced' }), { merge: true });
+      const publicTrack = buildPublicRepairTrack(job, localSettings);
+      currentBatch.set(publicDocRef, cleanForFirestore(publicTrack), { merge: true });
       if (job.id) await db.jobs.update(job.id, { syncStatus: 'synced' });
-      batchOps++;
+      batchOps += 2;
       pushedCount++;
       await commitBatchIfNeeded();
     }
@@ -305,7 +349,6 @@ export async function pushPendingChanges(uid: string): Promise<number> {
   }
 
   // 5. Settings
-  const localSettings = await getAppSettings();
   if (localSettings && localSettings.syncStatus !== 'synced') {
     if (!localSettings.ownerUid || localSettings.ownerUid === uid) {
       const docRef = doc(dbFirestore, 'users', uid, 'settings', 'appSettings');

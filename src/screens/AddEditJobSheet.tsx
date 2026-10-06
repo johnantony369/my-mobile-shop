@@ -5,7 +5,8 @@ import { Job, Language, StockItem } from '../types';
 import { t } from '../i18n';
 import { db, cleanIndianPhone, isValidIndianPhone } from '../db/db';
 import { getLocalDateString } from '../utils/date';
-import { openWhatsAppNotification, buildIntakeSlipMessage } from '../utils/repairs';
+import { openWhatsAppNotification, buildIntakeSlipMessage, buildTrackingUrl } from '../utils/repairs';
+import { pushSinglePublicRepair } from '../firebase/sync';
 import { StockPickerSheet } from '../components/StockPickerSheet';
 import { Wrench, X, Check, MessageSquare } from 'lucide-react';
 
@@ -169,6 +170,8 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
           expectedDate: expectedDate || undefined,
           imei: imei.trim() || undefined,
         });
+        const updatedJob = await db.jobs.get(jobToEdit.id);
+        if (updatedJob) pushSinglePublicRepair(updatedJob).catch(() => {});
         onSaved(jobToEdit.id);
       } else {
         const id = await db.jobs.add({
@@ -204,22 +207,13 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
           });
         }
 
+        const savedJob = await db.jobs.get(id);
+        if (savedJob) pushSinglePublicRepair(savedJob).catch(() => {});
+
         // Send WhatsApp intake slip if selected
-        if (sendWhatsAppSlip) {
-          const newJob: Job = {
-            id,
-            customerName: trimmedName,
-            phone: cleanedPhone,
-            model: trimmedModel,
-            complaint: trimmedComplaint,
-            estimate: parsedEstimate,
-            advance: parsedAdvance,
-            status: 'received',
-            expectedDate: expectedDate || undefined,
-            imei: imei.trim() || undefined,
-            receivedAt: Date.now(),
-          };
-          openWhatsAppNotification(newJob, shopName, buildIntakeSlipMessage(newJob, shopName));
+        if (sendWhatsAppSlip && savedJob) {
+          const trackingUrl = savedJob.cloudId ? buildTrackingUrl(savedJob.cloudId) : undefined;
+          openWhatsAppNotification(savedJob, shopName || 'My Mobile Shop', buildIntakeSlipMessage(savedJob, shopName || 'My Mobile Shop', trackingUrl));
         }
 
         onSaved(id);

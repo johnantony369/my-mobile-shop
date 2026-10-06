@@ -12,6 +12,7 @@ describe('App Router Structure', () => {
     expect(content).toContain('path="/login"');
     expect(content).toContain('path="/onboarding"');
     expect(content).toContain('path="/app"');
+    expect(content).toContain('path="/track/:trackingId"');
   });
 
   it('should wrap application in BrowserRouter in main.tsx or AppRouter.tsx', () => {

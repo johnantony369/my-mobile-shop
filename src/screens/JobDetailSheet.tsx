@@ -4,7 +4,8 @@ import { Job, Language, JobStatus } from '../types';
 import { t, formatINR } from '../i18n';
 import { db, calculateDaysInShop, cleanIndianPhone } from '../db/db';
 import { formatTime } from '../utils/date';
-import { openWhatsAppNotification, copyNotificationMessage } from '../utils/repairs';
+import { openWhatsAppNotification, copyNotificationMessage, buildTrackingUrl, buildJobNotificationMessage } from '../utils/repairs';
+import { pushSinglePublicRepair } from '../firebase/sync';
 import {
   Phone,
   MessageSquare,
@@ -16,6 +17,7 @@ import {
   Clock,
   RotateCcw,
   Check,
+  ExternalLink,
 } from 'lucide-react';
 import { ConfirmModal } from '../components/ConfirmModal';
 
@@ -45,9 +47,11 @@ export const JobDetailSheet: React.FC<JobDetailSheetProps> = ({
   const [showOtherStatuses, setShowOtherStatuses] = useState(false);
   const [showReturnConfirm, setShowReturnConfirm] = useState(false);
   const [copiedToast, setCopiedToast] = useState(false);
+  const [copiedLinkToast, setCopiedLinkToast] = useState(false);
 
   if (!job) return null;
 
+  const trackingUrl = job.cloudId ? buildTrackingUrl(job.cloudId) : undefined;
   const isTerminal = job.status === 'delivered' || job.status === 'returned';
   const balance = job.estimate !== undefined ? job.estimate - (job.advance || 0) : null;
   const daysInShop = calculateDaysInShop(job.receivedAt);
@@ -74,9 +78,12 @@ export const JobDetailSheet: React.FC<JobDetailSheetProps> = ({
     if (!job.id) return;
     if (job.status === 'received') {
       await db.jobs.update(job.id, { status: 'waiting' });
+      pushSinglePublicRepair({ ...job, status: 'waiting' }).catch(() => {});
       onJobUpdated();
     } else if (job.status === 'waiting') {
-      await db.jobs.update(job.id, { status: 'ready', readyAt: Date.now() });
+      const now = Date.now();
+      await db.jobs.update(job.id, { status: 'ready', readyAt: now });
+      pushSinglePublicRepair({ ...job, status: 'ready', readyAt: now }).catch(() => {});
       onJobUpdated();
     } else if (job.status === 'ready') {
       onOpenDelivery(job);
@@ -90,6 +97,7 @@ export const JobDetailSheet: React.FC<JobDetailSheetProps> = ({
       updates.readyAt = Date.now();
     }
     await db.jobs.update(job.id, updates);
+    pushSinglePublicRepair({ ...job, ...updates, status: newStatus }).catch(() => {});
     setShowOtherStatuses(false);
     onJobUpdated();
   };
@@ -100,16 +108,30 @@ export const JobDetailSheet: React.FC<JobDetailSheetProps> = ({
       status: 'returned',
       deliveredAt: Date.now(),
     });
+    pushSinglePublicRepair({ ...job, status: 'returned', deliveredAt: Date.now() }).catch(() => {});
     setShowReturnConfirm(false);
     setShowOtherStatuses(false);
     onJobUpdated();
     onClose();
   };
 
+  const handleSendWhatsApp = () => {
+    const msg = buildJobNotificationMessage(job, shopName, trackingUrl);
+    openWhatsAppNotification(job, shopName, msg);
+  };
+
   const handleCopyMessage = async () => {
-    await copyNotificationMessage(job, shopName);
+    const msg = buildJobNotificationMessage(job, shopName, trackingUrl);
+    await copyNotificationMessage(job, shopName, msg);
     setCopiedToast(true);
     setTimeout(() => setCopiedToast(false), 2000);
+  };
+
+  const handleCopyTrackingLink = async () => {
+    if (!trackingUrl) return;
+    await navigator.clipboard.writeText(trackingUrl);
+    setCopiedLinkToast(true);
+    setTimeout(() => setCopiedLinkToast(false), 2000);
   };
 
   return (
@@ -152,6 +174,42 @@ export const JobDetailSheet: React.FC<JobDetailSheetProps> = ({
           </div>
         </div>
 
+        {/* Customer Live Tracking Link Card */}
+        {trackingUrl && (
+          <div className="bg-white rounded-[14px] p-3.5 shadow-sm border border-black/[0.04] space-y-2.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <div className="w-7 h-7 rounded-full bg-blue-50 text-iosBlue flex items-center justify-center">
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </div>
+                <div>
+                  <h4 className="text-[13px] font-bold text-slate-900 leading-tight">Customer Tracking Link</h4>
+                  <p className="text-[11px] text-slate-400">Customer can track repair progress live</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleCopyTrackingLink}
+                className="py-1 px-2.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold flex items-center space-x-1 active:scale-95 transition-all"
+              >
+                {copiedLinkToast ? <Check className="w-3.5 h-3.5 text-iosGreen" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{copiedLinkToast ? 'Copied' : 'Copy Link'}</span>
+              </button>
+            </div>
+            <div className="p-2 bg-[#F2F2F7] rounded-[10px] text-xs font-mono text-slate-600 truncate select-all flex items-center justify-between">
+              <span className="truncate">{trackingUrl}</span>
+              <a
+                href={trackingUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="ml-2 text-iosBlue text-xs font-sans font-semibold shrink-0 hover:underline"
+              >
+                Preview
+              </a>
+            </div>
+          </div>
+        )}
+
         {/* Suggestion Card for RECEIVED / WAITING Jobs: Send Job Intake Slip */}
         {(job.status === 'received' || job.status === 'waiting') && (
           <div className="bg-blue-50/80 border border-blue-200/90 rounded-[14px] p-3.5 shadow-sm space-y-2">
@@ -162,13 +220,13 @@ export const JobDetailSheet: React.FC<JobDetailSheetProps> = ({
               </h4>
             </div>
             <p className="text-xs text-slate-600 leading-relaxed">
-              Send an intake receipt to {job.customerName} on WhatsApp with device model, complaint, advance, and estimate.
+              Send an intake receipt to {job.customerName} on WhatsApp with device model, complaint, advance, estimate, and live tracking link.
             </p>
 
             <div className="flex items-center space-x-2 pt-1">
               <button
                 type="button"
-                onClick={() => openWhatsAppNotification(job, shopName)}
+                onClick={handleSendWhatsApp}
                 className="flex-1 py-2 px-3 bg-iosBlue text-white rounded-full text-xs font-bold flex items-center justify-center space-x-1.5 active:opacity-85 shadow-sm"
               >
                 <MessageSquare className="w-4 h-4" />
@@ -203,7 +261,7 @@ export const JobDetailSheet: React.FC<JobDetailSheetProps> = ({
             <div className="flex items-center space-x-2 pt-1">
               <button
                 type="button"
-                onClick={() => openWhatsAppNotification(job, shopName)}
+                onClick={handleSendWhatsApp}
                 className="flex-1 py-2 px-3 bg-iosGreen text-white rounded-full text-xs font-bold flex items-center justify-center space-x-1.5 active:opacity-85 shadow-sm"
               >
                 <MessageSquare className="w-4 h-4" />
@@ -236,7 +294,7 @@ export const JobDetailSheet: React.FC<JobDetailSheetProps> = ({
             </div>
             <button
               type="button"
-              onClick={() => openWhatsAppNotification(job, shopName)}
+              onClick={handleSendWhatsApp}
               className="py-1.5 px-3 bg-white border border-slate-300 text-slate-800 rounded-full text-xs font-bold flex items-center space-x-1 active:bg-slate-100 shadow-2xs"
             >
               <MessageSquare className="w-3.5 h-3.5 text-iosBlue" />

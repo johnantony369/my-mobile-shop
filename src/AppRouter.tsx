@@ -9,6 +9,7 @@ import { LandingPage } from './screens/LandingPage';
 import { LoginScreen } from './screens/LoginScreen';
 import { OnboardingScreen } from './screens/OnboardingScreen';
 import { AdminScreen } from './screens/AdminScreen';
+import { TrackRepairScreen } from './screens/TrackRepairScreen';
 import { isSuperAdmin } from './utils/admin';
 import App from './App';
 
@@ -295,6 +296,7 @@ export function AppRouter() {
         <Route path="/app" element={<AppRouteWrapper />} />
         <Route path="/app/*" element={<AppRouteWrapper />} />
         <Route path="/admin" element={<AdminRouteWrapper />} />
+        <Route path="/track/:trackingId" element={<TrackRepairScreen />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

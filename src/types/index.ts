@@ -44,6 +44,26 @@ export interface Job extends SyncMetadata {
   bookEntryId?: number | null; // link to entries table
 }
 
+export interface PublicRepairTrack {
+  cloudId: string;
+  shopName: string;
+  shopAddress?: string;
+  shopPhone?: string;
+  customerName?: string;
+  model: string;
+  complaint: string;
+  status: JobStatus;
+  receivedAt: number;
+  readyAt?: number | null;
+  deliveredAt?: number | null;
+  expectedDate?: string;
+  estimate?: number;
+  advance?: number;
+  balanceDue?: number;
+  finalAmount?: number | null;
+  updatedAt: string;
+}
+
 export interface AppSettings extends SyncMetadata {
   id?: number;
   shopName: string;
@@ -56,6 +76,8 @@ export interface AppSettings extends SyncMetadata {
   lastBackupAt: string | null;
   showRepairs: boolean; // toggle for repairs module
   showStock?: boolean; // toggle for stock/inventory module
+  notificationsEnabled?: boolean; // toggle for daily closing summary notification
+  summaryNotificationTime?: string; // custom notification time in 'HH:mm' format (e.g. '20:30')
   ownerUid?: string; // Firebase user UID owning these settings
 }
 

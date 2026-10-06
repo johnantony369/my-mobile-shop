@@ -23,4 +23,8 @@ describe('Firestore Security Rules File', () => {
   it('allows owner or superadmin access to /accounts/{userId} enabling collection list and updates', () => {
     expect(rulesContent).toMatch(/match \/accounts\/\{userId\}\s*\{[\s\S]*?allow read, write: if[\s\S]*?request\.auth\.uid == userId[\s\S]*?isSuperAdmin\(\)/);
   });
+
+  it('allows public read and authenticated write to /public_repairs/{trackingId}', () => {
+    expect(rulesContent).toMatch(/match \/public_repairs\/\{trackingId\}\s*\{[\s\S]*?allow read: if true;[\s\S]*?allow write: if request\.auth != null/);
+  });
 });

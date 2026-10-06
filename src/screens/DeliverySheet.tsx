@@ -6,6 +6,7 @@ import { t, formatINR } from '../i18n';
 import { db } from '../db/db';
 import { getLocalDateString } from '../utils/date';
 import { CheckCircle2, AlertTriangle } from 'lucide-react';
+import { pushSinglePublicRepair } from '../firebase/sync';
 
 interface DeliverySheetProps {
   isOpen: boolean;
@@ -105,6 +106,13 @@ export const DeliverySheet: React.FC<DeliverySheetProps> = ({
           deliveredAt: Date.now(),
           bookEntryId,
         });
+
+        const deliveredJob = await db.jobs.get(job.id);
+        if (deliveredJob) {
+          pushSinglePublicRepair(deliveredJob).catch((err) => {
+            console.error('Failed to update public tracking for delivery:', err);
+          });
+        }
       }
 
       onDelivered();
