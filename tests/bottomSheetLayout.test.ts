@@ -20,10 +20,11 @@ describe('BottomSheet Layout & Submit Accessibility', () => {
     expect(content).toContain('flex-1 min-h-0 overflow-y-auto');
   });
 
-  it('AddEditSheet pins the save/update button to sticky footer', () => {
+  it('AddEditSheet pins the save/update button to BottomSheet sticky footer', () => {
     const filePath = path.resolve(__dirname, '../src/screens/AddEditSheet.tsx');
     const content = fs.readFileSync(filePath, 'utf-8');
 
+    expect(content).toContain('footer={');
     expect(content).toMatch(/<button[\s\S]*?(?:update_btn|save_btn)[\s\S]*?<\/button>/);
   });
 

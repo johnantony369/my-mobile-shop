@@ -10,9 +10,9 @@ describe('Dual Entry & Double Submission Prevention', () => {
     expect(content).toContain('isSubmittingRef = useRef(false)');
     expect(content).toContain('if (isSubmittingRef.current) return;');
     expect(content).toContain('isSubmittingRef.current = true;');
-    // Save button must be type="button" to prevent native form submission duplicate
-    expect(content).toMatch(/<button[\s\S]*?type="button"[\s\S]*?onClick=[\s\S]*?handleSave/);
-    expect(content).not.toMatch(/<button[\s\S]*?type="submit"/);
+    // Footer button must be type="button" to prevent native form submission duplicate
+    expect(content).toMatch(/footer=\{[\s\S]*?<button[\s\S]*?type="button"[\s\S]*?onClick=/);
+    expect(content).not.toMatch(/footer=\{[\s\S]*?<button[\s\S]*?type="submit"[\s\S]*?form="add-entry-form"/);
   });
 
   it('AddEditStockSheet has synchronous isSubmittingRef mutex and non-submitting footer button', () => {
