@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { BottomSheet } from '../components/BottomSheet';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { Entry, EntryType, PaymentMethod, Language, StockItem, Bill } from '../types';
 import { t } from '../i18n';
@@ -153,13 +152,28 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
       isSubmittingRef.current = false;
       setIsSubmitting(false);
 
-      // Auto-focus amount field
-      const timer = setTimeout(() => {
-        amountInputRef.current?.focus();
-      }, 100);
-      return () => clearTimeout(timer);
+      // Multi-tick auto-focus to reliably trigger soft keyboard on Android and iOS
+      amountInputRef.current?.focus();
+      const timer1 = setTimeout(() => amountInputRef.current?.focus(), 40);
+      const timer2 = setTimeout(() => amountInputRef.current?.focus(), 150);
+      return () => {
+        clearTimeout(timer1);
+        clearTimeout(timer2);
+      };
     }
   }, [isOpen, entryToEdit, defaultDate]);
+
+  // Lock body scroll when full-page entry view is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
 
   const handleGenerateBill = async () => {
     if (!entryToEdit || !entryToEdit.id || isGeneratingBill) return;
@@ -307,27 +321,83 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
     }
   };
 
+  if (!isOpen) return null;
+
   return (
-    <BottomSheet
-      isOpen={isOpen}
-      onClose={() => {
-        setShowBillPreview(false);
-        onClose();
-      }}
-      title={
-        showBillPreview && activeBill
-          ? `Bill ${activeBill.invoiceNo}`
-          : entryToEdit
-          ? t('edit_entry_title', language)
-          : t('new_entry_title', language)
-      }
-      footer={
-        showBillPreview && activeBill ? (
-          <div className="flex gap-2">
+    <div className="fixed inset-0 z-50 bg-[#F2F2F7] flex flex-col h-[100dvh] w-full max-w-lg mx-auto overflow-hidden animate-fade-slide-in select-none">
+      {/* 1. Header Bar */}
+      <div className="flex items-center justify-between px-4 py-3 bg-[#F2F2F7] border-b border-black/[0.04] shrink-0">
+        {step === 'amount' && !entryToEdit ? (
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-9 h-9 rounded-full bg-white flex items-center justify-center text-black/70 hover:text-black shadow-xs active:scale-95 transition-all"
+            aria-label="Close"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={entryToEdit ? onClose : handlePrevStep}
+            className="w-9 h-9 rounded-full bg-white flex items-center justify-center text-black/70 hover:text-black shadow-xs active:scale-95 transition-all"
+            aria-label={entryToEdit ? 'Close' : 'Back'}
+          >
+            {entryToEdit ? <X className="w-5 h-5" /> : <ArrowLeft className="w-5 h-5" />}
+          </button>
+        )}
+
+        <h2 className="text-[17px] font-bold text-black leading-tight">
+          {showBillPreview && activeBill
+            ? `Bill ${activeBill.invoiceNo}`
+            : entryToEdit
+            ? t('edit_entry_title', language)
+            : step === 'amount'
+            ? t('new_entry_title', language)
+            : 'Entry Details'}
+        </h2>
+
+        {step === 'details' && !entryToEdit ? (
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-9 h-9 rounded-full bg-white flex items-center justify-center text-black/70 hover:text-black shadow-xs active:scale-95 transition-all"
+            aria-label="Close"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        ) : (
+          <div className="w-9" />
+        )}
+      </div>
+
+      {/* 2. Main Content Area */}
+      {showBillPreview && activeBill ? (
+        <div className="flex-1 flex flex-col justify-between overflow-y-auto p-4 space-y-4">
+          <div className="space-y-3 pt-1 pb-2 animate-fade-in">
+            <div className="bg-emerald-50 text-emerald-800 rounded-[10px] p-3 text-xs sm:text-sm font-medium border border-emerald-200/80 flex items-center justify-between">
+              <span>Bill generated & linked to this entry.</span>
+              <span className="font-bold text-emerald-900">{activeBill.invoiceNo}</span>
+            </div>
+            <pre className="whitespace-pre-wrap text-[13px] sm:text-[14px] text-black bg-white rounded-[14px] p-4 font-sans border border-black/[0.04] leading-relaxed shadow-xs">
+              {buildBillText(activeBill, effectiveShopName, effectiveShopAddress)}
+            </pre>
+            <div className="text-center pt-1">
+              <button
+                type="button"
+                onClick={() => setShowBillPreview(false)}
+                className="text-xs text-iosBlue hover:underline font-semibold"
+              >
+                ← Back to Entry Details
+              </button>
+            </div>
+          </div>
+
+          <div className="flex gap-2 pb-[calc(1rem+env(safe-area-inset-bottom))]">
             <button
               type="button"
               onClick={handleShareBill}
-              className="flex-1 h-12 rounded-[12px] font-semibold text-[15px] text-white bg-[#25D366] active:opacity-85 flex items-center justify-center space-x-1.5 shadow-md shadow-[#25D366]/20 transition-all"
+              className="flex-1 h-12 rounded-[14px] font-semibold text-[15px] text-white bg-[#25D366] active:opacity-85 flex items-center justify-center space-x-1.5 shadow-md shadow-[#25D366]/20 transition-all"
             >
               <Share2 className="w-4 h-4" />
               <span>Share Bill</span>
@@ -335,7 +405,7 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
             <button
               type="button"
               onClick={handleDownloadPDF}
-              className="flex-1 h-12 rounded-[12px] font-semibold text-[15px] text-white bg-slate-800 active:opacity-85 flex items-center justify-center space-x-1.5 shadow-sm transition-all"
+              className="flex-1 h-12 rounded-[14px] font-semibold text-[15px] text-white bg-slate-800 active:opacity-85 flex items-center justify-center space-x-1.5 shadow-sm transition-all"
             >
               <Download className="w-4 h-4" />
               <span>PDF Bill</span>
@@ -346,30 +416,328 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
                 setShowBillPreview(false);
                 onClose();
               }}
-              className="px-4 h-12 rounded-[12px] font-semibold text-[15px] bg-[#E5E5EA] text-black active:opacity-85 transition-all"
+              className="px-4 h-12 rounded-[14px] font-semibold text-[15px] bg-[#E5E5EA] text-black active:opacity-85 transition-all"
             >
               Done
             </button>
           </div>
-        ) : step === 'amount' ? (
-          <div className="w-full">
+        </div>
+      ) : step === 'amount' ? (
+        <div className="flex-1 flex flex-col justify-between px-4 py-3 overflow-y-auto animate-fade-in">
+          {isReadOnly && (
+            <div className="bg-red-50 text-iosRed p-3 rounded-[10px] text-xs font-medium">
+              {t('read_only_locked_msg', language)}
+            </div>
+          )}
+
+          {/* 1. Type Segmented Control (In / Out) */}
+          <div className="max-w-xs mx-auto w-full pt-1">
+            <SegmentedControl<EntryType>
+              value={type}
+              onChange={(val) => setType(val)}
+              size="md"
+              options={[
+                { value: 'in', label: t('type_in_label', language) },
+                { value: 'out', label: t('type_out_label', language) },
+              ]}
+            />
+          </div>
+
+          {/* 2. Giant Amount Display with tight Rupee symbol */}
+          <div className="my-auto py-10 flex flex-col items-center justify-center text-center">
+            <span className="text-xs font-semibold text-[#8E8E93] uppercase tracking-wider mb-3">
+              {t('amount_label', language)}
+            </span>
+            <div className="inline-flex items-center justify-center max-w-full">
+              <span className="text-5xl sm:text-6xl font-black text-black select-none mr-1.5">₹</span>
+              <input
+                ref={amountInputRef}
+                autoFocus
+                type="text"
+                inputMode="decimal"
+                value={amountStr}
+                onChange={handleAmountChange}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleNextStep();
+                  }
+                }}
+                placeholder="0"
+                disabled={isReadOnly}
+                style={{ width: `${Math.max(1, (amountStr || '').length)}ch` }}
+                className="text-5xl sm:text-6xl font-black text-black bg-transparent text-left focus:outline-none p-0 m-0 tracking-tight"
+              />
+            </div>
+            {error && <p className="text-xs text-iosRed font-medium mt-3 text-center">{error}</p>}
+          </div>
+
+          {/* 3. Bottom Right Circular Arrow Button (GPay style) */}
+          <div className="pb-[calc(1.25rem+env(safe-area-inset-bottom))] flex justify-end">
             <button
               type="button"
               onClick={handleNextStep}
               disabled={!isAmountValid || isReadOnly}
-              className={`w-full h-12 rounded-[14px] font-semibold text-[16px] text-white flex items-center justify-center space-x-2 transition-all ${
+              aria-label="Next"
+              className={`w-14 h-14 rounded-full flex items-center justify-center transition-all ${
                 !isAmountValid || isReadOnly
-                  ? 'bg-gray-300 cursor-not-allowed text-gray-500'
-                  : 'bg-iosBlue active:scale-98 shadow-md shadow-iosBlue/25'
+                  ? 'bg-gray-300 cursor-not-allowed text-gray-400 opacity-60'
+                  : 'bg-iosBlue text-white shadow-lg shadow-iosBlue/35 active:scale-95'
               }`}
             >
-              <span>Continue</span>
-              <ArrowRight className="w-5 h-5" />
+              <ArrowRight className="w-6 h-6" />
             </button>
           </div>
-        ) : (
-          <div className="space-y-2 w-full">
-            {/* Generate Bill / View Bill Button for In Entries */}
+        </div>
+      ) : (
+        <div className="flex-1 flex flex-col justify-between overflow-hidden animate-fade-in">
+          {/* Scrollable Form Body */}
+          <form
+            id="add-entry-form"
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSave(e);
+            }}
+            className="flex-1 min-h-0 overflow-y-auto px-4 py-3 space-y-4"
+          >
+            {isReadOnly && (
+              <div className="bg-red-50 text-iosRed p-3 rounded-[10px] text-xs font-medium">
+                {t('read_only_locked_msg', language)}
+              </div>
+            )}
+
+            {/* Top Return Chip (Change Amount) */}
+            <div className="flex items-center justify-between bg-white border border-black/[0.06] rounded-[14px] p-3 shadow-xs">
+              <button
+                type="button"
+                onClick={handlePrevStep}
+                className="flex items-center space-x-1.5 text-iosBlue hover:opacity-80 active:scale-95 transition-all text-xs font-semibold"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span>Change Amount</span>
+              </button>
+              <button
+                type="button"
+                onClick={handlePrevStep}
+                className="flex items-center space-x-1 text-sm font-bold text-black hover:opacity-80 transition-opacity"
+              >
+                <span>₹{amountStr || '0'}</span>
+                <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${type === 'in' ? 'bg-green-100 text-iosGreen' : 'bg-red-100 text-iosRed'}`}>
+                  {type === 'in' ? 'In (Sale)' : 'Out (Expense)'}
+                </span>
+              </button>
+            </div>
+
+            {error && <p className="text-xs text-iosRed font-medium mt-1">{error}</p>}
+
+            {/* If editing an existing entry, show quick type toggle */}
+            {entryToEdit && (
+              <div>
+                <SegmentedControl<EntryType>
+                  value={type}
+                  onChange={(val) => setType(val)}
+                  size="sm"
+                  options={[
+                    { value: 'in', label: t('type_in_label', language) },
+                    { value: 'out', label: t('type_out_label', language) },
+                  ]}
+                />
+              </div>
+            )}
+
+            {/* Payment Method (If In) */}
+            {type === 'in' && (
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-[#8E8E93] ml-1">
+                  {t('payment_method_label', language)}
+                </label>
+                <SegmentedControl<PaymentMethod>
+                  value={paymentMethod}
+                  onChange={(val) => setPaymentMethod(val)}
+                  size="sm"
+                  options={[
+                    { value: 'cash', label: t('cash', language) },
+                    { value: 'upi', label: t('upi', language) },
+                    { value: 'card', label: t('card', language) },
+                    { value: 'credit', label: 'Credit' },
+                  ]}
+                />
+              </div>
+            )}
+
+            {/* Item / Service with Quick Stock Picker */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between ml-1">
+                <label className="text-xs font-semibold text-[#8E8E93]">
+                  {t('item_label', language)}
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setIsStockPickerOpen(true)}
+                  className="text-xs font-semibold text-iosBlue hover:underline flex items-center space-x-1 active:opacity-75"
+                >
+                  <Package className="w-3.5 h-3.5" />
+                  <span>Pick from Stock ({stockItems.length})</span>
+                </button>
+              </div>
+
+              {/* Quick stock chips if available */}
+              {stockItems.length > 0 && (
+                <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar momentum-scroll overscroll-x-contain touch-pan-x text-xs">
+                  {stockItems.slice(0, 8).map((si) => {
+                    const isSelected = selectedStockItem?.id === si.id;
+                    return (
+                      <button
+                        key={si.id}
+                        type="button"
+                        onClick={() => handleSelectStockItem(si)}
+                        className={`shrink-0 px-2.5 py-1 rounded-full text-[11px] font-medium transition-all active:scale-95 flex items-center space-x-1 border ${
+                          isSelected
+                            ? 'bg-iosBlue text-white border-iosBlue shadow-xs'
+                            : 'bg-white text-gray-700 border-gray-200/80 hover:border-iosBlue'
+                        }`}
+                      >
+                        <span className="font-semibold">{si.name}</span>
+                        <span className={isSelected ? 'text-blue-100' : 'text-gray-400'}>
+                          (₹{si.sellingPrice})
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              <div className="relative">
+                <input
+                  type="text"
+                  value={item}
+                  onChange={(e) => {
+                    setItem(e.target.value);
+                    if (selectedStockItem && selectedStockItem.name !== e.target.value) {
+                      setSelectedStockItem(null);
+                    }
+                  }}
+                  placeholder={t('item_placeholder', language)}
+                  disabled={isReadOnly}
+                  className="w-full bg-white rounded-[12px] px-3.5 py-2.5 text-[15px] text-black focus:outline-none focus:ring-2 focus:ring-iosBlue/40 border border-black/[0.06] shadow-xs"
+                />
+                {item && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setItem('');
+                      setSelectedStockItem(null);
+                    }}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 rounded-full"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Selected Stock Item details & Stock deduction toggle */}
+              {selectedStockItem && (
+                <div className="bg-blue-50/80 border border-blue-200 rounded-[10px] p-2.5 flex items-center justify-between text-xs animate-fade-in">
+                  <div className="flex items-center space-x-2 text-blue-900 min-w-0 pr-1">
+                    <Check className="w-4 h-4 text-iosBlue shrink-0" />
+                    <div className="truncate">
+                      <span className="font-semibold">
+                        Stock: {selectedStockItem.name}
+                      </span>
+                      <span className="text-gray-500 ml-1">
+                        (₹{selectedStockItem.sellingPrice})
+                      </span>
+                    </div>
+                    {selectedStockItem.category === 'product' && typeof selectedStockItem.quantity === 'number' && (
+                      <span className="text-[10px] font-semibold text-blue-700 bg-white px-1.5 py-0.5 rounded border border-blue-200 shrink-0">
+                        {selectedStockItem.quantity} left
+                      </span>
+                    )}
+                  </div>
+
+                  {type === 'in' && selectedStockItem.category === 'product' && typeof selectedStockItem.quantity === 'number' && (
+                    <label className="flex items-center space-x-1.5 text-[11px] text-gray-700 cursor-pointer font-medium shrink-0">
+                      <input
+                        type="checkbox"
+                        checked={deductStock}
+                        onChange={(e) => setDeductStock(e.target.checked)}
+                        className="rounded text-iosBlue focus:ring-iosBlue"
+                      />
+                      <span>Deduct 1</span>
+                    </label>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Customer Name */}
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-[#8E8E93] ml-1">
+                {t('customer_label', language)}
+                {type === 'in' && paymentMethod === 'credit' && (
+                  <span className="text-amber-600 font-bold ml-1">* (Required for Credit)</span>
+                )}
+              </label>
+              <input
+                type="text"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                placeholder={t('customer_placeholder', language)}
+                disabled={isReadOnly}
+                className="w-full bg-white rounded-[12px] px-3.5 py-2.5 text-[15px] text-black focus:outline-none focus:ring-2 focus:ring-iosBlue/40 border border-black/[0.06] shadow-xs"
+              />
+            </div>
+
+            {/* Note & Date */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-[#8E8E93] ml-1">
+                  {t('note_label', language)}
+                </label>
+                <input
+                  type="text"
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  placeholder={t('note_placeholder', language)}
+                  disabled={isReadOnly}
+                  className="w-full bg-white rounded-[12px] px-3 py-2.5 text-[14px] text-black focus:outline-none focus:ring-2 focus:ring-iosBlue/40 border border-black/[0.06] shadow-xs"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-[#8E8E93] ml-1">
+                  {t('date_label', language)}
+                </label>
+                <input
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  disabled={isReadOnly}
+                  className="w-full bg-white rounded-[12px] px-3 py-2.5 text-[14px] text-black focus:outline-none focus:ring-2 focus:ring-iosBlue/40 border border-black/[0.06] shadow-xs"
+                />
+              </div>
+            </div>
+
+            {/* Delete Entry Option */}
+            {entryToEdit && onDelete && (
+              <div className="pt-2 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const target = entryToEdit;
+                    onClose();
+                    onDelete(target);
+                  }}
+                  className="w-full py-2.5 rounded-[12px] bg-red-50 text-iosRed font-semibold text-[14px] border border-red-200/80 hover:bg-red-100 flex items-center justify-center space-x-1.5 active:opacity-75 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>{t('delete_action', language)} Entry</span>
+                </button>
+              </div>
+            )}
+          </form>
+
+          {/* Sticky Bottom Action Bar */}
+          <div className="bg-white border-t border-black/[0.06] p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] space-y-2 shrink-0 shadow-lg">
             {entryToEdit && type === 'in' && (
               <button
                 type="button"
@@ -395,7 +763,7 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
                 handleSave();
               }}
               disabled={isReadOnly || isSubmitting}
-              className={`w-full h-12 rounded-[12px] font-semibold text-[16px] text-white transition-opacity ${
+              className={`w-full h-12 rounded-[14px] font-semibold text-[16px] text-white transition-opacity ${
                 isReadOnly || isSubmitting
                   ? 'bg-gray-400 cursor-not-allowed opacity-70'
                   : 'bg-iosBlue active:opacity-85 shadow-md shadow-iosBlue/20'
@@ -404,318 +772,7 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
               {entryToEdit ? t('update_btn', language) : t('save_btn', language)}
             </button>
           </div>
-        )
-      }
-    >
-      {showBillPreview && activeBill ? (
-        <div className="space-y-3 pt-1 pb-2 animate-fade-in">
-          <div className="bg-emerald-50 text-emerald-800 rounded-[10px] p-3 text-xs sm:text-sm font-medium border border-emerald-200/80 flex items-center justify-between">
-            <span>Bill generated & linked to this entry.</span>
-            <span className="font-bold text-emerald-900">{activeBill.invoiceNo}</span>
-          </div>
-          <pre className="whitespace-pre-wrap text-[13px] sm:text-[14px] text-black bg-[#F2F2F7] rounded-[12px] p-3.5 font-sans border border-black/[0.04] leading-relaxed">
-            {buildBillText(activeBill, effectiveShopName, effectiveShopAddress)}
-          </pre>
-          <div className="text-center pt-1">
-            <button
-              type="button"
-              onClick={() => setShowBillPreview(false)}
-              className="text-xs text-iosBlue hover:underline font-semibold"
-            >
-              ← Back to Entry Details
-            </button>
-          </div>
         </div>
-      ) : step === 'amount' ? (
-        <div className="space-y-6 pt-2 pb-6 text-center animate-fade-in">
-          {isReadOnly && (
-            <div className="bg-red-50 text-iosRed p-3 rounded-[10px] text-xs font-medium">
-              {t('read_only_locked_msg', language)}
-            </div>
-          )}
-
-          {/* 1. Type Segmented Control (In / Out) */}
-          <div className="max-w-xs mx-auto">
-            <SegmentedControl<EntryType>
-              value={type}
-              onChange={(val) => setType(val)}
-              size="md"
-              options={[
-                { value: 'in', label: t('type_in_label', language) },
-                { value: 'out', label: t('type_out_label', language) },
-              ]}
-            />
-          </div>
-
-          {/* 2. Giant Amount Display */}
-          <div className="py-8 flex flex-col items-center justify-center">
-            <span className="text-xs font-semibold text-[#8E8E93] uppercase tracking-wider mb-2">
-              {t('amount_label', language)}
-            </span>
-            <div className="flex items-center justify-center space-x-1">
-              <span className="text-4xl sm:text-5xl font-black text-black select-none">₹</span>
-              <input
-                ref={amountInputRef}
-                type="text"
-                inputMode="decimal"
-                value={amountStr}
-                onChange={handleAmountChange}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleNextStep();
-                  }
-                }}
-                placeholder="0"
-                disabled={isReadOnly}
-                className="text-5xl sm:text-6xl font-black text-black bg-transparent w-64 text-center focus:outline-none placeholder:text-gray-300 tracking-tight"
-              />
-            </div>
-            {error && <p className="text-xs text-iosRed font-medium mt-3">{error}</p>}
-          </div>
-
-          <p className="text-xs text-[#8E8E93] max-w-xs mx-auto">
-            Enter amount, then tap continue to select payment mode and optional details
-          </p>
-        </div>
-      ) : (
-      <form id="add-entry-form" onSubmit={(e) => { e.preventDefault(); handleSave(e); }} className="space-y-4 pt-1 animate-fade-in">
-        {isReadOnly && (
-          <div className="bg-red-50 text-iosRed p-3 rounded-[10px] text-xs font-medium">
-            {t('read_only_locked_msg', language)}
-          </div>
-        )}
-
-        {/* Top Return Chip (Change Amount) */}
-        <div className="flex items-center justify-between bg-blue-50/70 border border-blue-100 rounded-[12px] p-2.5 px-3">
-          <button
-            type="button"
-            onClick={handlePrevStep}
-            className="flex items-center space-x-1.5 text-iosBlue hover:opacity-80 active:scale-95 transition-all text-xs font-semibold"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Change Amount</span>
-          </button>
-          <button
-            type="button"
-            onClick={handlePrevStep}
-            className="flex items-center space-x-1 text-sm font-bold text-black hover:opacity-80 transition-opacity"
-          >
-            <span>₹{amountStr || '0'}</span>
-            <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${type === 'in' ? 'bg-green-100 text-iosGreen' : 'bg-red-100 text-iosRed'}`}>
-              {type === 'in' ? 'In (Sale)' : 'Out (Expense)'}
-            </span>
-          </button>
-        </div>
-
-        {error && <p className="text-xs text-iosRed font-medium mt-1">{error}</p>}
-
-        {/* If editing an existing entry, show quick type toggle */}
-        {entryToEdit && (
-          <div>
-            <SegmentedControl<EntryType>
-              value={type}
-              onChange={(val) => setType(val)}
-              size="sm"
-              options={[
-                { value: 'in', label: t('type_in_label', language) },
-                { value: 'out', label: t('type_out_label', language) },
-              ]}
-            />
-          </div>
-        )}
-
-        {/* 3. Payment Method (If In) */}
-        {type === 'in' && (
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-[#8E8E93] ml-1">
-              {t('payment_method_label', language)}
-            </label>
-            <SegmentedControl<PaymentMethod>
-              value={paymentMethod}
-              onChange={(val) => setPaymentMethod(val)}
-              size="sm"
-              options={[
-                { value: 'cash', label: t('cash', language) },
-                { value: 'upi', label: t('upi', language) },
-                { value: 'card', label: t('card', language) },
-                { value: 'credit', label: 'Credit' },
-              ]}
-            />
-          </div>
-        )}
-
-        {/* 4. Item / Service with Quick Stock Picker */}
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between ml-1">
-            <label className="text-xs font-semibold text-[#8E8E93]">
-              {t('item_label', language)}
-            </label>
-            <button
-              type="button"
-              onClick={() => setIsStockPickerOpen(true)}
-              className="text-xs font-semibold text-iosBlue hover:underline flex items-center space-x-1 active:opacity-75"
-            >
-              <Package className="w-3.5 h-3.5" />
-              <span>Pick from Stock ({stockItems.length})</span>
-            </button>
-          </div>
-
-          {/* Quick stock chips if available */}
-          {stockItems.length > 0 && (
-            <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar momentum-scroll overscroll-x-contain touch-pan-x text-xs">
-              {stockItems.slice(0, 8).map((si) => {
-                const isSelected = selectedStockItem?.id === si.id;
-                return (
-                  <button
-                    key={si.id}
-                    type="button"
-                    onClick={() => handleSelectStockItem(si)}
-                    className={`shrink-0 px-2.5 py-1 rounded-full text-[11px] font-medium transition-all active:scale-95 flex items-center space-x-1 border ${
-                      isSelected
-                        ? 'bg-iosBlue text-white border-iosBlue shadow-xs'
-                        : 'bg-white text-gray-700 border-gray-200/80 hover:border-iosBlue'
-                    }`}
-                  >
-
-                    <span className="font-semibold">{si.name}</span>
-                    <span className={isSelected ? 'text-blue-100' : 'text-gray-400'}>
-                      (₹{si.sellingPrice})
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          <div className="relative">
-            <input
-              type="text"
-              value={item}
-              onChange={(e) => {
-                setItem(e.target.value);
-                if (selectedStockItem && selectedStockItem.name !== e.target.value) {
-                  setSelectedStockItem(null);
-                }
-              }}
-              placeholder={t('item_placeholder', language)}
-              disabled={isReadOnly}
-              className="w-full bg-[#F2F2F7] rounded-[10px] px-3.5 py-2.5 text-[15px] text-black focus:outline-none focus:ring-2 focus:ring-iosBlue/40 border border-black/[0.04]"
-            />
-            {item && (
-              <button
-                type="button"
-                onClick={() => {
-                  setItem('');
-                  setSelectedStockItem(null);
-                }}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 rounded-full"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-
-          {/* Selected Stock Item details & Stock deduction toggle */}
-          {selectedStockItem && (
-            <div className="bg-blue-50/80 border border-blue-200 rounded-[10px] p-2.5 flex items-center justify-between text-xs animate-fade-in">
-              <div className="flex items-center space-x-2 text-blue-900 min-w-0 pr-1">
-                <Check className="w-4 h-4 text-iosBlue shrink-0" />
-                <div className="truncate">
-                  <span className="font-semibold">
-                    Stock: {selectedStockItem.name}
-                  </span>
-                  <span className="text-gray-500 ml-1">
-                    (₹{selectedStockItem.sellingPrice})
-                  </span>
-                </div>
-                {selectedStockItem.category === 'product' && typeof selectedStockItem.quantity === 'number' && (
-                  <span className="text-[10px] font-semibold text-blue-700 bg-white px-1.5 py-0.5 rounded border border-blue-200 shrink-0">
-                    {selectedStockItem.quantity} left
-                  </span>
-                )}
-              </div>
-
-              {type === 'in' && selectedStockItem.category === 'product' && typeof selectedStockItem.quantity === 'number' && (
-                <label className="flex items-center space-x-1.5 text-[11px] text-gray-700 cursor-pointer font-medium shrink-0">
-                  <input
-                    type="checkbox"
-                    checked={deductStock}
-                    onChange={(e) => setDeductStock(e.target.checked)}
-                    className="rounded text-iosBlue focus:ring-iosBlue"
-                  />
-                  <span>Deduct 1</span>
-                </label>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* 5. Customer Name (Required if Credit, Optional otherwise) */}
-        <div className="space-y-1">
-          <label className="text-xs font-medium text-[#8E8E93] ml-1">
-            {t('customer_label', language)}
-            {type === 'in' && paymentMethod === 'credit' && (
-              <span className="text-amber-600 font-bold ml-1">* (Required for Credit)</span>
-            )}
-          </label>
-          <input
-            type="text"
-            value={customerName}
-            onChange={(e) => setCustomerName(e.target.value)}
-            placeholder={t('customer_placeholder', language)}
-            disabled={isReadOnly}
-            className="w-full bg-[#F2F2F7] rounded-[10px] px-3.5 py-2.5 text-[15px] text-black focus:outline-none focus:ring-2 focus:ring-iosBlue/40 border border-black/[0.04]"
-          />
-        </div>
-
-        {/* 6. Optional: Note & Date row */}
-        <div className="grid grid-cols-2 gap-2">
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-[#8E8E93] ml-1">
-              {t('note_label', language)}
-            </label>
-            <input
-              type="text"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder={t('note_placeholder', language)}
-              disabled={isReadOnly}
-              className="w-full bg-[#F2F2F7] rounded-[10px] px-3 py-2 text-[14px] text-black focus:outline-none focus:ring-2 focus:ring-iosBlue/40 border border-black/[0.04]"
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-[#8E8E93] ml-1">
-              {t('date_label', language)}
-            </label>
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              disabled={isReadOnly}
-              className="w-full bg-[#F2F2F7] rounded-[10px] px-3 py-2 text-[14px] text-black focus:outline-none focus:ring-2 focus:ring-iosBlue/40 border border-black/[0.04]"
-            />
-          </div>
-        </div>
-
-        {/* 7. Delete Entry Option (Only visible when editing an existing entry) */}
-        {entryToEdit && onDelete && (
-          <div className="pt-2 border-t border-gray-100">
-            <button
-              type="button"
-              onClick={() => {
-                const target = entryToEdit;
-                onClose();
-                onDelete(target);
-              }}
-              className="w-full py-2.5 rounded-[12px] bg-red-50 text-iosRed font-semibold text-[14px] border border-red-200/80 hover:bg-red-100 flex items-center justify-center space-x-1.5 active:opacity-75 transition-colors"
-            >
-              <Trash2 className="w-4 h-4" />
-              <span>{t('delete_action', language)} Entry</span>
-            </button>
-          </div>
-        )}
-      </form>
       )}
 
       {/* Stock Picker Sheet */}
@@ -726,6 +783,6 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
         language={language}
         title="Select Product or Service"
       />
-    </BottomSheet>
+    </div>
   );
 };
