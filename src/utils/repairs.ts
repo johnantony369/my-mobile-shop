@@ -7,7 +7,24 @@ export function buildTrackingUrl(cloudId: string, origin?: string): string {
   return `${base.replace(/\/$/, '')}/track/${cloudId}`;
 }
 
-export function buildIntakeSlipMessage(job: Job, shopName: string, trackingUrl?: string): string {
+export function buildIntakeSlipMessage(job: Job, shopName: string, photoCount?: number): string;
+export function buildIntakeSlipMessage(job: Job, shopName: string, trackingUrl?: string, photoCount?: number): string;
+export function buildIntakeSlipMessage(
+  job: Job,
+  shopName: string,
+  trackingUrlOrPhotoCount?: string | number,
+  photoCountParam?: number
+): string {
+  let trackingUrl: string | undefined;
+  let photoCount: number | undefined;
+
+  if (typeof trackingUrlOrPhotoCount === 'number') {
+    photoCount = trackingUrlOrPhotoCount;
+  } else if (typeof trackingUrlOrPhotoCount === 'string') {
+    trackingUrl = trackingUrlOrPhotoCount;
+    photoCount = photoCountParam;
+  }
+
   const shop = shopName.trim() || 'My Mobile Shop';
   const est = job.estimate !== undefined && job.estimate > 0 ? formatINR(job.estimate) : 'To be estimated';
   const adv = job.advance ? formatINR(job.advance) : formatINR(0);
@@ -23,6 +40,9 @@ export function buildIntakeSlipMessage(job: Job, shopName: string, trackingUrl?:
   msg += `Estimate: ${est} | Advance: ${adv}\n`;
   msg += `Balance Due: ${balance}\n`;
   if (job.expectedDate) msg += `Est. Date: ${job.expectedDate}\n`;
+  if (photoCount && photoCount > 0) {
+    msg += `Photos: ${photoCount} intake condition photo(s) recorded\n`;
+  }
   msg += `Status: Received for Repair\n\n`;
 
   if (trackingUrl) {

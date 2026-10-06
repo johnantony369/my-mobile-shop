@@ -40,6 +40,14 @@ describe('Repair Slips & Accounting Workflow', () => {
     expect(slip).toContain('2026-10-05');
   });
 
+  it('includes intake photos count in intake slip when photos are recorded', () => {
+    const slipWithPhotos = buildIntakeSlipMessage(sampleJob, 'Kerala Mobile Care', 3);
+    expect(slipWithPhotos).toContain('Photos: 3 intake condition photo(s) recorded');
+
+    const slipWithoutPhotos = buildIntakeSlipMessage(sampleJob, 'Kerala Mobile Care', 0);
+    expect(slipWithoutPhotos).not.toContain('intake condition photo(s)');
+  });
+
   it('builds a ready notification message with balance due', () => {
     const readyJob: Job = { ...sampleJob, status: 'ready', readyAt: Date.now() };
     const msg = buildReadyNotificationMessage(readyJob, 'Kerala Mobile Care');
