@@ -250,7 +250,9 @@ export const JobDetailSheet: React.FC<JobDetailSheetProps> = ({
           <div className="bg-white rounded-[14px] p-4 shadow-sm border border-black/[0.04] space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-[#8E8E93] uppercase tracking-wider block">
-                Condition &amp; Work Photos ({photos.length})
+                {photos.some((p) => p.tag === 'ready')
+                  ? `Condition Photos & Repaired (${photos.length})`
+                  : `Condition Photos (${photos.length})`}
               </span>
             </div>
             <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
@@ -271,13 +273,19 @@ export const JobDetailSheet: React.FC<JobDetailSheetProps> = ({
                       alt={p.label || 'Job Photo'}
                       className="w-full h-full object-cover"
                     />
-                    <span
-                      className={`absolute bottom-0 inset-x-0 text-[8px] font-bold py-0.5 text-center text-white truncate ${
-                        isReadyPhoto ? 'bg-emerald-600/90' : 'bg-black/60'
-                      }`}
-                    >
-                      {isReadyPhoto ? 'Ready' : 'Intake'}
-                    </span>
+                    {p.label ? (
+                      <span
+                        className={`absolute bottom-0 inset-x-0 text-[8px] font-bold py-0.5 text-center text-white truncate px-0.5 ${
+                          isReadyPhoto ? 'bg-emerald-600/90' : 'bg-black/60'
+                        }`}
+                      >
+                        {p.label}
+                      </span>
+                    ) : isReadyPhoto ? (
+                      <span className="absolute bottom-0 inset-x-0 text-[8px] font-bold py-0.5 text-center text-white truncate bg-emerald-600/90">
+                        Ready
+                      </span>
+                    ) : null}
                   </button>
                 );
               })}
