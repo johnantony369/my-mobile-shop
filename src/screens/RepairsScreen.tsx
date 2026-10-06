@@ -76,24 +76,26 @@ export const RepairsScreen: React.FC<RepairsScreenProps> = ({
   let displayedJobs: Job[] = [];
 
   if (trimmedSearch) {
-    // Search across ALL jobs
-    displayedJobs = allJobs.filter(
-      (j) =>
-        j.customerName.toLowerCase().includes(trimmedSearch) ||
-        j.phone.includes(trimmedSearch) ||
-        j.model.toLowerCase().includes(trimmedSearch) ||
-        j.complaint.toLowerCase().includes(trimmedSearch)
-    );
+    // Search across ALL jobs (newest first)
+    displayedJobs = allJobs
+      .filter(
+        (j) =>
+          j.customerName.toLowerCase().includes(trimmedSearch) ||
+          j.phone.includes(trimmedSearch) ||
+          j.model.toLowerCase().includes(trimmedSearch) ||
+          j.complaint.toLowerCase().includes(trimmedSearch)
+      )
+      .sort((a, b) => b.receivedAt - a.receivedAt);
   } else if (currentSegment === 'active') {
-    // Active: received + waiting, oldest first
+    // Active: received + waiting, newest first
     displayedJobs = allJobs
       .filter((j) => j.status === 'received' || j.status === 'waiting')
-      .sort((a, b) => a.receivedAt - b.receivedAt);
+      .sort((a, b) => b.receivedAt - a.receivedAt);
   } else if (currentSegment === 'ready') {
-    // Ready: oldest ready first
+    // Ready: newest ready first
     displayedJobs = allJobs
       .filter((j) => j.status === 'ready')
-      .sort((a, b) => (a.readyAt || a.receivedAt) - (b.readyAt || b.receivedAt));
+      .sort((a, b) => (b.readyAt || b.receivedAt) - (a.readyAt || a.receivedAt));
   } else {
     // History: delivered + returned, newest first
     displayedJobs = allJobs
