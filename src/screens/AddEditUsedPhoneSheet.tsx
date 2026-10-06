@@ -169,14 +169,6 @@ export const AddEditUsedPhoneSheet: React.FC<AddEditUsedPhoneSheetProps> = ({
       setErrorMsg('Please enter Model name first.');
       return;
     }
-    if (isPhone && !cleanImei) {
-      setErrorMsg('Please enter 15-digit IMEI first.');
-      return;
-    }
-    if (!isPhone && !cleanSerial && !cleanImei) {
-      setErrorMsg('Please enter Serial Number first.');
-      return;
-    }
 
     const text = formatWhatsAppDeclaration(
       {
@@ -210,7 +202,7 @@ export const AddEditUsedPhoneSheet: React.FC<AddEditUsedPhoneSheetProps> = ({
       return;
     }
 
-    if (isPhone) {
+    if (cleanImei) {
       if (!is15Digits) {
         setErrorMsg('IMEI must be exactly 15 numeric digits');
         return;
@@ -218,11 +210,6 @@ export const AddEditUsedPhoneSheet: React.FC<AddEditUsedPhoneSheetProps> = ({
 
       if (!isLuhnValid) {
         setErrorMsg('IMEI is invalid (Luhn checksum failed). Please verify typing.');
-        return;
-      }
-    } else {
-      if (!cleanSerial && !cleanImei) {
-        setErrorMsg('Please enter Serial Number (S/N) or IMEI');
         return;
       }
     }
@@ -419,18 +406,17 @@ export const AddEditUsedPhoneSheet: React.FC<AddEditUsedPhoneSheetProps> = ({
           {isPhone ? (
             <div>
               <div className="flex items-center justify-between mb-1 ml-0.5">
-                <label className="text-xs font-semibold text-black">15-Digit IMEI *</label>
+                <label className="text-xs font-semibold text-black">15-Digit IMEI (Optional)</label>
                 <span className="text-[11px] font-mono text-[#8E8E93]">
                   {cleanImei.length} / 15
                 </span>
               </div>
               <input
                 type="text"
-                required
                 maxLength={15}
                 value={imei}
                 onChange={(e) => setImei(e.target.value.replace(/\D/g, ''))}
-                placeholder="Dial *#06# on phone to get IMEI"
+                placeholder="Optional — Dial *#06# on phone to get IMEI"
                 className="w-full bg-[#F2F2F7] border border-black/[0.04] rounded-[10px] px-3.5 py-2.5 font-mono text-black font-bold text-sm tracking-wider focus:outline-none focus:ring-2 focus:ring-iosBlue/40"
               />
               <div className="mt-1.5 ml-0.5">
