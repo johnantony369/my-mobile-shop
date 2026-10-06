@@ -158,25 +158,25 @@ export const ToolsScreen: React.FC<ToolsScreenProps> = ({
            ======================================================== */}
         <div className="space-y-3">
           {/* 1. HERO BENTO CARD: PRE-OWNED PHONE HUB (Full Width) */}
-          <div className="relative overflow-hidden bg-gradient-to-br from-[#3b0764] via-[#4c1d95] to-[#581c87] rounded-[22px] p-5 text-white shadow-lg active:scale-[0.99] transition-all">
-            {/* Background decorative glow */}
-            <div className="absolute -top-12 -right-12 w-36 h-36 bg-purple-400/20 rounded-full blur-2xl pointer-events-none" />
+          <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-[22px] p-5 text-white shadow-lg active:scale-[0.99] transition-all border border-slate-700/50">
+            {/* Background decorative subtle glow */}
+            <div className="absolute -top-12 -right-12 w-36 h-36 bg-blue-500/15 rounded-full blur-2xl pointer-events-none" />
 
             <div className="relative z-10 space-y-3.5">
               <div className="flex items-start justify-between">
                 <div>
                   <div className="flex items-center space-x-2">
-                    <span className="text-xs font-bold uppercase tracking-wider text-purple-200">
+                    <span className="text-xs font-bold uppercase tracking-wider text-blue-400">
                       Flagship Tool
                     </span>
-                    <span className="text-[10px] bg-white/20 text-white px-2 py-0.5 rounded-full font-bold">
+                    <span className="text-[10px] bg-white/15 text-white px-2 py-0.5 rounded-full font-bold">
                       KYC Verified
                     </span>
                   </div>
                   <h2 className="text-[22px] font-extrabold tracking-tight mt-1 leading-tight">
                     Pre-Owned Stock Hub
                   </h2>
-                  <p className="text-xs text-purple-200 leading-relaxed max-w-[240px] mt-0.5">
+                  <p className="text-xs text-slate-300 leading-relaxed max-w-[240px] mt-0.5">
                     Serialized intake, IMEI/Serial check, Seller ID proof & WhatsApp transfer declaration.
                   </p>
                 </div>
@@ -192,7 +192,7 @@ export const ToolsScreen: React.FC<ToolsScreenProps> = ({
                   {inStockCount} {inStockCount === 1 ? 'in Stock' : 'in Stock'}
                 </span>
                 {inStockValue > 0 && (
-                  <span className="bg-purple-900/50 text-purple-200 text-xs font-medium px-2.5 py-1 rounded-full">
+                  <span className="bg-slate-700/70 text-slate-200 text-xs font-medium px-2.5 py-1 rounded-full border border-white/10">
                     {formatINR(inStockValue)} Value
                   </span>
                 )}
@@ -206,7 +206,7 @@ export const ToolsScreen: React.FC<ToolsScreenProps> = ({
                     setEditingDevice(null);
                     setIsAddIntakeOpen(true);
                   }}
-                  className="w-full py-2.5 bg-white text-purple-950 hover:bg-purple-50 active:scale-95 text-xs font-bold rounded-[12px] shadow-sm flex items-center justify-center space-x-1.5 transition-all"
+                  className="w-full py-2.5 bg-iosBlue hover:bg-blue-600 active:scale-95 text-white text-xs font-bold rounded-[12px] shadow-sm flex items-center justify-center space-x-1.5 transition-all"
                 >
                   <Plus className="w-4 h-4 stroke-[2.5]" />
                   <span>+ New Intake</span>

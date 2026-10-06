@@ -199,9 +199,7 @@ export const StockScreen: React.FC<StockScreenProps> = ({
                   setIsAddPreownedOpen(true);
                 }
               }}
-              className={`${
-                view === 'stock' ? 'bg-iosBlue' : 'bg-purple-600'
-              } text-white text-xs font-semibold px-3 py-1.5 rounded-full flex items-center space-x-1 shadow-xs active:scale-95 transition-all`}
+              className="bg-iosBlue text-white text-xs font-semibold px-3 py-1.5 rounded-full flex items-center space-x-1 shadow-xs active:scale-95 transition-all"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>{view === 'stock' ? 'Add' : 'Intake'}</span>
@@ -239,7 +237,7 @@ export const StockScreen: React.FC<StockScreenProps> = ({
                 setIsAddPreownedOpen(true);
               }}
               disabled={isReadOnly}
-              className="mt-1 bg-purple-600 hover:bg-purple-700 active:scale-95 text-white font-semibold text-[14px] px-4 py-2.5 rounded-full shadow-md shadow-purple-600/25 flex items-center space-x-1.5 transition-all select-none"
+              className="mt-1 bg-iosBlue hover:bg-blue-600 active:scale-95 text-white font-semibold text-[14px] px-4 py-2.5 rounded-full shadow-md shadow-iosBlue/25 flex items-center space-x-1.5 transition-all select-none"
             >
               <Plus className="w-4 h-4 stroke-[2.5]" />
               <span>New Intake</span>
@@ -646,11 +644,7 @@ export const StockScreen: React.FC<StockScreenProps> = ({
               setIsAddPreownedOpen(true);
             }
           }}
-          className={`h-13 px-5 py-3 rounded-full flex items-center space-x-2 font-bold text-[15px] shadow-lg active:scale-95 transition-all duration-150 text-white ${
-            view === 'stock'
-              ? 'bg-iosBlue shadow-iosBlue/35 hover:bg-blue-600'
-              : 'bg-purple-600 shadow-purple-600/35 hover:bg-purple-700'
-          }`}
+          className="h-13 px-5 py-3 rounded-full flex items-center space-x-2 font-bold text-[15px] shadow-lg active:scale-95 transition-all duration-150 text-white bg-iosBlue shadow-iosBlue/35 hover:bg-blue-600"
         >
           <Plus className="w-5 h-5 stroke-[2.5]" />
           <span>{view === 'stock' ? 'Add Item' : 'New Intake'}</span>

@@ -112,7 +112,7 @@ export const InstallGuideModal: React.FC<{
             </li>
           </ol>
           <div className="bg-amber-50 border border-amber-200/60 rounded-xl p-2.5 text-xs text-amber-900 leading-relaxed font-medium">
-            💡 <strong>Note:</strong> If you opened this link inside WhatsApp or another app, tap the 3 dots and choose <strong>"Open in Chrome"</strong> first.
+            <strong>Note:</strong> If you opened this link inside WhatsApp or another app, tap the 3 dots and choose <strong>"Open in Chrome"</strong> first.
           </div>
         </div>
       )}

@@ -189,14 +189,14 @@ export const EntryList: React.FC<EntryListProps> = ({
                 onClick={() => handleSettle('cash')}
                 className="h-11 rounded-[12px] bg-gray-100 hover:bg-gray-200 active:scale-95 font-semibold text-sm text-black transition-all flex items-center justify-center space-x-1.5"
               >
-                <span>💵 Cash</span>
+                <span>Cash</span>
               </button>
               <button
                 type="button"
                 onClick={() => handleSettle('upi')}
                 className="h-11 rounded-[12px] bg-blue-50 text-iosBlue hover:bg-blue-100 active:scale-95 font-semibold text-sm transition-all flex items-center justify-center space-x-1.5"
               >
-                <span>📱 UPI</span>
+                <span>UPI</span>
               </button>
             </div>
             <button
