@@ -116,3 +116,15 @@ export interface Bill extends SyncMetadata {
   entryId?: number; // linked Day Book entry
   createdAt: number;
 }
+
+export interface JobPhoto extends SyncMetadata {
+  id?: number;
+  photoId: string;
+  jobCloudId: string;
+  dataUrl?: string;
+  downloadUrl?: string;
+  label?: string;
+  createdAt: number;
+  uploadedAt?: number;
+  uploadStatus: 'pending' | 'uploading' | 'uploaded' | 'failed';
+}

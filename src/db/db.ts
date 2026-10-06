@@ -1,5 +1,5 @@
 import Dexie, { Table } from 'dexie';
-import { Entry, AppSettings, DaySummary, Job, Language, StockItem, Bill, BillItem, PaymentMethod, PurchaseItem } from '../types';
+import { Entry, AppSettings, DaySummary, Job, Language, StockItem, Bill, BillItem, PaymentMethod, PurchaseItem, JobPhoto } from '../types';
 import { getLocalDateString } from '../utils/date';
 import { computeBillTotals, formatInvoiceNo, summarizeBillItems } from '../utils/billing';
 
@@ -17,6 +17,7 @@ export class ShopDatabase extends Dexie {
   stock!: Table<StockItem, number>;
   bills!: Table<Bill, number>;
   purchases!: Table<PurchaseItem, number>;
+  jobPhotos!: Table<JobPhoto, number>;
 
   constructor() {
     super('MyMobileShopDB');
@@ -80,6 +81,30 @@ export class ShopDatabase extends Dexie {
       stock: '++id, cloudId, name, category, sellingPrice, quantity, sku, createdAt, updatedAt, syncStatus',
       bills: '++id, cloudId, invoiceNo, date, createdAt, updatedAt, syncStatus',
       purchases: '++id, cloudId, name, isPurchased, createdAt, updatedAt, syncStatus',
+    });
+
+    this.version(7).stores({
+      entries: '++id, cloudId, type, amount, date, createdAt, updatedAt, syncStatus, paymentMethod, repairId',
+      settings: '++id, cloudId, updatedAt, syncStatus',
+      jobs: '++id, cloudId, status, phone, customerName, model, receivedAt, readyAt, deliveredAt, bookEntryId, updatedAt, syncStatus',
+      stock: '++id, cloudId, name, category, sellingPrice, quantity, sku, createdAt, updatedAt, syncStatus',
+      bills: '++id, cloudId, invoiceNo, date, createdAt, updatedAt, syncStatus',
+      purchases: '++id, cloudId, name, isPurchased, createdAt, updatedAt, syncStatus',
+      jobPhotos: '++id, photoId, jobCloudId, uploadStatus, createdAt, syncStatus',
+    });
+
+    this.jobPhotos.hook('creating', (_primKey, obj) => {
+      if (!obj.cloudId) obj.cloudId = generateCloudId();
+      if (!obj.createdAt) obj.createdAt = Date.now();
+      if (!obj.updatedAt) obj.updatedAt = new Date().toISOString();
+      if (!obj.syncStatus) obj.syncStatus = 'pending';
+      if (!obj.uploadStatus) obj.uploadStatus = 'pending';
+    });
+    this.jobPhotos.hook('updating', (modifications: Partial<JobPhoto>) => {
+      if (!modifications.updatedAt) {
+        return { ...modifications, updatedAt: new Date().toISOString(), syncStatus: modifications.syncStatus || 'pending' };
+      }
+      return undefined;
     });
 
     this.purchases.hook('creating', (_primKey, obj) => {
@@ -166,13 +191,14 @@ export async function getAppSettings(): Promise<AppSettings | undefined> {
 
 export async function clearLocalDatabase(): Promise<void> {
   try {
-    await db.transaction('rw', [db.entries, db.settings, db.jobs, db.stock, db.bills, db.purchases], async () => {
+    await db.transaction('rw', [db.entries, db.settings, db.jobs, db.stock, db.bills, db.purchases, db.jobPhotos], async () => {
       await db.entries.clear();
       await db.settings.clear();
       await db.jobs.clear();
       if (db.stock) await db.stock.clear();
       if (db.bills) await db.bills.clear();
       if (db.purchases) await db.purchases.clear();
+      if (db.jobPhotos) await db.jobPhotos.clear();
     });
   } catch (err) {
     console.warn('Error clearing local database in transaction, falling back to individual clears:', err);
@@ -183,6 +209,7 @@ export async function clearLocalDatabase(): Promise<void> {
       db.stock ? db.stock.clear() : Promise.resolve(),
       db.bills ? db.bills.clear() : Promise.resolve(),
       db.purchases ? db.purchases.clear() : Promise.resolve(),
+      db.jobPhotos ? db.jobPhotos.clear() : Promise.resolve(),
     ]);
   }
 }
@@ -485,4 +512,39 @@ export async function clearPurchasedItems(): Promise<number> {
   const ids = await db.purchases.filter((p) => p.isPurchased).primaryKeys();
   await db.purchases.bulkDelete(ids);
   return ids.length;
+}
+
+export async function saveJobPhotos(jobCloudId: string, photos: Array<Partial<JobPhoto>>): Promise<void> {
+  const now = Date.now();
+  for (const p of photos) {
+    if (!p.photoId) continue;
+    const existing = await db.jobPhotos.where('photoId').equals(p.photoId).first();
+    if (!existing) {
+      await db.jobPhotos.add({
+        photoId: p.photoId,
+        jobCloudId,
+        dataUrl: p.dataUrl,
+        downloadUrl: p.downloadUrl,
+        label: p.label,
+        createdAt: p.createdAt || now,
+        uploadStatus: p.uploadStatus || 'pending',
+        ...(p.syncStatus ? { syncStatus: p.syncStatus } : {}),
+        ...(p.deletedAt !== undefined ? { deletedAt: p.deletedAt } : {}),
+      } as JobPhoto);
+    }
+  }
+}
+
+export async function getJobPhotos(jobCloudId: string): Promise<JobPhoto[]> {
+  if (!db.jobPhotos) return [];
+  const photos = await db.jobPhotos.where('jobCloudId').equals(jobCloudId).toArray();
+  return photos.filter((p) => !p.deletedAt && p.syncStatus !== 'deleted');
+}
+
+export async function deleteJobPhoto(photoId: string): Promise<void> {
+  if (!db.jobPhotos) return;
+  const item = await db.jobPhotos.where('photoId').equals(photoId).first();
+  if (item && item.id) {
+    await db.jobPhotos.delete(item.id);
+  }
 }
