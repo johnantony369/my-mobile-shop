@@ -1,26 +1,39 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Minus, Plus, Trash2, Package, Share2 } from 'lucide-react';
+import { Minus, Plus, Trash2, Package, Share2, Download } from 'lucide-react';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { BottomSheet } from '../components/BottomSheet';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { StockPickerSheet } from '../components/StockPickerSheet';
-import { createBill } from '../db/db';
+import { createBill, db } from '../db/db';
 import { formatINR } from '../i18n';
 import { Bill, BillItem, Language, PaymentMethod, StockItem } from '../types';
 import { buildBillText, buildWhatsAppUrl, computeBillTotals } from '../utils/billing';
 import { shareSummary } from '../utils/share';
+import { downloadBillPDF } from '../utils/pdf';
 
 interface BillSheetProps {
   isOpen: boolean;
   onClose: () => void;
   defaultDate: string;
   shopName: string;
+  shopAddress?: string;
   language: Language;
 }
 
 const inputCls =
   'w-full bg-[#F2F2F7] rounded-[10px] px-3.5 py-2.5 text-[15px] text-black focus:outline-none focus:ring-2 focus:ring-iosBlue/40 border border-black/[0.04]';
 
-export const BillSheet: React.FC<BillSheetProps> = ({ isOpen, onClose, defaultDate, shopName, language }) => {
+export const BillSheet: React.FC<BillSheetProps> = ({
+  isOpen,
+  onClose,
+  defaultDate,
+  shopName,
+  shopAddress,
+  language,
+}) => {
+  const settings = useLiveQuery(() => db.settings.toCollection().first());
+  const effectiveShopName = shopName || settings?.shopName || 'My Mobile Shop';
+  const effectiveShopAddress = shopAddress || settings?.shopAddress;
   const [items, setItems] = useState<BillItem[]>([]);
   const [customName, setCustomName] = useState('');
   const [customPrice, setCustomPrice] = useState('');
@@ -121,7 +134,7 @@ export const BillSheet: React.FC<BillSheetProps> = ({ isOpen, onClose, defaultDa
 
   const handleShare = async () => {
     if (!savedBill) return;
-    const text = buildBillText(savedBill, shopName);
+    const text = buildBillText(savedBill, effectiveShopName, effectiveShopAddress);
     if (savedBill.customerPhone) {
       window.open(buildWhatsAppUrl(text, savedBill.customerPhone), '_blank');
     } else {
@@ -129,20 +142,37 @@ export const BillSheet: React.FC<BillSheetProps> = ({ isOpen, onClose, defaultDa
     }
   };
 
+  const handleDownloadPDF = () => {
+    if (!savedBill) return;
+    downloadBillPDF({
+      bill: savedBill,
+      shopName: effectiveShopName,
+      shopAddress: effectiveShopAddress,
+    });
+  };
+
   const footer = savedBill ? (
     <div className="flex gap-2">
       <button
         type="button"
         onClick={handleShare}
-        className="flex-1 h-12 rounded-[12px] font-semibold text-[16px] text-white bg-[#25D366] active:opacity-85 flex items-center justify-center space-x-2"
+        className="flex-1 h-12 rounded-[12px] font-semibold text-[15px] text-white bg-[#25D366] active:opacity-85 flex items-center justify-center space-x-1.5 shadow-sm"
       >
-        <Share2 className="w-5 h-5" />
+        <Share2 className="w-4 h-4" />
         <span>Share Bill</span>
       </button>
       <button
         type="button"
+        onClick={handleDownloadPDF}
+        className="flex-1 h-12 rounded-[12px] font-semibold text-[15px] text-white bg-slate-800 active:opacity-85 flex items-center justify-center space-x-1.5 shadow-sm"
+      >
+        <Download className="w-4 h-4" />
+        <span>PDF Bill</span>
+      </button>
+      <button
+        type="button"
         onClick={onClose}
-        className="px-5 h-12 rounded-[12px] font-semibold text-[16px] bg-[#E5E5EA] text-black active:opacity-85"
+        className="px-4 h-12 rounded-[12px] font-semibold text-[15px] bg-[#E5E5EA] text-black active:opacity-85"
       >
         Done
       </button>
@@ -168,7 +198,7 @@ export const BillSheet: React.FC<BillSheetProps> = ({ isOpen, onClose, defaultDa
             Bill saved and added to Day Book.
           </div>
           <pre className="whitespace-pre-wrap text-[14px] text-black bg-[#F2F2F7] rounded-[12px] p-3 font-sans">
-            {buildBillText(savedBill, shopName)}
+            {buildBillText(savedBill, effectiveShopName, effectiveShopAddress)}
           </pre>
         </div>
       ) : (

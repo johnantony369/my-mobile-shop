@@ -47,6 +47,7 @@ export interface Job extends SyncMetadata {
 export interface AppSettings extends SyncMetadata {
   id?: number;
   shopName: string;
+  shopAddress?: string;
   language: Language;
   firstLaunchDate: string; // 'YYYY-MM-DD' or ISO
   activated: boolean;

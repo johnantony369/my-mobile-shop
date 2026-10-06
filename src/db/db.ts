@@ -192,7 +192,8 @@ export async function initAppSettings(
   language: Language = 'en',
   showRepairs: boolean = false,
   showStock: boolean = true,
-  ownerUid?: string
+  ownerUid?: string,
+  shopAddress?: string
 ): Promise<AppSettings> {
   const existing = await getAppSettings();
   if (existing) {
@@ -205,6 +206,7 @@ export async function initAppSettings(
   const now = new Date().toISOString();
   const newSettings: AppSettings = {
     shopName,
+    shopAddress,
     language,
     firstLaunchDate: getLocalDateString(),
     activated: false,

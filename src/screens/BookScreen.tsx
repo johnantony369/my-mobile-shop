@@ -17,6 +17,7 @@ import { Plus } from 'lucide-react';
 interface BookScreenProps {
   language: Language;
   shopName: string;
+  shopAddress?: string;
   isReadOnly: boolean;
   isActivated?: boolean;
   trialDays?: number;
@@ -26,6 +27,7 @@ interface BookScreenProps {
 export const BookScreen: React.FC<BookScreenProps> = ({
   language,
   shopName,
+  shopAddress,
   isReadOnly,
   isActivated,
   trialDays: _trialDays,
@@ -225,6 +227,7 @@ export const BookScreen: React.FC<BookScreenProps> = ({
         }}
         defaultDate={selectedDate}
         shopName={shopName}
+        shopAddress={shopAddress}
         language={language}
       />
 
@@ -242,6 +245,7 @@ export const BookScreen: React.FC<BookScreenProps> = ({
         onDelete={(entry) => setEntryToDelete(entry)}
         defaultDate={selectedDate}
         shopName={shopName}
+        shopAddress={shopAddress}
         language={language}
         isReadOnly={isReadOnly}
       />

@@ -202,6 +202,7 @@ export default function App() {
           <BookScreen
             language={language}
             shopName={settings.shopName}
+            shopAddress={settings.shopAddress}
             isReadOnly={isReadOnly}
             isActivated={isActivated}
             trialDays={trialDays}

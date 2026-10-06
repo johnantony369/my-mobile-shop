@@ -15,26 +15,38 @@ export function summarizeBillItems(items: BillItem[]): string {
   return items.map((it) => (it.qty > 1 ? `${it.name} x${it.qty}` : it.name)).join(', ');
 }
 
-export function buildBillText(bill: Bill, shopName: string): string {
+export function buildBillText(bill: Bill, shopName: string, shopAddress?: string): string {
   const shop = shopName.trim() || 'My Mobile Shop';
+  const address = (shopAddress || '').trim();
   const lines = bill.items.map(
     (it) => `${it.name} x${it.qty} = ${formatINR(it.qty * it.price)}`
   );
-  const parts = [
-    `*${shop}*`,
-    `Bill ${bill.invoiceNo} | ${bill.date}`,
-    bill.customerName ? `Customer: ${bill.customerName}` : '',
-    '',
-    ...lines,
-    '',
-    bill.discount > 0 ? `Subtotal: ${formatINR(bill.subtotal)}` : '',
-    bill.discount > 0 ? `Discount: -${formatINR(bill.discount)}` : '',
-    `*Total: ${formatINR(bill.total)}*`,
-    `Paid via ${bill.paymentMethod.toUpperCase()}`,
-    '',
+
+  const header: string[] = [`*${shop}*`];
+  if (address) {
+    header.push(address);
+  }
+  header.push(`Bill ${bill.invoiceNo} | ${bill.date}`);
+  if (bill.customerName) {
+    header.push(`Customer: ${bill.customerName}`);
+  }
+
+  const totals: string[] = [];
+  if (bill.discount > 0) {
+    totals.push(`Subtotal: ${formatINR(bill.subtotal)}`);
+    totals.push(`Discount: -${formatINR(bill.discount)}`);
+  }
+  totals.push(`*Total: ${formatINR(bill.total)}*`);
+  totals.push(`Paid via ${bill.paymentMethod.toUpperCase()}`);
+
+  const sections = [
+    header.join('\n'),
+    lines.join('\n'),
+    totals.join('\n'),
     'Thank you! Visit again.',
-  ];
-  return parts.filter((p, i) => p !== '' || (parts[i - 1] ?? '') !== '').join('\n');
+  ].filter(Boolean);
+
+  return sections.join('\n\n');
 }
 
 export function buildWhatsAppUrl(text: string, phone?: string): string {

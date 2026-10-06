@@ -178,6 +178,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 }) => {
   const navigate = useNavigate();
   const [shopName, setShopName] = useState(settings.shopName);
+  const [shopAddress, setShopAddress] = useState(settings.shopAddress || '');
   const [isSavedNotice, setIsSavedNotice] = useState(false);
 
   // Paywall state
@@ -258,7 +259,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const handleSaveShopName = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!shopName.trim()) return;
-    await updateAppSettings({ shopName: shopName.trim() });
+    await updateAppSettings({
+      shopName: shopName.trim(),
+      shopAddress: shopAddress.trim() || undefined,
+    });
     setIsSavedNotice(true);
     setTimeout(() => setIsSavedNotice(false), 2500);
     onRefreshSettings();
@@ -426,6 +430,19 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 value={shopName}
                 onChange={(e) => setShopName(e.target.value)}
                 className="w-full bg-[#F2F2F7] rounded-[10px] px-3.5 py-2.5 text-[15px] font-medium text-black focus:outline-none focus:ring-2 focus:ring-iosBlue/40 border border-black/[0.04]"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs text-[#8E8E93] block mb-1">
+                Shop Address (Appears on Bills & Invoices)
+              </label>
+              <textarea
+                rows={2}
+                value={shopAddress}
+                onChange={(e) => setShopAddress(e.target.value)}
+                placeholder="e.g. Near Bus Stand, Main Road, Calicut"
+                className="w-full bg-[#F2F2F7] rounded-[10px] px-3.5 py-2.5 text-[14px] font-medium text-black focus:outline-none focus:ring-2 focus:ring-iosBlue/40 border border-black/[0.04] resize-none"
               />
             </div>
             <div className="flex items-center justify-between">

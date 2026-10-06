@@ -9,7 +9,8 @@ import { getLocalDateString } from '../utils/date';
 import { buildBillText, buildWhatsAppUrl } from '../utils/billing';
 import { shareSummary } from '../utils/share';
 import { StockPickerSheet } from '../components/StockPickerSheet';
-import { Package, X, Check, Trash2, Receipt, Share2 } from 'lucide-react';
+import { Package, X, Check, Trash2, Receipt, Share2, Download } from 'lucide-react';
+import { downloadBillPDF } from '../utils/pdf';
 
 interface AddEditSheetProps {
   isOpen: boolean;
@@ -19,6 +20,7 @@ interface AddEditSheetProps {
   entryToEdit: Entry | null;
   defaultDate: string;
   shopName?: string;
+  shopAddress?: string;
   language: Language;
   isReadOnly?: boolean;
 }
@@ -42,9 +44,14 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
   entryToEdit,
   defaultDate,
   shopName,
+  shopAddress,
   language,
   isReadOnly = false,
 }) => {
+  const settings = useLiveQuery(() => db.settings.toCollection().first());
+  const effectiveShopName = shopName || settings?.shopName || 'My Mobile Shop';
+  const effectiveShopAddress = shopAddress || settings?.shopAddress;
+
   const [type, setType] = useState<EntryType>('in');
   const [amountStr, setAmountStr] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
@@ -162,12 +169,21 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
 
   const handleShareBill = async () => {
     if (!activeBill) return;
-    const text = buildBillText(activeBill, shopName || 'My Mobile Shop');
+    const text = buildBillText(activeBill, effectiveShopName, effectiveShopAddress);
     if (activeBill.customerPhone) {
       window.open(buildWhatsAppUrl(text, activeBill.customerPhone), '_blank');
     } else {
       await shareSummary(text, `Bill ${activeBill.invoiceNo}`);
     }
+  };
+
+  const handleDownloadPDF = () => {
+    if (!activeBill) return;
+    downloadBillPDF({
+      bill: activeBill,
+      shopName: effectiveShopName,
+      shopAddress: effectiveShopAddress,
+    });
   };
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -287,10 +303,18 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
             <button
               type="button"
               onClick={handleShareBill}
-              className="flex-1 h-12 rounded-[12px] font-semibold text-[16px] text-white bg-[#25D366] active:opacity-85 flex items-center justify-center space-x-2 shadow-md shadow-[#25D366]/20 transition-all"
+              className="flex-1 h-12 rounded-[12px] font-semibold text-[15px] text-white bg-[#25D366] active:opacity-85 flex items-center justify-center space-x-1.5 shadow-md shadow-[#25D366]/20 transition-all"
             >
-              <Share2 className="w-5 h-5" />
+              <Share2 className="w-4 h-4" />
               <span>Share Bill</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleDownloadPDF}
+              className="flex-1 h-12 rounded-[12px] font-semibold text-[15px] text-white bg-slate-800 active:opacity-85 flex items-center justify-center space-x-1.5 shadow-sm transition-all"
+            >
+              <Download className="w-4 h-4" />
+              <span>PDF Bill</span>
             </button>
             <button
               type="button"
@@ -298,7 +322,7 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
                 setShowBillPreview(false);
                 onClose();
               }}
-              className="px-5 h-12 rounded-[12px] font-semibold text-[16px] bg-[#E5E5EA] text-black active:opacity-85 transition-all"
+              className="px-4 h-12 rounded-[12px] font-semibold text-[15px] bg-[#E5E5EA] text-black active:opacity-85 transition-all"
             >
               Done
             </button>
@@ -350,7 +374,7 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
             <span className="font-bold text-emerald-900">{activeBill.invoiceNo}</span>
           </div>
           <pre className="whitespace-pre-wrap text-[13px] sm:text-[14px] text-black bg-[#F2F2F7] rounded-[12px] p-3.5 font-sans border border-black/[0.04] leading-relaxed">
-            {buildBillText(activeBill, shopName || 'My Mobile Shop')}
+            {buildBillText(activeBill, effectiveShopName, effectiveShopAddress)}
           </pre>
           <div className="text-center pt-1">
             <button
