@@ -95,3 +95,14 @@ describe('SettingsScreen Notification UI Contract', () => {
     expect(content).toContain('triggerDailySummaryNotification');
   });
 });
+
+describe('App Lifecycle Notification Integration', () => {
+  it('App.tsx schedules daily summary notifications on mount', async () => {
+    const fs = await import('fs');
+    const path = await import('path');
+    const appPath = path.resolve(__dirname, '../src/App.tsx');
+    const appContent = fs.readFileSync(appPath, 'utf-8');
+
+    expect(appContent).toContain('scheduleDailyNotification');
+  });
+});

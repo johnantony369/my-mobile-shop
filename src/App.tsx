@@ -18,6 +18,7 @@ import { InstallBanner } from './components/InstallBanner';
 import { PaywallModal } from './components/PaywallModal';
 import { Language } from './types';
 import { pullCloudChanges } from './firebase/sync';
+import { scheduleDailyNotification } from './utils/notifications';
 
 export default function App() {
   const [currentTab, setCurrentTab] = useState<TabType>('book');
@@ -146,6 +147,21 @@ export default function App() {
       });
     }
   }, [isAdmin, currentSettings]);
+
+  // Schedule daily closing summary notification if enabled
+  useEffect(() => {
+    if (currentSettings?.notificationsEnabled) {
+      const cancel = scheduleDailyNotification(
+        currentSettings.summaryNotificationTime || '20:30',
+        currentSettings.shopName
+      );
+      return () => cancel();
+    }
+  }, [
+    currentSettings?.notificationsEnabled,
+    currentSettings?.summaryNotificationTime,
+    currentSettings?.shopName,
+  ]);
 
   // Loading state with timeout fallback
   if (settingsList === undefined) {
