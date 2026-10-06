@@ -618,6 +618,7 @@ export const StockScreen: React.FC<StockScreenProps> = ({
         ) : (
           <UsedPhonesView
             shopName={shopName}
+            hideHeader={true}
             onOpenAdd={() => {
               setEditingPreowned(null);
               setIsAddPreownedOpen(true);

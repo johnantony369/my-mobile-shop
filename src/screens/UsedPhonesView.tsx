@@ -27,6 +27,7 @@ export interface UsedPhonesViewProps {
   shopPhone?: string;
   onOpenAdd: () => void;
   onEditDevice: (device: UsedDevice) => void;
+  hideHeader?: boolean;
 }
 
 export const UsedPhonesView: React.FC<UsedPhonesViewProps> = ({
@@ -35,6 +36,7 @@ export const UsedPhonesView: React.FC<UsedPhonesViewProps> = ({
   shopPhone,
   onOpenAdd,
   onEditDevice,
+  hideHeader = false,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'in_stock' | 'sold'>('in_stock');
@@ -180,49 +182,53 @@ export const UsedPhonesView: React.FC<UsedPhonesViewProps> = ({
   };
 
   return (
-    <div className="min-h-screen pb-28 pt-2">
-      <div className="max-w-lg mx-auto px-4 space-y-3.5">
-        {/* Top Header */}
-        <div className="flex items-center justify-between">
-          {onBack ? (
-            <button
-              type="button"
-              onClick={onBack}
-              className="flex items-center text-iosBlue text-[15px] font-medium active:opacity-60 -ml-1 transition-all"
-            >
-              <ChevronLeft className="w-5 h-5 -mr-0.5" />
-              <span>Tools</span>
-            </button>
-          ) : (
-            <span className="text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wider block">
-              {shopName || 'My Mobile Shop'}
-            </span>
-          )}
+    <div className={hideHeader ? "space-y-3.5" : "min-h-screen pb-28 pt-2"}>
+      <div className={hideHeader ? "space-y-3.5" : "max-w-lg mx-auto px-4 space-y-3.5"}>
+        {!hideHeader && (
+          <>
+            {/* Top Header */}
+            <div className="flex items-center justify-between">
+              {onBack ? (
+                <button
+                  type="button"
+                  onClick={onBack}
+                  className="flex items-center text-iosBlue text-[15px] font-medium active:opacity-60 -ml-1 transition-all"
+                >
+                  <ChevronLeft className="w-5 h-5 -mr-0.5" />
+                  <span>Tools</span>
+                </button>
+              ) : (
+                <span className="text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wider block">
+                  {shopName || 'My Mobile Shop'}
+                </span>
+              )}
 
-            <button
-            type="button"
-            onClick={onOpenAdd}
-            className="flex items-center space-x-1.5 bg-iosBlue hover:bg-blue-600 active:scale-95 text-white text-xs font-bold px-3.5 py-2 rounded-full shadow-md shadow-iosBlue/20 transition-all select-none ml-auto"
-          >
-            <Plus className="w-4 h-4" />
-            <span>+ New Intake</span>
-          </button>
-        </div>
+              <button
+                type="button"
+                onClick={onOpenAdd}
+                className="flex items-center space-x-1.5 bg-iosBlue hover:bg-blue-600 active:scale-95 text-white text-xs font-bold px-3.5 py-2 rounded-full shadow-md shadow-iosBlue/20 transition-all select-none ml-auto"
+              >
+                <Plus className="w-4 h-4" />
+                <span>+ New Intake</span>
+              </button>
+            </div>
 
-        {/* Title Header */}
-        <div>
-          {onBack && (
-            <span className="text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wider block">
-              {shopName || 'My Mobile Shop'}
-            </span>
-          )}
-          <h1 className="text-[30px] font-extrabold text-black tracking-tight leading-tight">
-            Pre-Owned Stock
-          </h1>
-          <p className="text-xs text-[#8E8E93] mt-0.5">
-            Phones & gadgets buyback, KYC, and resale margin tracking
-          </p>
-        </div>
+            {/* Title Header */}
+            <div>
+              {onBack && (
+                <span className="text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wider block">
+                  {shopName || 'My Mobile Shop'}
+                </span>
+              )}
+              <h1 className="text-[30px] font-extrabold text-black tracking-tight leading-tight">
+                Pre-Owned Stock
+              </h1>
+              <p className="text-xs text-[#8E8E93] mt-0.5">
+                Phones & gadgets buyback, KYC, and resale margin tracking
+              </p>
+            </div>
+          </>
+        )}
 
         {/* Metrics Banner */}
         <div className="grid grid-cols-3 gap-2">
