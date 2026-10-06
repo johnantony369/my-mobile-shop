@@ -2,12 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { BottomSheet } from '../components/BottomSheet';
 import { SegmentedControl } from '../components/SegmentedControl';
-import { Entry, EntryType, PaymentMethod, Language, StockItem } from '../types';
+import { Entry, EntryType, PaymentMethod, Language, StockItem, Bill } from '../types';
 import { t } from '../i18n';
-import { db, adjustStockQuantity } from '../db/db';
+import { db, adjustStockQuantity, createBillForEntry, getBillForEntry } from '../db/db';
 import { getLocalDateString } from '../utils/date';
+import { buildBillText, buildWhatsAppUrl } from '../utils/billing';
+import { shareSummary } from '../utils/share';
 import { StockPickerSheet } from '../components/StockPickerSheet';
-import { Package, X, Check, Trash2 } from 'lucide-react';
+import { Package, X, Check, Trash2, Receipt, Share2 } from 'lucide-react';
 
 interface AddEditSheetProps {
   isOpen: boolean;
@@ -16,6 +18,7 @@ interface AddEditSheetProps {
   onDelete?: (entry: Entry) => void;
   entryToEdit: Entry | null;
   defaultDate: string;
+  shopName?: string;
   language: Language;
   isReadOnly?: boolean;
 }
@@ -38,6 +41,7 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
   onDelete,
   entryToEdit,
   defaultDate,
+  shopName,
   language,
   isReadOnly = false,
 }) => {
@@ -51,6 +55,11 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isSubmittingRef = useRef(false);
+
+  // Billing states
+  const [activeBill, setActiveBill] = useState<Bill | null>(null);
+  const [isGeneratingBill, setIsGeneratingBill] = useState(false);
+  const [showBillPreview, setShowBillPreview] = useState(false);
 
   // Stock selection state
   const [isStockPickerOpen, setIsStockPickerOpen] = useState(false);
@@ -85,6 +94,15 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
         setDate(entryToEdit.date);
         setSelectedStockItem(null);
         setDeductStock(false);
+
+        // Check if a bill already exists for this entry
+        if (entryToEdit.id && entryToEdit.type === 'in') {
+          getBillForEntry(entryToEdit.id)
+            .then((b) => setActiveBill(b || null))
+            .catch(() => setActiveBill(null));
+        } else {
+          setActiveBill(null);
+        }
       } else {
         // Reset defaults
         setType('in');
@@ -96,7 +114,10 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
         setDate(defaultDate || getLocalDateString());
         setSelectedStockItem(null);
         setDeductStock(true);
+        setActiveBill(null);
       }
+      setShowBillPreview(false);
+      setIsGeneratingBill(false);
       setError(null);
       isSubmittingRef.current = false;
       setIsSubmitting(false);
@@ -108,6 +129,46 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
       return () => clearTimeout(timer);
     }
   }, [isOpen, entryToEdit, defaultDate]);
+
+  const handleGenerateBill = async () => {
+    if (!entryToEdit || !entryToEdit.id || isGeneratingBill) return;
+    setIsGeneratingBill(true);
+    try {
+      // If a bill already exists, just show its preview
+      if (activeBill) {
+        setShowBillPreview(true);
+        setIsGeneratingBill(false);
+        return;
+      }
+
+      // Generate new bill for current entry
+      const bill = await createBillForEntry(entryToEdit);
+      setActiveBill(bill);
+      setShowBillPreview(true);
+      // Update note in current form to reflect invoice number
+      if (entryToEdit.note) {
+        setNote(`${entryToEdit.note} · ${bill.invoiceNo}`);
+      } else {
+        setNote(bill.invoiceNo);
+      }
+      onSaved(date);
+    } catch (err) {
+      console.error('Failed to generate bill:', err);
+      setError('Error generating bill');
+    } finally {
+      setIsGeneratingBill(false);
+    }
+  };
+
+  const handleShareBill = async () => {
+    if (!activeBill) return;
+    const text = buildBillText(activeBill, shopName || 'My Mobile Shop');
+    if (activeBill.customerPhone) {
+      window.open(buildWhatsAppUrl(text, activeBill.customerPhone), '_blank');
+    } else {
+      await shareSummary(text, `Bill ${activeBill.invoiceNo}`);
+    }
+  };
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -209,26 +270,99 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
   return (
     <BottomSheet
       isOpen={isOpen}
-      onClose={onClose}
-      title={entryToEdit ? t('edit_entry_title', language) : t('new_entry_title', language)}
+      onClose={() => {
+        setShowBillPreview(false);
+        onClose();
+      }}
+      title={
+        showBillPreview && activeBill
+          ? `Bill ${activeBill.invoiceNo}`
+          : entryToEdit
+          ? t('edit_entry_title', language)
+          : t('new_entry_title', language)
+      }
       footer={
-        <button
-          type="button"
-          onClick={(e) => {
-            e.preventDefault();
-            handleSave();
-          }}
-          disabled={isReadOnly || isSubmitting}
-          className={`w-full h-12 rounded-[12px] font-semibold text-[16px] text-white transition-opacity ${
-            isReadOnly || isSubmitting
-              ? 'bg-gray-400 cursor-not-allowed opacity-70'
-              : 'bg-iosBlue active:opacity-85 shadow-md shadow-iosBlue/20'
-          }`}
-        >
-          {entryToEdit ? t('update_btn', language) : t('save_btn', language)}
-        </button>
+        showBillPreview && activeBill ? (
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={handleShareBill}
+              className="flex-1 h-12 rounded-[12px] font-semibold text-[16px] text-white bg-[#25D366] active:opacity-85 flex items-center justify-center space-x-2 shadow-md shadow-[#25D366]/20 transition-all"
+            >
+              <Share2 className="w-5 h-5" />
+              <span>Share Bill</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowBillPreview(false);
+                onClose();
+              }}
+              className="px-5 h-12 rounded-[12px] font-semibold text-[16px] bg-[#E5E5EA] text-black active:opacity-85 transition-all"
+            >
+              Done
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {/* Generate Bill / View Bill Button for In Entries */}
+            {entryToEdit && type === 'in' && (
+              <button
+                type="button"
+                onClick={handleGenerateBill}
+                disabled={isReadOnly || isGeneratingBill}
+                className="w-full h-11 rounded-[12px] font-semibold text-[15px] bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-800 border border-emerald-300 hover:from-emerald-100 hover:to-teal-100 active:scale-98 transition-all flex items-center justify-center space-x-2"
+              >
+                <Receipt className="w-4 h-4 text-emerald-700" />
+                <span>
+                  {isGeneratingBill
+                    ? 'Generating Bill...'
+                    : activeBill
+                    ? `View / Share Bill (${activeBill.invoiceNo})`
+                    : 'Generate Bill'}
+                </span>
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                handleSave();
+              }}
+              disabled={isReadOnly || isSubmitting}
+              className={`w-full h-12 rounded-[12px] font-semibold text-[16px] text-white transition-opacity ${
+                isReadOnly || isSubmitting
+                  ? 'bg-gray-400 cursor-not-allowed opacity-70'
+                  : 'bg-iosBlue active:opacity-85 shadow-md shadow-iosBlue/20'
+              }`}
+            >
+              {entryToEdit ? t('update_btn', language) : t('save_btn', language)}
+            </button>
+          </div>
+        )
       }
     >
+      {showBillPreview && activeBill ? (
+        <div className="space-y-3 pt-1 pb-2 animate-fade-in">
+          <div className="bg-emerald-50 text-emerald-800 rounded-[10px] p-3 text-xs sm:text-sm font-medium border border-emerald-200/80 flex items-center justify-between">
+            <span>Bill generated & linked to this entry.</span>
+            <span className="font-bold text-emerald-900">{activeBill.invoiceNo}</span>
+          </div>
+          <pre className="whitespace-pre-wrap text-[13px] sm:text-[14px] text-black bg-[#F2F2F7] rounded-[12px] p-3.5 font-sans border border-black/[0.04] leading-relaxed">
+            {buildBillText(activeBill, shopName || 'My Mobile Shop')}
+          </pre>
+          <div className="text-center pt-1">
+            <button
+              type="button"
+              onClick={() => setShowBillPreview(false)}
+              className="text-xs text-iosBlue hover:underline font-semibold"
+            >
+              ← Back to Entry Details
+            </button>
+          </div>
+        </div>
+      ) : (
       <form id="add-entry-form" onSubmit={(e) => { e.preventDefault(); handleSave(e); }} className="space-y-4 pt-1">
         {isReadOnly && (
           <div className="bg-red-50 text-iosRed p-3 rounded-[10px] text-xs font-medium">
@@ -461,6 +595,7 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
           </div>
         )}
       </form>
+      )}
 
       {/* Stock Picker Sheet */}
       <StockPickerSheet

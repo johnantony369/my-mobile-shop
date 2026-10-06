@@ -243,6 +243,7 @@ export const BillSheet: React.FC<BillSheetProps> = ({ isOpen, onClose, defaultDa
               { value: 'cash', label: 'Cash' },
               { value: 'upi', label: 'UPI' },
               { value: 'card', label: 'Card' },
+              { value: 'credit', label: 'Credit' },
             ]}
           />
 

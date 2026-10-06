@@ -340,6 +340,61 @@ export async function createBill(input: CreateBillInput): Promise<Bill> {
   });
 }
 
+/**
+ * Creates a Bill for an existing Entry without creating a duplicate book entry.
+ * Also appends or sets the invoiceNo in the entry's note field.
+ */
+export async function createBillForEntry(entry: Entry): Promise<Bill> {
+  const entryId = entry.id;
+  if (!entryId) {
+    throw new Error('Entry must be saved before generating a bill');
+  }
+  return db.transaction('rw', db.bills, db.entries, async () => {
+    const invoiceNo = await getNextInvoiceNo();
+    const now = Date.now();
+    const itemName = entry.item?.trim() || 'General Sale';
+    const bill: Bill = {
+      invoiceNo,
+      date: entry.date,
+      customerName: entry.customerName?.trim() || undefined,
+      items: [
+        {
+          name: itemName,
+          qty: 1,
+          price: entry.amount,
+        },
+      ],
+      subtotal: entry.amount,
+      discount: 0,
+      total: entry.amount,
+      paymentMethod: entry.paymentMethod || 'cash',
+      entryId: entryId,
+      createdAt: now,
+    };
+    const id = await db.bills.add(bill);
+
+    // Update entry's note with invoice number so it's readily visible
+    const existingNote = entry.note?.trim();
+    const updatedNote = existingNote ? `${existingNote} · ${invoiceNo}` : invoiceNo;
+    await db.entries.update(entryId, {
+      note: updatedNote,
+      updatedAt: new Date().toISOString(),
+      syncStatus: 'pending',
+    });
+
+    return { ...bill, id: id as number };
+  });
+}
+
+/**
+ * Finds any Bill linked to a Day Book entry by its entryId.
+ */
+export async function getBillForEntry(entryId: number): Promise<Bill | undefined> {
+  if (!db.bills) return undefined;
+  return db.bills.filter((b) => b.entryId === entryId).first();
+}
+
+
 export function computeSummary(entries: Entry[]): DaySummary {
   let inTotal = 0;
   let outTotal = 0;

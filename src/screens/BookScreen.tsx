@@ -241,6 +241,7 @@ export const BookScreen: React.FC<BookScreenProps> = ({
         entryToEdit={entryToEdit}
         onDelete={(entry) => setEntryToDelete(entry)}
         defaultDate={selectedDate}
+        shopName={shopName}
         language={language}
         isReadOnly={isReadOnly}
       />
