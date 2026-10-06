@@ -7,7 +7,7 @@ import { formatMonthName } from '../utils/date';
 import { DailyBarChart } from '../components/DailyBarChart';
 import { buildShareSummaryText, shareSummary } from '../utils/share';
 import { exportEntriesToCSV } from '../utils/csv';
-import { ChevronLeft, ChevronRight, Share2, Download, ArrowDownLeft, ArrowUpRight, TrendingUp, Wrench } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Share2, Download, ArrowDownLeft, ArrowUpRight, TrendingUp, Wrench, Clock } from 'lucide-react';
 
 interface ReportsScreenProps {
   language: Language;
@@ -67,6 +67,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
   }).length;
 
   const summary = computeSummary(entries);
+  const creditCount = entries.filter((e) => e.type === 'in' && e.paymentMethod === 'credit').length;
 
   // Compute daily totals for the bar chart
   const dailyTotals: { [day: number]: { in: number; out: number } } = {};
@@ -241,16 +242,17 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
             </p>
           </div>
 
-          {/* Total Entries */}
+          {/* Credit (Udhar) */}
           <div className="bg-white rounded-[14px] p-3.5 shadow-sm border border-black/[0.04]">
             <div className="flex items-center text-xs font-semibold text-[#8E8E93] mb-1">
-              <span>{t('entries_count', language)}</span>
+              <Clock className="w-3.5 h-3.5 text-amber-600 mr-1" />
+              <span>Credit</span>
             </div>
-            <p className="text-[20px] font-bold text-black tracking-tight">
-              {entries.length}
+            <p className="text-[20px] font-bold text-amber-600 tracking-tight">
+              {formatINR(summary.creditTotal)}
             </p>
             <span className="text-[11px] text-[#8E8E93]">
-              {t('tab_book', language)}
+              {creditCount} {t('items_unit', language)}
             </span>
           </div>
         </div>
