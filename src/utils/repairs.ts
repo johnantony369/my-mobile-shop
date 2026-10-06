@@ -20,7 +20,7 @@ export function buildIntakeSlipMessage(
 
   if (typeof trackingUrlOrPhotoCount === 'number') {
     photoCount = trackingUrlOrPhotoCount;
-  } else if (typeof trackingUrlOrPhotoCount === 'string') {
+  } else {
     trackingUrl = trackingUrlOrPhotoCount;
     photoCount = photoCountParam;
   }

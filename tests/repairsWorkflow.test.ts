@@ -46,6 +46,14 @@ describe('Repair Slips & Accounting Workflow', () => {
 
     const slipWithoutPhotos = buildIntakeSlipMessage(sampleJob, 'Kerala Mobile Care', 0);
     expect(slipWithoutPhotos).not.toContain('intake condition photo(s)');
+
+    const slipWithUndefinedTrackingAndPhotos = buildIntakeSlipMessage(sampleJob, 'Kerala Mobile Care', undefined, 3);
+    expect(slipWithUndefinedTrackingAndPhotos).toContain('Photos: 3 intake condition photo(s) recorded');
+    expect(slipWithUndefinedTrackingAndPhotos).not.toContain('Track live repair progress');
+
+    const slipWithTrackingAndPhotos = buildIntakeSlipMessage(sampleJob, 'Kerala Mobile Care', 'https://example.com/track', 3);
+    expect(slipWithTrackingAndPhotos).toContain('Photos: 3 intake condition photo(s) recorded');
+    expect(slipWithTrackingAndPhotos).toContain('https://example.com/track');
   });
 
   it('builds a ready notification message with balance due', () => {
