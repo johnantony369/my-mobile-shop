@@ -7,38 +7,38 @@ import {
 } from '../src/utils/activation';
 
 describe('Trial duration & calculation', () => {
-  it('should define TRIAL_DURATION_DAYS as 2', () => {
-    expect(TRIAL_DURATION_DAYS).toBe(2);
+  it('should define TRIAL_DURATION_DAYS as 14', () => {
+    expect(TRIAL_DURATION_DAYS).toBe(14);
   });
 
-  it('should return 2 days when firstLaunchDate is empty or undefined', () => {
-    expect(getTrialDaysRemaining('')).toBe(2);
+  it('should return 14 days when firstLaunchDate is empty or undefined', () => {
+    expect(getTrialDaysRemaining('')).toBe(14);
   });
 
-  it('should return 2 days when launched today', () => {
+  it('should return 14 days when launched today', () => {
     const today = new Date();
     const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-    expect(getTrialDaysRemaining(todayStr)).toBe(2);
+    expect(getTrialDaysRemaining(todayStr)).toBe(14);
   });
 
-  it('should return 1 day when launched yesterday', () => {
+  it('should return 13 days when launched yesterday', () => {
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
-    expect(getTrialDaysRemaining(yesterdayStr)).toBe(1);
+    expect(getTrialDaysRemaining(yesterdayStr)).toBe(13);
   });
 
-  it('should return 0 days (expired) when launched 2 days ago', () => {
-    const twoDaysAgo = new Date();
-    twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
-    const twoDaysAgoStr = `${twoDaysAgo.getFullYear()}-${String(twoDaysAgo.getMonth() + 1).padStart(2, '0')}-${String(twoDaysAgo.getDate()).padStart(2, '0')}`;
-    expect(getTrialDaysRemaining(twoDaysAgoStr)).toBe(0);
+  it('should return 0 days (expired) when launched 14 days ago', () => {
+    const fourteenDaysAgo = new Date();
+    fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+    const str = `${fourteenDaysAgo.getFullYear()}-${String(fourteenDaysAgo.getMonth() + 1).padStart(2, '0')}-${String(fourteenDaysAgo.getDate()).padStart(2, '0')}`;
+    expect(getTrialDaysRemaining(str)).toBe(0);
   });
 
-  it('should return 0 days (never negative) when launched 10 days ago', () => {
-    const tenDaysAgo = new Date();
-    tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
-    const str = `${tenDaysAgo.getFullYear()}-${String(tenDaysAgo.getMonth() + 1).padStart(2, '0')}-${String(tenDaysAgo.getDate()).padStart(2, '0')}`;
+  it('should return 0 days (never negative) when launched 20 days ago', () => {
+    const twentyDaysAgo = new Date();
+    twentyDaysAgo.setDate(twentyDaysAgo.getDate() - 20);
+    const str = `${twentyDaysAgo.getFullYear()}-${String(twentyDaysAgo.getMonth() + 1).padStart(2, '0')}-${String(twentyDaysAgo.getDate()).padStart(2, '0')}`;
     expect(getTrialDaysRemaining(str)).toBe(0);
   });
 });

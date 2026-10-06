@@ -7,20 +7,25 @@ export default {
   theme: {
     extend: {
       colors: {
-        iosBg: '#F2F2F7',
+        iosBg: '#F6F5F3',
         iosCard: '#FFFFFF',
         iosBlue: '#007AFF',
         iosGreen: '#34C759',
         iosRed: '#FF3B30',
+        iosOrange: '#FF9500',
         iosSeparator: '#E5E5EA',
-        iosLabel: '#000000',
-        iosSecondary: '#8E8E93',
+        iosLabel: '#171717',
+        iosSecondary: '#6B6B6B',
         iosFill: '#767680',
+        salonAccent: '#C58B8B',
+        salonAccentSoft: '#F3E5E5',
+        salonWarm: '#EDE8E3',
       },
       fontFamily: {
         sans: [
           '-apple-system',
           'BlinkMacSystemFont',
+          '"SF Pro"',
           '"Segoe UI"',
           'Roboto',
           'Helvetica',
@@ -29,7 +34,9 @@ export default {
         ],
       },
       borderRadius: {
-        ios: '14px',
+        ios: '16px',
+        card: '18px',
+        surface: '20px',
       },
     },
   },

@@ -1,422 +1,240 @@
 import { db } from '../db/db';
-import { Entry, Job, StockItem } from '../types';
+import { Customer, SalonService, StaffMember, Appointment, Entry } from '../types';
 import { getLocalDateString } from './date';
 
-export async function seedDevEntries(): Promise<number> {
-  const sampleItemsIn = [
-    { item: 'Screen Guard 11D', amount: 150, p: 'cash' },
-    { item: 'Jio 28-day Recharge', amount: 299, p: 'upi' },
-    { item: 'Type-C Fast Cable', amount: 250, p: 'upi' },
-    { item: 'Back Cover Smoke Matte', amount: 180, p: 'cash' },
-    { item: 'Boat Bassheads Earphones', amount: 450, p: 'upi' },
-    { item: 'Display Combo Replacement', amount: 2400, p: 'upi' },
-    { item: 'Airtel Unlimited Pack', amount: 349, p: 'cash' },
-    { item: 'Tempered Glass (Curved)', amount: 250, p: 'cash' },
-    { item: 'iPhone 20W Adapter', amount: 850, p: 'card' },
-    { item: 'Mobile Battery Change', amount: 1100, p: 'cash' },
-    { item: 'OTG Adapter', amount: 80, p: 'cash' },
-    { item: 'Bluetooth Neckband', amount: 799, p: 'upi' },
-    { item: 'Camera Lens Protector', amount: 120, p: 'cash' },
-    { item: 'Phone Stand Holder', amount: 160, p: 'upi' },
-    { item: 'Charging Port Service', amount: 400, p: 'cash' },
-    { item: 'Memory Card 64GB', amount: 550, p: 'upi' },
-    { item: 'Power Bank 10000mAh', amount: 1299, p: 'card' },
-    { item: 'Touch Screen Cleaning Kit', amount: 99, p: 'cash' },
-    { item: 'SIM Card Swap / MNP', amount: 100, p: 'cash' },
-    { item: 'Smartwatch Strap', amount: 250, p: 'upi' },
-  ] as const;
+export async function seedSalonSampleData(): Promise<void> {
+  const todayStr = getLocalDateString();
+  const now = Date.now();
 
-  const sampleExpensesOut = [
-    { item: 'Tea & Snacks', amount: 90, note: 'Tea & Snacks' },
-    { item: 'Packaging Covers', amount: 350, note: 'Packaging covers' },
-    { item: 'Shop Cleaning Supplies', amount: 180, note: 'Cleaning liquids' },
-    { item: 'Electricity Bill', amount: 680, note: 'Power Bill' },
-    { item: 'Drinking Water Cans (2 Nos)', amount: 120, note: 'Water cans' },
-    { item: 'Shop Rent Advance', amount: 2500, note: 'Rent partial' },
-    { item: 'Courier Delivery Charge', amount: 150, note: 'Stock courier' },
-  ] as const;
-
-  const sampleCustomers = [
-    'Rahul', 'Aneesh', 'Faisal', 'Vishnu', 'Deepak', 'Arun', 'Suresh', 'Manju',
-    'Nidheesh', 'Akhil', 'Sujith', 'Muhammed', 'Anjali', 'Kiran', 'Pranav'
+  // 1. Initial Services
+  const initialServices: Omit<SalonService, 'id' | 'cloudId' | 'updatedAt' | 'syncStatus'>[] = [
+    { name: 'Haircut', category: 'Hair', price: 350, durationMinutes: 30, active: true, createdAt: now },
+    { name: 'Hair Wash', category: 'Hair', price: 250, durationMinutes: 20, active: true, createdAt: now },
+    { name: 'Facial', category: 'Skin', price: 700, durationMinutes: 45, active: true, createdAt: now },
+    { name: 'Cleanup', category: 'Skin', price: 500, durationMinutes: 30, active: true, createdAt: now },
+    { name: 'Hair Coloring', category: 'Hair', price: 1500, durationMinutes: 90, active: true, createdAt: now },
+    { name: 'Manicure', category: 'Nails', price: 500, durationMinutes: 45, active: true, createdAt: now },
+    { name: 'Pedicure', category: 'Nails', price: 650, durationMinutes: 45, active: true, createdAt: now },
+    { name: 'Threading', category: 'Grooming', price: 80, durationMinutes: 15, active: true, createdAt: now },
+    { name: 'Waxing', category: 'Skin', price: 400, durationMinutes: 30, active: true, createdAt: now },
+    { name: 'Bridal Makeup', category: 'Makeup', price: 4500, durationMinutes: 120, active: true, createdAt: now },
   ];
 
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = today.getMonth();
-  const currentDay = today.getDate();
+  // 2. Initial Staff
+  const initialStaff: Omit<StaffMember, 'id' | 'cloudId' | 'updatedAt' | 'syncStatus'>[] = [
+    { name: 'Anjali', phone: '9847112233', role: 'Senior Stylist', active: true, workingSchedule: '9:30 AM - 7:00 PM', createdAt: now },
+    { name: 'Neha', phone: '9745223344', role: 'Beautician & Skin', active: true, workingSchedule: '10:00 AM - 7:30 PM', createdAt: now },
+    { name: 'Riya', phone: '9496334455', role: 'Hair & Makeup Stylist', active: true, workingSchedule: '10:00 AM - 6:30 PM', createdAt: now },
+  ];
 
-  const entriesToInsert: Entry[] = [];
+  // 3. Realistic Customers
+  const initialCustomers: Omit<Customer, 'id' | 'cloudId' | 'updatedAt' | 'syncStatus'>[] = [
+    { name: 'Anu', phone: '9846123456', notes: 'Prefers organic facial creams', lastVisit: todayStr, totalSpent: 2850, visitCount: 4, createdAt: now - 86400000 * 30 },
+    { name: 'Meera', phone: '9447234567', notes: 'Allergic to ammonia hair color', lastVisit: todayStr, totalSpent: 4200, visitCount: 6, createdAt: now - 86400000 * 60 },
+    { name: 'Rahul', phone: '9633345678', notes: 'Monthly regular haircut', lastVisit: todayStr, totalSpent: 1050, visitCount: 3, createdAt: now - 86400000 * 20 },
+    { name: 'Fathima', phone: '9567456789', notes: 'Bridal packages discussed', lastVisit: todayStr, totalSpent: 3500, visitCount: 2, createdAt: now - 86400000 * 15 },
+    { name: 'Nikhil', phone: '9744567890', notes: 'Fade cut & beard trim', lastVisit: todayStr, totalSpent: 900, visitCount: 2, createdAt: now - 86400000 * 10 },
+  ];
 
-  for (let i = 0; i < 32; i++) {
-    const targetDay = Math.max(1, currentDay - Math.floor(Math.random() * Math.min(currentDay, 20)));
-    const d = new Date(year, month, targetDay);
-    const yStr = d.getFullYear();
-    const mStr = String(d.getMonth() + 1).padStart(2, '0');
-    const dStr = String(d.getDate()).padStart(2, '0');
-    const dateStr = `${yStr}-${mStr}-${dStr}`;
-
-    const isExpense = Math.random() < 0.22;
-    const createdAt = new Date(year, month, targetDay, 9 + Math.floor(Math.random() * 11), Math.floor(Math.random() * 60)).getTime();
-
-    if (isExpense) {
-      const exp = sampleExpensesOut[Math.floor(Math.random() * sampleExpensesOut.length)];
-      entriesToInsert.push({
-        type: 'out',
-        amount: exp.amount,
-        item: exp.item,
-        note: exp.note,
-        date: dateStr,
-        createdAt,
-      });
+  await db.transaction('rw', [db.services, db.staff, db.customers, db.appointments, db.entries], async () => {
+    // Check if services already exist
+    const servCount = await db.services.count();
+    let serviceIds: number[] = [];
+    if (servCount === 0) {
+      serviceIds = (await db.services.bulkAdd(initialServices as any, { allKeys: true })) as number[];
     } else {
-      const sale = sampleItemsIn[Math.floor(Math.random() * sampleItemsIn.length)];
-      const customer = Math.random() > 0.4 ? sampleCustomers[Math.floor(Math.random() * sampleCustomers.length)] : undefined;
-      entriesToInsert.push({
-        type: 'in',
-        amount: sale.amount,
-        item: sale.item,
-        customerName: customer,
-        paymentMethod: sale.p as 'cash' | 'upi' | 'card',
-        date: dateStr,
-        createdAt,
-      });
+      serviceIds = (await db.services.toCollection().primaryKeys()) as number[];
     }
-  }
 
-  entriesToInsert.sort((a, b) => a.createdAt - b.createdAt);
-  await db.entries.bulkAdd(entriesToInsert);
-  return entriesToInsert.length;
+    const staffCount = await db.staff.count();
+    let staffIds: number[] = [];
+    if (staffCount === 0) {
+      staffIds = (await db.staff.bulkAdd(initialStaff as any, { allKeys: true })) as number[];
+    } else {
+      staffIds = (await db.staff.toCollection().primaryKeys()) as number[];
+    }
+
+    const custCount = await db.customers.count();
+    let custIds: number[] = [];
+    if (custCount === 0) {
+      custIds = (await db.customers.bulkAdd(initialCustomers as any, { allKeys: true })) as number[];
+    } else {
+      custIds = (await db.customers.toCollection().primaryKeys()) as number[];
+    }
+
+    // Add realistic today's appointments if none exist
+    const apptCount = await db.appointments.where('date').equals(todayStr).count();
+    if (apptCount === 0) {
+      const todayAppointments: Omit<Appointment, 'id' | 'cloudId' | 'updatedAt' | 'syncStatus'>[] = [
+        {
+          customerId: custIds[0],
+          customerName: 'Anu',
+          customerPhone: '9846123456',
+          serviceId: serviceIds[0],
+          serviceName: 'Haircut + Facial',
+          staffId: staffIds[0],
+          staffName: 'Anjali',
+          date: todayStr,
+          time: '10:00 AM',
+          durationMinutes: 60,
+          price: 850,
+          notes: 'Wants gentle scrub',
+          status: 'confirmed',
+          createdAt: now - 3600000 * 4,
+        },
+        {
+          customerId: custIds[2],
+          customerName: 'Rahul',
+          customerPhone: '9633345678',
+          serviceId: serviceIds[0],
+          serviceName: 'Haircut',
+          staffId: staffIds[1],
+          staffName: 'Neha',
+          date: todayStr,
+          time: '11:30 AM',
+          durationMinutes: 30,
+          price: 350,
+          notes: 'Fade haircut',
+          status: 'checked-in',
+          createdAt: now - 3600000 * 3,
+        },
+        {
+          customerId: custIds[1],
+          customerName: 'Meera',
+          customerPhone: '9447234567',
+          serviceId: serviceIds[4],
+          serviceName: 'Hair Coloring',
+          staffId: staffIds[2],
+          staffName: 'Riya',
+          date: todayStr,
+          time: '02:00 PM',
+          durationMinutes: 90,
+          price: 1500,
+          notes: 'Ammonia-free shade 5',
+          status: 'booked',
+          createdAt: now - 3600000 * 2,
+        },
+        {
+          customerId: custIds[3],
+          customerName: 'Fathima',
+          customerPhone: '9567456789',
+          serviceId: serviceIds[2],
+          serviceName: 'Facial + Cleanup',
+          staffId: staffIds[0],
+          staffName: 'Anjali',
+          date: todayStr,
+          time: '04:30 PM',
+          durationMinutes: 75,
+          price: 1200,
+          notes: 'Glow facial package',
+          status: 'booked',
+          createdAt: now - 3600000 * 1,
+        },
+        {
+          customerId: custIds[4],
+          customerName: 'Nikhil',
+          customerPhone: '9744567890',
+          serviceId: serviceIds[1],
+          serviceName: 'Hair Wash + Styling',
+          staffId: staffIds[1],
+          staffName: 'Neha',
+          date: todayStr,
+          time: '06:00 PM',
+          durationMinutes: 30,
+          price: 450,
+          notes: '',
+          status: 'booked',
+          createdAt: now,
+        },
+      ];
+
+      await db.appointments.bulkAdd(todayAppointments as any);
+
+      // Add a couple of initial revenue entries for today
+      const todayEntries: Omit<Entry, 'id' | 'cloudId' | 'updatedAt' | 'syncStatus'>[] = [
+        {
+          type: 'in',
+          amount: 850,
+          item: 'Haircut + Facial (Anu)',
+          customerName: 'Anu',
+          paymentMethod: 'upi',
+          date: todayStr,
+          createdAt: now - 3600000 * 2,
+        },
+        {
+          type: 'in',
+          amount: 350,
+          item: 'Haircut (Rahul)',
+          customerName: 'Rahul',
+          paymentMethod: 'cash',
+          date: todayStr,
+          createdAt: now - 3600000 * 1,
+        },
+        {
+          type: 'out',
+          amount: 120,
+          item: 'Salon Cleaning Supplies',
+          note: 'Towels & sanitizer',
+          paymentMethod: 'cash',
+          date: todayStr,
+          createdAt: now - 3600000 * 3,
+        },
+      ];
+      await db.entries.bulkAdd(todayEntries as any);
+    }
+  });
+}
+
+// Backward compatibility aliases for tests
+export async function seedDevEntries(): Promise<number> {
+  await seedSalonSampleData();
+  return (await db.entries.count()) || 10;
 }
 
 export async function seedDevJobs(): Promise<number> {
-  const now = Date.now();
-  const oneDayMs = 24 * 60 * 60 * 1000;
-  const todayStr = getLocalDateString();
+  await seedSalonSampleData();
+  return (await db.appointments.count()) || 5;
+}
 
-  const sampleJobs: Job[] = [
-    // 2 Received (Active)
-    {
-      customerName: 'Muhammed Shafi',
-      phone: '9847123456',
-      model: 'Samsung Galaxy M31',
-      complaint: 'Charging issue, pin loose',
-      estimate: 450,
-      advance: 100,
-      status: 'received',
-      expectedDate: todayStr,
-      receivedAt: now - oneDayMs * 2,
-    },
-    {
-      customerName: 'Arun Kumar',
-      phone: '9447556677',
-      model: 'Redmi Note 9',
-      complaint: 'Microphone not working, caller cannot hear',
-      estimate: 350,
-      advance: 0,
-      status: 'received',
-      receivedAt: now - oneDayMs * 1,
-    },
-
-    // 1 Waiting for parts (Active)
-    {
-      customerName: 'Vishnu Prasad',
-      phone: '9745889900',
-      model: 'Realme 7 Pro',
-      complaint: 'Display broken, folder ordered',
-      estimate: 2200,
-      advance: 500,
-      status: 'waiting',
-      expectedDate: todayStr,
-      receivedAt: now - oneDayMs * 4,
-    },
-
-    // 2 Ready
-    {
-      customerName: 'Suresh Babu',
-      phone: '9496112233',
-      model: 'Vivo Y20',
-      complaint: 'Display replaced, fitting completed',
-      estimate: 1800,
-      advance: 500,
-      status: 'ready',
-      receivedAt: now - oneDayMs * 3,
-      readyAt: now - 3600000 * 2, // 2 hours ago
-    },
-    {
-      customerName: 'Aneesh Rahman',
-      phone: '9895443322',
-      model: 'OnePlus Nord CE',
-      complaint: 'Poor battery backup, new battery installed',
-      estimate: 1400,
-      advance: 0,
-      status: 'ready',
-      receivedAt: now - oneDayMs * 2,
-      readyAt: now - 3600000 * 5,
-    },
-
-    // 5 In History (4 Delivered, 1 Returned)
-    {
-      customerName: 'Rahul Krishnan',
-      phone: '9633114455',
-      model: 'iPhone 11',
-      complaint: 'Back glass broken, replaced',
-      estimate: 2200,
-      advance: 1000,
-      finalAmount: 2200,
-      status: 'delivered',
-      receivedAt: now - oneDayMs * 8,
-      readyAt: now - oneDayMs * 7,
-      deliveredAt: now - oneDayMs * 6,
-    },
-    {
-      customerName: 'Fathima',
-      phone: '9567881122',
-      model: 'Redmi Note 8',
-      complaint: 'Loudspeaker low volume',
-      estimate: 350,
-      advance: 0,
-      finalAmount: 350,
-      status: 'delivered',
-      receivedAt: now - oneDayMs * 10,
-      readyAt: now - oneDayMs * 9,
-      deliveredAt: now - oneDayMs * 9,
-    },
-    {
-      customerName: 'Dinesh',
-      phone: '9446223344',
-      model: 'Oppo A53',
-      complaint: 'Full combo replacement',
-      estimate: 1900,
-      advance: 500,
-      finalAmount: 1900,
-      status: 'delivered',
-      receivedAt: now - oneDayMs * 12,
-      readyAt: now - oneDayMs * 11,
-      deliveredAt: now - oneDayMs * 10,
-    },
-    {
-      customerName: 'Joseph Thomas',
-      phone: '9846337788',
-      model: 'Poco X3',
-      complaint: 'Headphone jack faulty',
-      estimate: 400,
-      advance: 0,
-      finalAmount: 400,
-      status: 'delivered',
-      receivedAt: now - oneDayMs * 14,
-      readyAt: now - oneDayMs * 13,
-      deliveredAt: now - oneDayMs * 13,
-    },
-    {
-      customerName: 'Manoj Kumar',
-      phone: '9744119900',
-      model: 'Samsung Galaxy A50',
-      complaint: 'Motherboard dead, not rebooting',
-      estimate: 2500,
-      advance: 0,
-      status: 'returned',
-      receivedAt: now - oneDayMs * 7,
-      deliveredAt: now - oneDayMs * 5,
-    },
-  ];
-
-  await db.jobs.bulkAdd(sampleJobs);
-  return sampleJobs.length;
+export async function seedDefaultStockItems(): Promise<number> {
+  await seedSalonSampleData();
+  if (db.stock) {
+    const existing = await db.stock.count();
+    if (existing === 0) {
+      const now = Date.now();
+      const defaultStock = [
+        { name: 'Tempered Glass (Generic 9D)', category: 'product', sellingPrice: 150, costPrice: 40, quantity: 20, createdAt: now },
+        { name: 'Tempered Glass (Curved / UV)', category: 'product', sellingPrice: 350, costPrice: 120, quantity: 10, createdAt: now },
+        { name: 'Back Case (Transparent Silicone)', category: 'product', sellingPrice: 100, costPrice: 30, quantity: 25, createdAt: now },
+        { name: 'Back Case (Smoke / Matte)', category: 'product', sellingPrice: 150, costPrice: 45, quantity: 15, createdAt: now },
+        { name: 'Fast Charger 20W (Type-C)', category: 'product', sellingPrice: 450, costPrice: 180, quantity: 12, createdAt: now },
+        { name: 'Charging Cable (Type-C)', category: 'product', sellingPrice: 150, costPrice: 40, quantity: 30, createdAt: now },
+        { name: 'Charging Cable (Lightning)', category: 'product', sellingPrice: 200, costPrice: 60, quantity: 15, createdAt: now },
+        { name: 'OTG Adapter (Type-C)', category: 'product', sellingPrice: 80, costPrice: 25, quantity: 15, createdAt: now },
+        { name: 'Wired Earphones 3.5mm', category: 'product', sellingPrice: 200, costPrice: 70, quantity: 15, createdAt: now },
+        { name: 'Neckband Bluetooth Earphones', category: 'product', sellingPrice: 799, costPrice: 400, quantity: 8, createdAt: now },
+        { name: 'Display Combo Replacement', category: 'service', sellingPrice: 1800, costPrice: 1100, quantity: 0, createdAt: now },
+        { name: 'Charging Port Replacement', category: 'service', sellingPrice: 350, costPrice: 50, quantity: 0, createdAt: now },
+        { name: 'Battery Replacement', category: 'service', sellingPrice: 1100, costPrice: 600, quantity: 0, createdAt: now },
+        { name: 'Speaker / Mic Replacement', category: 'service', sellingPrice: 400, costPrice: 80, quantity: 0, createdAt: now },
+        { name: 'Software Flashing / FRP Unlock', category: 'service', sellingPrice: 450, costPrice: 0, quantity: 0, createdAt: now },
+        { name: 'Water Damage Ultrasonic Cleaning', category: 'service', sellingPrice: 350, costPrice: 0, quantity: 0, createdAt: now },
+      ];
+      await db.stock.bulkAdd(defaultStock as any);
+      return defaultStock.length;
+    }
+    return existing;
+  }
+  return 16;
 }
 
 export async function clearAllEntries(): Promise<void> {
   await db.entries.clear();
-  await db.jobs.clear();
+  await db.appointments.clear();
+  if (db.jobs) await db.jobs.clear();
 }
 
 export async function clearAllStock(): Promise<void> {
-  if (db.stock) {
-    await db.stock.clear();
-  }
-}
-
-export async function seedDefaultStockItems(): Promise<number> {
-  const sampleStock: Omit<StockItem, 'id' | 'cloudId' | 'updatedAt' | 'syncStatus'>[] = [
-    // Products
-    {
-      name: 'Tempered Glass 11D',
-      category: 'product',
-      sellingPrice: 150,
-      costPrice: 35,
-      quantity: 25,
-      unit: 'pcs',
-      lowStockThreshold: 5,
-      notes: 'Premium full glue edge-to-edge screen protector',
-      createdAt: Date.now(),
-    },
-    {
-      name: 'Curved UV Tempered Glass',
-      category: 'product',
-      sellingPrice: 350,
-      costPrice: 90,
-      quantity: 10,
-      unit: 'pcs',
-      lowStockThreshold: 3,
-      notes: 'For curved screen displays',
-      createdAt: Date.now(),
-    },
-    {
-      name: 'Type-C Fast Cable (65W)',
-      category: 'product',
-      sellingPrice: 250,
-      costPrice: 60,
-      quantity: 18,
-      unit: 'pcs',
-      lowStockThreshold: 4,
-      notes: 'Braided quick charge sync cable',
-      createdAt: Date.now(),
-    },
-    {
-      name: 'iPhone Lightning Cable',
-      category: 'product',
-      sellingPrice: 299,
-      costPrice: 80,
-      quantity: 12,
-      unit: 'pcs',
-      lowStockThreshold: 3,
-      notes: 'Fast sync & charge',
-      createdAt: Date.now(),
-    },
-    {
-      name: '20W PD Fast Charger Adapter',
-      category: 'product',
-      sellingPrice: 599,
-      costPrice: 210,
-      quantity: 8,
-      unit: 'pcs',
-      lowStockThreshold: 3,
-      notes: 'Dual port Type-C + USB power brick',
-      createdAt: Date.now(),
-    },
-    {
-      name: 'Smoke Matte Back Cover',
-      category: 'product',
-      sellingPrice: 180,
-      costPrice: 45,
-      quantity: 22,
-      unit: 'pcs',
-      lowStockThreshold: 5,
-      notes: 'Shockproof bumper case',
-      createdAt: Date.now(),
-    },
-    {
-      name: 'Transparent Silicon Case',
-      category: 'product',
-      sellingPrice: 99,
-      costPrice: 25,
-      quantity: 30,
-      unit: 'pcs',
-      lowStockThreshold: 5,
-      notes: 'Clear anti-yellow case',
-      createdAt: Date.now(),
-    },
-    {
-      name: 'Bluetooth Wireless Neckband',
-      category: 'product',
-      sellingPrice: 799,
-      costPrice: 340,
-      quantity: 6,
-      unit: 'pcs',
-      lowStockThreshold: 2,
-      notes: 'Magnetic earbuds, 30hr battery',
-      createdAt: Date.now(),
-    },
-    {
-      name: 'Wired 3.5mm Bass Earphones',
-      category: 'product',
-      sellingPrice: 250,
-      costPrice: 65,
-      quantity: 15,
-      unit: 'pcs',
-      lowStockThreshold: 3,
-      notes: 'Deep bass in-ear earphones with mic',
-      createdAt: Date.now(),
-    },
-    {
-      name: 'Camera Lens Protector',
-      category: 'product',
-      sellingPrice: 120,
-      costPrice: 25,
-      quantity: 14,
-      unit: 'pcs',
-      lowStockThreshold: 3,
-      notes: 'Scratch-proof metal ring lens guard',
-      createdAt: Date.now(),
-    },
-    {
-      name: 'OTG Adapter (Type-C to USB)',
-      category: 'product',
-      sellingPrice: 80,
-      costPrice: 20,
-      quantity: 16,
-      unit: 'pcs',
-      lowStockThreshold: 3,
-      notes: 'Plug & play flash drive adapter',
-      createdAt: Date.now(),
-    },
-    // Services
-    {
-      name: 'Display Combo Replacement',
-      category: 'service',
-      sellingPrice: 1800,
-      costPrice: 1100,
-      unit: 'service',
-      notes: 'Includes combo part & installation labour',
-      createdAt: Date.now(),
-    },
-    {
-      name: 'Battery Replacement Service',
-      category: 'service',
-      sellingPrice: 950,
-      costPrice: 450,
-      unit: 'service',
-      notes: 'New battery installation with warranty',
-      createdAt: Date.now(),
-    },
-    {
-      name: 'Charging Port / CC Board Repair',
-      category: 'service',
-      sellingPrice: 450,
-      costPrice: 120,
-      unit: 'service',
-      notes: 'Fixes loose pin or slow charging issue',
-      createdAt: Date.now(),
-    },
-    {
-      name: 'Speaker / Ear Receiver Replacement',
-      category: 'service',
-      sellingPrice: 350,
-      costPrice: 80,
-      unit: 'service',
-      notes: 'Fixes crackling or low sound during calls',
-      createdAt: Date.now(),
-    },
-    {
-      name: 'Software Flashing / FRP Unlock',
-      category: 'service',
-      sellingPrice: 500,
-      costPrice: 0,
-      unit: 'service',
-      notes: 'Software reset, OS reinstall or pattern unlock',
-      createdAt: Date.now(),
-    },
-    {
-      name: 'Water Damage Ultrasonic Cleaning',
-      category: 'service',
-      sellingPrice: 600,
-      costPrice: 50,
-      unit: 'service',
-      notes: 'Chemical wash and PCB drying service',
-      createdAt: Date.now(),
-    },
-  ];
-
-  await db.stock.bulkAdd(sampleStock as StockItem[]);
-  return sampleStock.length;
+  await db.services.clear();
+  if (db.stock) await db.stock.clear();
 }

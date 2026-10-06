@@ -1,20 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Store,
+  Sparkles,
+  Calendar,
+  Users,
+  Receipt,
   ArrowRight,
   CheckCircle2,
-  Zap,
-  MessageSquare,
-  WifiOff,
-  ShieldCheck,
-  TrendingUp,
-  Wrench,
-  Receipt,
-  Sparkles,
-  Mail,
-  Menu,
-  X
 } from 'lucide-react';
 import { LegalModal } from '../components/LegalModal';
 
@@ -26,12 +18,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isAuthenticated = fals
   const navigate = useNavigate();
   const [isLegalOpen, setIsLegalOpen] = useState(false);
   const [legalTab, setLegalTab] = useState<'privacy' | 'terms'>('privacy');
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleOpenLegal = (tab: 'privacy' | 'terms') => {
     setLegalTab(tab);
     setIsLegalOpen(true);
-    setMobileMenuOpen(false);
   };
 
   const handleGetStarted = () => {
@@ -51,546 +41,202 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isAuthenticated = fals
   };
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] text-slate-900 font-sans selection:bg-blue-500/20 pb-20 sm:pb-0 overflow-x-hidden">
-      {/* 1. Header / Navbar */}
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 safe-top">
-        <div className="max-w-6xl mx-auto px-3.5 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
-          {/* Brand */}
-          <div
-            className="flex items-center gap-2 cursor-pointer touch-manipulation active:opacity-80 transition-opacity"
-            onClick={() => navigate('/')}
-          >
-            <img
-              src="/icon-192.png"
-              alt="My Mobile Shop"
-              className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl shadow-xs border border-black/5 object-cover"
-            />
-            <span className="text-base sm:text-lg font-black tracking-tight text-slate-900">
-              My Mobile Shop
-            </span>
+    <div className="min-h-screen bg-[#F6F5F3] text-[#171717] font-sans selection:bg-[#171717]/10 pb-20 sm:pb-0 overflow-x-hidden">
+      {/* 1. Navbar */}
+      <header className="sticky top-0 z-40 bg-[#F6F5F3]/90 backdrop-blur-md border-b border-black/[0.05]">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
+            <div className="w-8 h-8 rounded-[10px] bg-[#171717] text-white flex items-center justify-center font-black text-sm">
+              S
+            </div>
+            <span className="text-lg font-black tracking-tight text-[#171717]">MySalon</span>
           </div>
 
-          {/* Desktop Nav links */}
-          <nav className="hidden md:flex items-center gap-7 text-xs font-semibold text-slate-600">
-            <a href="#benefits" className="hover:text-blue-600 transition-colors">Why It Works</a>
-            <a href="#workflow" className="hover:text-blue-600 transition-colors">Daily Routine</a>
-            <a href="#pricing" className="hover:text-blue-600 transition-colors">Pricing</a>
-            <button
-              type="button"
-              onClick={() => handleOpenLegal('privacy')}
-              className="hover:text-blue-600 transition-colors"
-            >
-              Privacy
-            </button>
-          </nav>
-
-          {/* Action CTAs */}
-          <div className="flex items-center gap-1.5 sm:gap-2.5">
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={handleSignIn}
-              className="px-2.5 sm:px-3.5 py-2 text-xs font-bold text-slate-700 hover:text-blue-600 active:bg-slate-100 rounded-lg transition-colors touch-manipulation"
+              className="px-3 py-2 text-xs font-bold text-[#6B6B6B] hover:text-[#171717] rounded-lg transition-colors"
             >
-              {isAuthenticated ? 'Open Shop' : 'Sign In'}
+              {isAuthenticated ? 'Open Salon' : 'Sign In'}
             </button>
             <button
               type="button"
               onClick={handleGetStarted}
-              className="hidden sm:inline-flex px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-sm hover:shadow-md transition-all items-center gap-1.5 active:scale-95"
+              className="px-4 py-2 bg-[#171717] hover:bg-[#2C2C2E] active:scale-95 text-white text-xs font-bold rounded-full shadow-xs transition-all flex items-center gap-1.5"
             >
-              <span>{isAuthenticated ? 'Go to App' : 'Get Started'}</span>
+              <span>{isAuthenticated ? 'Dashboard' : 'Get Started'}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
-            <button
-              type="button"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 text-slate-600 hover:text-slate-900 rounded-xl hover:bg-slate-100 active:bg-slate-200 transition-colors"
-              aria-label="Toggle navigation menu"
-            >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
           </div>
         </div>
-
-        {/* Mobile Dropdown Menu */}
-        {mobileMenuOpen && (
-          <div className="md:hidden bg-white border-b border-slate-200 px-4 py-3 space-y-2 shadow-lg animate-in slide-in-from-top-2">
-            <a
-              href="#benefits"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block py-2 text-sm font-semibold text-slate-700 hover:text-blue-600 border-b border-slate-100"
-            >
-              Why It Works
-            </a>
-            <a
-              href="#workflow"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block py-2 text-sm font-semibold text-slate-700 hover:text-blue-600 border-b border-slate-100"
-            >
-              Daily Routine
-            </a>
-            <a
-              href="#pricing"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block py-2 text-sm font-semibold text-slate-700 hover:text-blue-600 border-b border-slate-100"
-            >
-              Pricing Plans
-            </a>
-            <button
-              type="button"
-              onClick={() => handleOpenLegal('privacy')}
-              className="w-full text-left py-2 text-sm font-semibold text-slate-700 hover:text-blue-600 border-b border-slate-100"
-            >
-              Privacy Policy
-            </button>
-            <button
-              type="button"
-              onClick={() => handleOpenLegal('terms')}
-              className="w-full text-left py-2 text-sm font-semibold text-slate-700 hover:text-blue-600"
-            >
-              Terms of Service
-            </button>
-          </div>
-        )}
       </header>
 
-      {/* 2. Hero Section */}
-      <section className="relative overflow-hidden pt-6 pb-12 sm:pt-16 sm:pb-20 md:pt-20 md:pb-24 px-4 sm:px-6 max-w-5xl mx-auto text-center">
-        {/* Benefit Pill */}
-        <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1 sm:py-1.5 rounded-full bg-blue-50 border border-blue-200/60 text-blue-700 text-[11px] sm:text-xs font-bold mb-4 sm:mb-6 shadow-2xs">
-          <Sparkles className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-blue-600 shrink-0" />
-          <span>Built Exclusively for Mobile Retail & Repair Shops</span>
+      {/* 2. Hero */}
+      <section className="pt-10 pb-16 px-4 sm:px-6 max-w-4xl mx-auto text-center space-y-4">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-black/[0.06] text-[#171717] text-xs font-bold shadow-2xs">
+          <Sparkles className="w-3.5 h-3.5 text-[#171717]" />
+          <span>Simple salon management for your business</span>
         </div>
 
-        {/* Hero Title */}
-        <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-[1.2] max-w-3xl mx-auto px-1">
-          Run Your Mobile Shop Without the Daily Notebook Chaos
+        <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-[#171717] tracking-tight leading-[1.15] max-w-2xl mx-auto">
+          Manage your salon without notebooks and confusion.
         </h1>
 
-        {/* Hero Subtitle */}
-        <p className="mt-3.5 sm:mt-5 text-sm sm:text-base md:text-lg text-slate-600 max-w-2xl mx-auto font-medium leading-relaxed px-2">
-          Track daily cash & UPI in seconds, manage customer phone repairs without missed deadlines, and send professional WhatsApp repair receipts—all from your smartphone.
+        <p className="text-sm sm:text-base md:text-lg text-[#6B6B6B] max-w-xl mx-auto font-medium leading-relaxed">
+          Fast appointments, customer visit histories, staff schedules, and 1-tap WhatsApp receipts—built for beauty parlours and salons in Kerala.
         </p>
 
-        {/* Quick Proof Badges */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-6 mt-5 sm:mt-6 text-xs font-semibold text-slate-600 bg-slate-100/70 sm:bg-transparent py-2.5 px-4 rounded-2xl max-w-md sm:max-w-none mx-auto">
-          <div className="flex items-center gap-1.5">
-            <Zap className="w-4 h-4 text-amber-500 shrink-0" />
-            <span>5-second entry speed</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <MessageSquare className="w-4 h-4 text-emerald-500 shrink-0" />
-            <span>1-tap WhatsApp repair receipts</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <WifiOff className="w-4 h-4 text-blue-500 shrink-0" />
-            <span>Opens instantly without internet</span>
-          </div>
-        </div>
-
-        {/* Hero Action Buttons */}
-        <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2.5 sm:gap-3 max-w-md mx-auto">
+        <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2.5 max-w-xs sm:max-w-none mx-auto">
           <button
             type="button"
             onClick={handleGetStarted}
-            className="w-full sm:w-auto px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-2xl shadow-lg shadow-blue-500/25 transition-all flex items-center justify-center gap-2 active:scale-98 touch-manipulation min-h-[48px]"
+            className="w-full sm:w-auto px-6 py-3.5 bg-[#171717] hover:bg-[#2C2C2E] text-white text-sm font-bold rounded-[16px] shadow-sm active:scale-95 transition-all flex items-center justify-center gap-2"
           >
-            <span>{isAuthenticated ? 'Open Your Day Book' : 'Start Your Shop Ledger'}</span>
+            <span>Start 14-Day Free Trial</span>
             <ArrowRight className="w-4 h-4" />
           </button>
           <button
             type="button"
             onClick={handleSignIn}
-            className="w-full sm:w-auto px-5 py-3.5 bg-white hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-2xl border border-slate-200 transition-all active:scale-98 shadow-2xs touch-manipulation min-h-[48px]"
+            className="w-full sm:w-auto px-5 py-3.5 bg-white text-[#171717] text-sm font-bold rounded-[16px] border border-black/[0.08] shadow-2xs hover:bg-gray-50 active:scale-95 transition-all"
           >
-            {isAuthenticated ? 'Dashboard' : 'Sign In to Existing Shop'}
+            Existing Salon Login
           </button>
         </div>
 
-        {/* Interactive App Preview Mockup */}
-        <div className="mt-8 sm:mt-12 max-w-md sm:max-w-lg mx-auto bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xl sm:shadow-2xl border border-slate-200 text-left">
-          {/* Mock Header */}
-          <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-slate-100">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0">
-                <Store className="w-4 h-4" />
+        {/* Hero Card Mockup */}
+        <div className="pt-8 max-w-md mx-auto">
+          <div className="bg-white rounded-[22px] border border-black/[0.06] shadow-xl p-5 text-left space-y-3.5">
+            <div className="flex items-center justify-between pb-3 border-b border-black/[0.04]">
+              <div>
+                <h4 className="font-extrabold text-[16px] text-[#171717]">Glow Studio</h4>
+                <p className="text-xs text-[#8E8E93]">Today's Appointments (5)</p>
               </div>
-              <div className="min-w-0">
-                <h4 className="text-xs font-bold text-slate-900 truncate">Kerala Mobile Care</h4>
-                <p className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  Today's Day Book Open
-                </p>
-              </div>
-            </div>
-            <span className="text-[11px] font-bold bg-blue-50 text-blue-700 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full whitespace-nowrap">
-              ₹Net: +₹18,300
-            </span>
-          </div>
-
-          {/* Mock Financial Summary Cards */}
-          <div className="grid grid-cols-2 gap-2.5 sm:gap-3 mt-3 sm:mt-4">
-            <div className="p-2.5 sm:p-3 bg-emerald-50/70 border border-emerald-100 rounded-xl sm:rounded-2xl">
-              <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-emerald-700">Cash IN</span>
-              <p className="text-base sm:text-lg font-black text-emerald-900 mt-0.5">₹24,500</p>
-              <span className="text-[9px] sm:text-[10px] text-emerald-600 font-medium">14 sales</span>
-            </div>
-            <div className="p-2.5 sm:p-3 bg-rose-50/70 border border-rose-100 rounded-xl sm:rounded-2xl">
-              <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-rose-700">Cash OUT</span>
-              <p className="text-base sm:text-lg font-black text-rose-900 mt-0.5">₹6,200</p>
-              <span className="text-[9px] sm:text-[10px] text-rose-600 font-medium">Spares & tea</span>
-            </div>
-          </div>
-
-          {/* Mock Repair Card with WhatsApp action */}
-          <div className="mt-3 sm:mt-4 p-2.5 sm:p-3 bg-slate-50 border border-slate-150 rounded-xl sm:rounded-2xl flex items-center justify-between gap-2">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-bold text-slate-900 truncate">iPhone 13 - Rahul</span>
-                <span className="text-[8px] sm:text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 uppercase shrink-0">
-                  Ready
-                </span>
-              </div>
-              <p className="text-[10px] sm:text-[11px] text-slate-500 truncate mt-0.5">Display Replacement • ₹3,800</p>
-            </div>
-            <div className="shrink-0">
-              <span className="px-2 sm:px-2.5 py-1 bg-emerald-600 text-white rounded-lg text-[10px] font-bold flex items-center gap-1 shadow-2xs">
-                <MessageSquare className="w-3 h-3" />
-                WhatsApp
+              <span className="text-xs font-bold text-[#1E7E34] bg-[#EBF7EE] px-2.5 py-1 rounded-full">
+                Revenue: ₹3,850
               </span>
             </div>
+
+            <div className="p-3 bg-[#F6F5F3] rounded-[14px] flex items-center justify-between text-xs">
+              <div>
+                <span className="font-bold text-[#171717] block">10:00 AM • Anu</span>
+                <span className="text-[#6B6B6B]">Haircut + Facial (Anjali)</span>
+              </div>
+              <span className="font-bold text-[#171717]">₹850</span>
+            </div>
+
+            <div className="p-3 bg-[#F6F5F3] rounded-[14px] flex items-center justify-between text-xs">
+              <div>
+                <span className="font-bold text-[#171717] block">11:30 AM • Rahul</span>
+                <span className="text-[#6B6B6B]">Haircut (Neha)</span>
+              </div>
+              <span className="font-bold text-[#171717]">₹350</span>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* 3. The "6 Daily Headaches Solved" Grid */}
-      <section id="benefits" className="py-12 sm:py-16 bg-white border-y border-slate-200/80 px-4 sm:px-6">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-12">
-            <h2 className="text-[11px] sm:text-xs font-bold uppercase tracking-widest text-blue-600 mb-1.5 sm:mb-2">
-              Practical Shop Benefits
+      {/* 3. Core Features */}
+      <section className="py-12 bg-white border-y border-black/[0.05] px-4 sm:px-6">
+        <div className="max-w-4xl mx-auto space-y-8">
+          <div className="text-center max-w-xl mx-auto">
+            <h2 className="text-2xl sm:text-3xl font-black text-[#171717] tracking-tight">
+              Designed for salon owners, not IT experts.
             </h2>
-            <h3 className="text-xl sm:text-3xl md:text-4xl font-black text-slate-900 tracking-tight">
-              Designed For The Way Mobile Shops Actually Work
-            </h3>
-            <p className="mt-2.5 text-xs sm:text-sm text-slate-600">
-              Say goodbye to messy registers, forgotten customer parts, and endless telephone follow-ups.
-            </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-5">
-            {/* Benefit 1 */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-slate-50/80 border border-slate-200 hover:border-blue-300 transition-colors">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center mb-2.5 sm:mb-3.5">
-                <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />
-              </div>
-              <h4 className="text-sm sm:text-base font-bold text-slate-900 mb-1">
-                Zero Closing Time Confusion
-              </h4>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Know your exact cash-in-hand, UPI collections, and net profit before you lock up your counter tonight. No manual calculator errors.
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="p-5 rounded-[18px] bg-[#F6F5F3] space-y-2">
+              <Calendar className="w-6 h-6 text-[#171717]" />
+              <h3 className="font-bold text-[16px]">Fast Appointments</h3>
+              <p className="text-xs text-[#6B6B6B] leading-relaxed">
+                Book a customer in under 30 seconds with selected service, staff member and time slot.
               </p>
             </div>
 
-            {/* Benefit 2 */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-slate-50/80 border border-slate-200 hover:border-blue-300 transition-colors">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center mb-2.5 sm:mb-3.5">
-                <Wrench className="w-4 h-4 sm:w-5 sm:h-5" />
-              </div>
-              <h4 className="text-sm sm:text-base font-bold text-slate-900 mb-1">
-                Never Miss a Repair Deadline
-              </h4>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                See all customer phones on your workbench at a glance. Filter by Received, Waiting for Parts, or Ready for pickup without digging through shelves.
+            <div className="p-5 rounded-[18px] bg-[#F6F5F3] space-y-2">
+              <Users className="w-6 h-6 text-[#171717]" />
+              <h3 className="font-bold text-[16px]">Customer Histories</h3>
+              <p className="text-xs text-[#6B6B6B] leading-relaxed">
+                Scan past visits, favorite styles, allergies and total spent with a single tap.
               </p>
             </div>
 
-            {/* Benefit 3 */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-slate-50/80 border border-slate-200 hover:border-blue-300 transition-colors">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center mb-2.5 sm:mb-3.5">
-                <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5" />
-              </div>
-              <h4 className="text-sm sm:text-base font-bold text-slate-900 mb-1">
-                1-Tap WhatsApp Receipts
-              </h4>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Stop disputes before they happen. Send your customer an immediate digital job receipt on WhatsApp showing phone condition, complaint, and estimated charge.
-              </p>
-            </div>
-
-            {/* Benefit 4 */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-slate-50/80 border border-slate-200 hover:border-blue-300 transition-colors">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center mb-2.5 sm:mb-3.5">
-                <Zap className="w-4 h-4 sm:w-5 sm:h-5" />
-              </div>
-              <h4 className="text-sm sm:text-base font-bold text-slate-900 mb-1">
-                Never Freezes on Slow Wi-Fi
-              </h4>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Never make a customer wait at your counter. The app opens and records transactions in under 2 seconds, even when shop data or Wi-Fi drops completely.
-              </p>
-            </div>
-
-            {/* Benefit 5 */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-slate-50/80 border border-slate-200 hover:border-blue-300 transition-colors">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center mb-2.5 sm:mb-3.5">
-                <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5" />
-              </div>
-              <h4 className="text-sm sm:text-base font-bold text-slate-900 mb-1">
-                Safe From Lost or Broken Phones
-              </h4>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                If your phone gets dropped or you upgrade to a new model, sign in and your entire shop ledger and repair records restore instantly.
-              </p>
-            </div>
-
-            {/* Benefit 6 */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-slate-50/80 border border-slate-200 hover:border-blue-300 transition-colors">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center mb-2.5 sm:mb-3.5">
-                <Receipt className="w-4 h-4 sm:w-5 sm:h-5" />
-              </div>
-              <h4 className="text-sm sm:text-base font-bold text-slate-900 mb-1">
-                Month-End Reports in 1 Tap
-              </h4>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Download or export clean monthly income and expense sheets anytime for your business taxes or partner profit sharing.
+            <div className="p-5 rounded-[18px] bg-[#F6F5F3] space-y-2">
+              <Receipt className="w-6 h-6 text-[#171717]" />
+              <h3 className="font-bold text-[16px]">Fast Billing & WhatsApp</h3>
+              <p className="text-xs text-[#6B6B6B] leading-relaxed">
+                Collect Cash, UPI, or Card and send modern WhatsApp receipts directly to clients.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 4. "A Day with My Mobile Shop" Workflow */}
-      <section id="workflow" className="py-12 sm:py-16 px-4 sm:px-6 max-w-4xl mx-auto">
-        <div className="text-center mb-8 sm:mb-12">
-          <h2 className="text-[11px] sm:text-xs font-bold uppercase tracking-widest text-blue-600 mb-1.5 sm:mb-2">
-            Daily Simplicity
-          </h2>
-          <h3 className="text-xl sm:text-3xl font-black text-slate-900 tracking-tight">
-            How It Fits Into Your Daily Shop Routine
-          </h3>
-        </div>
+      {/* 4. Pricing */}
+      <section className="py-14 px-4 sm:px-6 max-w-md mx-auto text-center space-y-4">
+        <span className="text-[11px] font-bold text-[#8E8E93] uppercase tracking-wider">
+          Pricing
+        </span>
+        <h2 className="text-2xl sm:text-3xl font-black text-[#171717]">Simple, Transparent Plans</h2>
 
-        <div className="space-y-3 sm:space-y-4">
-          <div className="p-3.5 sm:p-5 bg-white rounded-2xl border border-slate-200 shadow-2xs flex items-start gap-3 sm:gap-4">
-            <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-blue-100 text-blue-700 text-xs font-black flex items-center justify-center shrink-0 mt-0.5">
-              1
+        <div className="p-6 bg-white rounded-[22px] border border-black/[0.08] shadow-lg text-left space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="font-bold text-[#171717] text-lg">MySalon Pro</span>
+            <span className="bg-[#EBF7EE] text-[#1E7E34] text-xs font-bold px-2.5 py-0.5 rounded-full">
+              14-Day Free Trial
             </span>
-            <div>
-              <h4 className="text-xs sm:text-sm font-bold text-slate-900">Morning Shop Opening (9:00 AM)</h4>
-              <p className="text-xs text-slate-600 mt-0.5 sm:mt-1 leading-relaxed">
-                Open the app on your phone. Yesterday's closing cash balance is already waiting. You're ready for the first customer.
-              </p>
-            </div>
           </div>
 
-          <div className="p-3.5 sm:p-5 bg-white rounded-2xl border border-slate-200 shadow-2xs flex items-start gap-3 sm:gap-4">
-            <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-blue-100 text-blue-700 text-xs font-black flex items-center justify-center shrink-0 mt-0.5">
-              2
-            </span>
-            <div>
-              <h4 className="text-xs sm:text-sm font-bold text-slate-900">Busy Afternoon Sales & Repairs (2:00 PM)</h4>
-              <p className="text-xs text-slate-600 mt-0.5 sm:mt-1 leading-relaxed">
-                Take in a broken phone, log the model & passcode in 10 seconds, and tap WhatsApp to send the customer an immediate receipt.
-              </p>
-            </div>
+          <div className="flex items-baseline gap-1">
+            <span className="text-3xl font-black text-[#171717]">₹199</span>
+            <span className="text-xs text-[#8E8E93] font-semibold">/ month</span>
+            <span className="text-xs text-[#6B6B6B] ml-2 font-medium">or ₹1,999 / year</span>
           </div>
 
-          <div className="p-3.5 sm:p-5 bg-white rounded-2xl border border-slate-200 shadow-2xs flex items-start gap-3 sm:gap-4">
-            <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-blue-100 text-blue-700 text-xs font-black flex items-center justify-center shrink-0 mt-0.5">
-              3
-            </span>
-            <div>
-              <h4 className="text-xs sm:text-sm font-bold text-slate-900">Repair Delivery & Collection (6:30 PM)</h4>
-              <p className="text-xs text-slate-600 mt-0.5 sm:mt-1 leading-relaxed">
-                Screen replacement done? Mark "Ready" &rarr; customer gets notified on WhatsApp &rarr; comes back to pay and collect their device.
-              </p>
-            </div>
-          </div>
+          <ul className="space-y-2 text-xs text-[#4A4A4A] font-medium pt-2">
+            <li className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-[#34C759]" />
+              <span>Unlimited appointments & customers</span>
+            </li>
+            <li className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-[#34C759]" />
+              <span>Services menu & staff management</span>
+            </li>
+            <li className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-[#34C759]" />
+              <span>100% offline-first + secure cloud sync</span>
+            </li>
+            <li className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-[#34C759]" />
+              <span>Instant WhatsApp receipts & reports</span>
+            </li>
+          </ul>
 
-          <div className="p-3.5 sm:p-5 bg-white rounded-2xl border border-slate-200 shadow-2xs flex items-start gap-3 sm:gap-4">
-            <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-blue-100 text-blue-700 text-xs font-black flex items-center justify-center shrink-0 mt-0.5">
-              4
-            </span>
-            <div>
-              <h4 className="text-xs sm:text-sm font-bold text-slate-900">Night Shutter Closing (9:30 PM)</h4>
-              <p className="text-xs text-slate-600 mt-0.5 sm:mt-1 leading-relaxed">
-                Count the physical cash in your drawer, match it with the app total, see today's net profit, and close up feeling relaxed and organized.
-              </p>
-            </div>
-          </div>
+          <button
+            type="button"
+            onClick={handleGetStarted}
+            className="w-full py-3 bg-[#171717] hover:bg-[#2C2C2E] active:scale-95 text-white rounded-[14px] text-xs font-bold shadow-sm transition-all text-center"
+          >
+            Start 14-Day Free Trial
+          </button>
         </div>
       </section>
 
-      {/* 5. Transparent Pricing Section */}
-      <section id="pricing" className="py-12 sm:py-16 bg-white border-t border-slate-200/80 px-4 sm:px-6">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-[11px] sm:text-xs font-bold uppercase tracking-widest text-blue-600 mb-1.5 sm:mb-2">
-            Simple, Honest Pricing
-          </h2>
-          <h3 className="text-xl sm:text-3xl md:text-4xl font-black text-slate-900 tracking-tight">
-            Plans That Pay For Themselves On Day One
-          </h3>
-          <p className="mt-2 text-xs sm:text-sm text-slate-600 max-w-xl mx-auto">
-            No setup charges, no per-transaction cuts, and no lock-in contracts.
-          </p>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mt-8 sm:mt-10 max-w-2xl mx-auto text-left">
-            {/* Monthly Plan */}
-            <div className="p-5 sm:p-6 rounded-2xl sm:rounded-3xl bg-slate-50 border border-slate-200 flex flex-col justify-between">
-              <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Monthly</span>
-                <div className="mt-2 flex items-baseline gap-1">
-                  <span className="text-3xl sm:text-4xl font-black text-slate-900">₹99</span>
-                  <span className="text-xs sm:text-sm font-semibold text-slate-500">/ month</span>
-                </div>
-                <p className="text-xs text-slate-600 mt-1 sm:mt-2">Billed monthly • Cancel anytime</p>
-
-                <ul className="mt-5 space-y-2 text-xs text-slate-700 font-medium">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Unlimited daily cash & UPI entries</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Unlimited customer repair job cards</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Instant WhatsApp job updates</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Automatic cloud backup</span>
-                  </li>
-                </ul>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleGetStarted}
-                className="mt-6 sm:mt-8 w-full py-3 bg-white hover:bg-slate-100 text-slate-900 border border-slate-300 rounded-xl text-xs font-bold transition-colors shadow-2xs min-h-[44px] touch-manipulation"
-              >
-                Choose Monthly
-              </button>
-            </div>
-
-            {/* Yearly Plan (Best Value) */}
-            <div className="p-5 sm:p-6 rounded-2xl sm:rounded-3xl bg-blue-50/70 border-2 border-blue-500 flex flex-col justify-between relative shadow-md">
-              <div className="absolute -top-3 right-4 sm:right-6 bg-emerald-500 text-white text-[9px] sm:text-[10px] font-black uppercase px-2.5 sm:px-3 py-1 rounded-full shadow-xs">
-                Save 16% • Best Value
-              </div>
-
-              <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-blue-700">Yearly</span>
-                <div className="mt-2 flex items-baseline gap-1">
-                  <span className="text-3xl sm:text-4xl font-black text-slate-900">₹999</span>
-                  <span className="text-xs sm:text-sm font-semibold text-slate-500">/ year</span>
-                </div>
-                <p className="text-xs text-emerald-700 font-bold mt-1 sm:mt-2">Just ₹83/month • Peace of mind all year</p>
-
-                <ul className="mt-5 space-y-2 text-xs text-slate-700 font-medium">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
-                    <span>Everything in Monthly plan</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
-                    <span>Multi-device sign-in support</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
-                    <span>Priority WhatsApp support</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
-                    <span>1-tap Excel/CSV report exports</span>
-                  </li>
-                </ul>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleGetStarted}
-                className="mt-6 sm:mt-8 w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/20 active:scale-95 min-h-[44px] touch-manipulation"
-              >
-                Choose Yearly (Save 16%)
-              </button>
-            </div>
-          </div>
-
-          <div className="mt-5 sm:mt-6 text-[11px] sm:text-xs text-slate-500 font-medium flex items-center justify-center gap-1.5 px-2">
-            <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-            <span>100% Privacy Protected: We never sell your shop data or show annoying advertisements.</span>
-          </div>
-        </div>
-      </section>
-
-      {/* 6. Footer & Trust */}
-      <footer className="bg-slate-900 text-slate-400 py-8 sm:py-12 px-4 sm:px-6 text-xs border-t border-slate-800">
-        <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-5 sm:gap-6">
-          <div className="flex items-center gap-3 text-center sm:text-left">
-            <img
-              src="/icon-192.png"
-              alt="My Mobile Shop"
-              className="w-8 h-8 rounded-xl object-cover border border-white/10"
-            />
-            <div>
-              <p className="font-bold text-white text-sm">My Mobile Shop</p>
-              <p className="text-[11px] text-slate-500">Digital Day Book & Repair Tracker</p>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs font-medium">
-            <button
-              type="button"
-              onClick={() => handleOpenLegal('privacy')}
-              className="hover:text-white transition-colors"
-            >
-              Privacy Policy
-            </button>
-            <button
-              type="button"
-              onClick={() => handleOpenLegal('terms')}
-              className="hover:text-white transition-colors"
-            >
-              Terms of Service
-            </button>
-            <a
-              href="mailto:support@mymobileshop.online"
-              className="hover:text-white transition-colors flex items-center gap-1"
-            >
-              <Mail className="w-3.5 h-3.5" />
-              <span>support@mymobileshop.online</span>
-            </a>
-          </div>
-
-          <p className="text-[11px] text-slate-500 text-center md:text-right">
-            © {new Date().getFullYear()} My Mobile Shop. All rights reserved.
-          </p>
+      {/* 5. Footer */}
+      <footer className="py-8 border-t border-black/[0.06] text-center text-xs text-[#8E8E93] space-y-2">
+        <p>© {new Date().getFullYear()} MySalon. Simple salon management for Kerala businesses.</p>
+        <div className="flex justify-center gap-4 text-xs font-medium text-[#6B6B6B]">
+          <button type="button" onClick={() => handleOpenLegal('privacy')}>
+            Privacy Policy
+          </button>
+          <button type="button" onClick={() => handleOpenLegal('terms')}>
+            Terms of Service
+          </button>
         </div>
       </footer>
 
-      {/* 7. Mobile Sticky Bottom Action Bar (visible on mobile only) */}
-      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200/90 p-2.5 px-3 flex items-center gap-2 shadow-2xl safe-bottom">
-        <button
-          type="button"
-          onClick={handleSignIn}
-          className="flex-1 py-2.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl border border-slate-200/80 active:scale-98 transition-all touch-manipulation text-center"
-        >
-          {isAuthenticated ? 'Open Shop' : 'Sign In'}
-        </button>
-        <button
-          type="button"
-          onClick={handleGetStarted}
-          className="flex-[1.5] py-2.5 px-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-md shadow-blue-500/25 active:scale-98 transition-all flex items-center justify-center gap-1.5 touch-manipulation text-center"
-        >
-          <span>{isAuthenticated ? 'Go to App' : 'Get Started'}</span>
-          <ArrowRight className="w-3.5 h-3.5" />
-        </button>
-      </div>
-
-      {/* Legal Modal */}
       <LegalModal
         isOpen={isLegalOpen}
         onClose={() => setIsLegalOpen(false)}

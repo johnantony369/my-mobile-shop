@@ -1,40 +1,52 @@
 import { useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db, updateAppSettings, clearLocalDatabase } from './db/db';
-import { TabBar, TabType } from './components/TabBar';
-import { BookScreen } from './screens/BookScreen';
-import { StockScreen } from './screens/StockScreen';
-import { RepairsScreen } from './screens/RepairsScreen';
-import { ReportsScreen } from './screens/ReportsScreen';
-import { SettingsScreen } from './screens/SettingsScreen';
+import { db } from './db/db';
+import { TabBar, MainTab } from './components/TabBar';
+import { HomeScreen } from './screens/HomeScreen';
+import { AppointmentsScreen } from './screens/AppointmentsScreen';
+import { CustomersScreen } from './screens/CustomersScreen';
+import { MoreScreen } from './screens/MoreScreen';
 import { OnboardingScreen } from './screens/OnboardingScreen';
-import { getTrialDaysRemaining } from './utils/activation';
-import { isSuperAdmin, hasFullAccess } from './utils/admin';
-import { isProCurrentlyActive } from './utils/proPlan';
+import { AppointmentSheet } from './screens/AppointmentSheet';
+import { CustomerSheet } from './screens/CustomerSheet';
+import { ServiceSheet } from './screens/ServiceSheet';
+import { StaffSheet } from './screens/StaffSheet';
+import { SalonBillSheet } from './screens/SalonBillSheet';
+import { PaywallModal } from './components/PaywallModal';
+import { InstallBanner } from './components/InstallBanner';
+import { Appointment, Customer, SalonService, StaffMember } from './types';
 import { requestPersistentStorage } from './utils/storage';
 import { useAuth } from './firebase/useAuth';
-import { LoginModal } from './components/LoginModal';
-import { InstallBanner } from './components/InstallBanner';
-import { PaywallModal } from './components/PaywallModal';
-import { Language } from './types';
-import { pullCloudChanges } from './firebase/sync';
+import { getLocalDateString } from './utils/date';
+import { isProCurrentlyActive } from './utils/proPlan';
 
 export default function App() {
-  const [currentTab, setCurrentTab] = useState<TabType>('book');
+  const [currentTab, setCurrentTab] = useState<MainTab>('home');
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [loadingTimeout, setLoadingTimeout] = useState(false);
+
+  // Bottom Sheets State
+  const [isAppointmentSheetOpen, setIsAppointmentSheetOpen] = useState(false);
+  const [appointmentToEdit, setAppointmentToEdit] = useState<Appointment | null>(null);
+  const [appointmentDefaultCustomer, setAppointmentDefaultCustomer] = useState<Customer | null>(null);
+
+  const [isCustomerSheetOpen, setIsCustomerSheetOpen] = useState(false);
+  const [customerToEdit, setCustomerToEdit] = useState<Customer | null>(null);
+
+  const [isServiceSheetOpen, setIsServiceSheetOpen] = useState(false);
+  const [serviceToEdit, setServiceToEdit] = useState<SalonService | null>(null);
+
+  const [isStaffSheetOpen, setIsStaffSheetOpen] = useState(false);
+  const [staffToEdit, setStaffToEdit] = useState<StaffMember | null>(null);
+
+  const [isBillSheetOpen, setIsBillSheetOpen] = useState(false);
+  const [billDefaultAppointment, setBillDefaultAppointment] = useState<Appointment | null>(null);
+  const [billDefaultCustomer, setBillDefaultCustomer] = useState<Customer | null>(null);
+
   const [isPaywallOpen, setIsPaywallOpen] = useState(false);
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const { user, loading: authLoading } = useAuth();
+  const { loading: authLoading } = useAuth();
 
   useEffect(() => {
-    // Request OS to keep storage persistent
     requestPersistentStorage();
-
-    const timer = setTimeout(() => {
-      setLoadingTimeout(true);
-    }, 2500);
-    return () => clearTimeout(timer);
   }, []);
 
   // Safe live query for settings
@@ -44,137 +56,32 @@ export default function App() {
         await db.open();
         return await db.settings.toArray();
       } catch (err) {
-        console.error('Error loading settings from IndexedDB:', err);
+        console.error('Error reading settings from IndexedDB:', err);
         return [];
       }
     },
     [refreshTrigger]
   );
 
-  // Safe live query for ready jobs count
-  const readyJobsCount = useLiveQuery(
+  // Today's appointments count for tab badge
+  const todayStr = getLocalDateString();
+  const todayAppointmentsCount = useLiveQuery(
     async () => {
       try {
-        if (!db.jobs) return 0;
-        return await db.jobs.where('status').equals('ready').count();
-      } catch (err) {
-        console.warn('Error querying ready jobs count:', err);
+        return await db.appointments.where('date').equals(todayStr).count();
+      } catch {
         return 0;
       }
     },
-    []
+    [todayStr, refreshTrigger]
   ) ?? 0;
 
-  // Safe live query for low stock products count
-  const lowStockCount = useLiveQuery(
-    async () => {
-      try {
-        if (!db.stock) return 0;
-        const items = await db.stock.toArray();
-        return items.filter(
-          (i) =>
-            !i.deletedAt &&
-            i.syncStatus !== 'deleted' &&
-            i.category === 'product' &&
-            (i.quantity ?? 0) <= (i.lowStockThreshold || 5)
-        ).length;
-      } catch (err) {
-        console.warn('Error querying low stock count:', err);
-        return 0;
-      }
-    },
-    []
-  ) ?? 0;
-
-  const [checkingCloud, setCheckingCloud] = useState(false);
-  const [checkedCloudUid, setCheckedCloudUid] = useState<string | null>(null);
-
-  const isMismatched = Boolean(
-    user &&
-    settingsList &&
-    settingsList.length > 0 &&
-    settingsList[0].ownerUid &&
-    settingsList[0].ownerUid !== user.uid
-  );
-
-  useEffect(() => {
-    if (!user || settingsList === undefined) return;
-
-    if (isMismatched) {
-      clearLocalDatabase().then(() => {
-        setCheckingCloud(true);
-        pullCloudChanges(user.uid)
-          .catch(err => console.warn('Could not pull cloud changes in App:', err))
-          .finally(() => {
-            setCheckedCloudUid(user.uid);
-            setCheckingCloud(false);
-          });
-      });
-      return;
-    }
-
-    if (settingsList.length === 0 && checkedCloudUid !== user.uid) {
-      setCheckingCloud(true);
-      pullCloudChanges(user.uid)
-        .catch(err => console.warn('Could not pull cloud changes in App:', err))
-        .finally(() => {
-          setCheckedCloudUid(user.uid);
-          setCheckingCloud(false);
-        });
-    }
-  }, [user, settingsList, checkedCloudUid, isMismatched]);
-
-  const currentSettings = settingsList && settingsList[0];
-  const showStock = currentSettings ? currentSettings.showStock !== false : true;
-  const showRepairs = currentSettings ? !!currentSettings.showRepairs : false;
-  const isAdmin = isSuperAdmin(user);
-
-  useEffect(() => {
-    if (!showStock && currentTab === 'stock') {
-      setCurrentTab('book');
-    }
-    if (!showRepairs && currentTab === 'repairs') {
-      setCurrentTab('book');
-    }
-  }, [showStock, showRepairs, currentTab]);
-
-  // Auto-activate local settings unconditionally if superadmin is logged in
-  useEffect(() => {
-    if (isAdmin && currentSettings && !currentSettings.activated) {
-      updateAppSettings({ activated: true }).catch((err) => {
-        console.warn('Failed to auto-activate local settings for admin:', err);
-      });
-    }
-  }, [isAdmin, currentSettings]);
-
-  // Loading state with timeout fallback
-  if (settingsList === undefined) {
+  // Loading state
+  if (settingsList === undefined || authLoading) {
     return (
-      <div className="min-h-screen bg-iosBg flex flex-col items-center justify-center p-6 text-center select-none">
-        <div className="w-9 h-9 border-3 border-iosBlue border-t-transparent rounded-full animate-spin mb-4" />
-        {loadingTimeout && (
-          <div className="mt-4 space-y-3 animate-fade-in">
-            <p className="text-xs text-[#8E8E93]">
-              Taking longer than usual to load...
-            </p>
-            <button
-              type="button"
-              onClick={() => window.location.reload()}
-              className="px-4 py-2 bg-iosBlue text-white text-xs font-semibold rounded-full shadow-sm"
-            >
-              Reload App
-            </button>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // Show loading spinner while determining auth state, handling account switch, or pulling cloud data
-  if (authLoading || isMismatched || (user && settingsList?.length === 0 && (checkingCloud || checkedCloudUid !== user.uid))) {
-    return (
-      <div className="min-h-screen bg-iosBg flex flex-col items-center justify-center p-6 text-center select-none">
-        <div className="w-9 h-9 border-3 border-iosBlue border-t-transparent rounded-full animate-spin mb-4" />
+      <div className="min-h-screen bg-[#F6F5F3] flex flex-col items-center justify-center p-6 text-center select-none font-sans">
+        <div className="w-8 h-8 border-2 border-[#171717] border-t-transparent rounded-full animate-spin mb-3" />
+        <span className="text-xs font-semibold text-[#8E8E93]">Opening MySalon...</span>
       </div>
     );
   }
@@ -189,93 +96,155 @@ export default function App() {
   }
 
   const settings = settingsList[0];
-  const language: Language = 'en';
-  const trialDays = getTrialDaysRemaining(settings.firstLaunchDate);
-  const isActivated = hasFullAccess(isProCurrentlyActive(settings), user);
-  const isReadOnly = !isActivated && trialDays <= 0;
+  const isProActive = isProCurrentlyActive(settings);
+  void isProActive;
 
   return (
-    <div className="min-h-screen bg-iosBg text-iosLabel font-sans flex flex-col justify-between selection:bg-iosBlue/20">
-      {/* Active Screen View */}
+    <div className="min-h-screen bg-[#F6F5F3] text-[#171717] font-sans flex flex-col justify-between selection:bg-[#171717]/10">
+      {/* Active Tab Screen */}
       <main key={currentTab} className="flex-1 w-full max-w-lg mx-auto animate-fade-slide-in">
-        {currentTab === 'book' && (
-          <BookScreen
-            language={language}
+        {currentTab === 'home' && (
+          <HomeScreen
             shopName={settings.shopName}
-            isReadOnly={isReadOnly}
-            isActivated={isActivated}
-            trialDays={trialDays}
-            onOpenPaywall={() => setIsPaywallOpen(true)}
+            ownerName={settings.ownerName}
+            onNewAppointment={() => {
+              setAppointmentToEdit(null);
+              setAppointmentDefaultCustomer(null);
+              setIsAppointmentSheetOpen(true);
+            }}
+            onNewBill={(appt) => {
+              setBillDefaultAppointment(appt || null);
+              setBillDefaultCustomer(null);
+              setIsBillSheetOpen(true);
+            }}
+            onSelectAppointment={(appt) => {
+              setAppointmentToEdit(appt);
+              setIsAppointmentSheetOpen(true);
+            }}
+            onGoToAppointments={() => setCurrentTab('appointments')}
           />
         )}
-        {showStock && currentTab === 'stock' && (
-          <StockScreen
-            language={language}
-            shopName={settings.shopName}
-            isReadOnly={isReadOnly}
-            isActivated={isActivated}
-            onOpenPaywall={() => setIsPaywallOpen(true)}
+
+        {currentTab === 'appointments' && (
+          <AppointmentsScreen
+            onNewAppointment={() => {
+              setAppointmentToEdit(null);
+              setAppointmentDefaultCustomer(null);
+              setIsAppointmentSheetOpen(true);
+            }}
+            onEditAppointment={(appt) => {
+              setAppointmentToEdit(appt);
+              setIsAppointmentSheetOpen(true);
+            }}
+            onOpenBillForAppointment={(appt) => {
+              setBillDefaultAppointment(appt);
+              setBillDefaultCustomer(null);
+              setIsBillSheetOpen(true);
+            }}
           />
         )}
-        {showRepairs && currentTab === 'repairs' && (
-          <RepairsScreen
-            language={language}
-            shopName={settings.shopName}
-            isReadOnly={isReadOnly}
-            isActivated={isActivated}
-            trialDays={trialDays}
-            onOpenPaywall={() => setIsPaywallOpen(true)}
+
+        {currentTab === 'customers' && (
+          <CustomersScreen
+            onAddCustomer={() => {
+              setCustomerToEdit(null);
+              setIsCustomerSheetOpen(true);
+            }}
+            onEditCustomer={(c) => {
+              setCustomerToEdit(c);
+              setIsCustomerSheetOpen(true);
+            }}
+            onNewAppointmentForCustomer={(c) => {
+              setAppointmentToEdit(null);
+              setAppointmentDefaultCustomer(c);
+              setIsAppointmentSheetOpen(true);
+            }}
+            onNewBillForCustomer={(c) => {
+              setBillDefaultCustomer(c);
+              setBillDefaultAppointment(null);
+              setIsBillSheetOpen(true);
+            }}
           />
         )}
-        {currentTab === 'reports' && (
-          <ReportsScreen
-            language={language}
-            shopName={settings.shopName}
-            showRepairs={showRepairs}
-            isActivated={isActivated}
-            onOpenPaywall={() => setIsPaywallOpen(true)}
-          />
-        )}
-        {currentTab === 'settings' && (
-          <SettingsScreen
+
+        {currentTab === 'more' && (
+          <MoreScreen
             settings={settings}
-            language={language}
-            onLanguageChange={() => setRefreshTrigger((prev) => prev + 1)}
             onRefreshSettings={() => setRefreshTrigger((prev) => prev + 1)}
             onOpenPaywall={() => setIsPaywallOpen(true)}
+            onAddService={() => {
+              setServiceToEdit(null);
+              setIsServiceSheetOpen(true);
+            }}
+            onEditService={(s) => {
+              setServiceToEdit(s);
+              setIsServiceSheetOpen(true);
+            }}
+            onAddStaff={() => {
+              setStaffToEdit(null);
+              setIsStaffSheetOpen(true);
+            }}
+            onEditStaff={(st) => {
+              setStaffToEdit(st);
+              setIsStaffSheetOpen(true);
+            }}
           />
         )}
       </main>
-
-      {/* Install Banner — shown to first-time browser visitors */}
-      <InstallBanner language={language} />
 
       {/* Persistent Bottom Tab Bar */}
       <TabBar
         currentTab={currentTab}
         onTabChange={(tab) => setCurrentTab(tab)}
-        language={language}
-        showRepairs={showRepairs}
-        showStock={showStock}
-        readyCount={readyJobsCount}
-        lowStockCount={lowStockCount}
+        todayAppointmentsCount={todayAppointmentsCount}
       />
 
-      {/* Premium Paywall Modal */}
+      {/* Install Banner */}
+      <InstallBanner language="en" />
+
+      {/* Reusable Bottom Sheets */}
+      <AppointmentSheet
+        isOpen={isAppointmentSheetOpen}
+        onClose={() => setIsAppointmentSheetOpen(false)}
+        appointmentToEdit={appointmentToEdit}
+        defaultCustomer={appointmentDefaultCustomer}
+        onSaved={() => setRefreshTrigger((prev) => prev + 1)}
+      />
+
+      <CustomerSheet
+        isOpen={isCustomerSheetOpen}
+        onClose={() => setIsCustomerSheetOpen(false)}
+        customerToEdit={customerToEdit}
+        onSaved={() => setRefreshTrigger((prev) => prev + 1)}
+      />
+
+      <ServiceSheet
+        isOpen={isServiceSheetOpen}
+        onClose={() => setIsServiceSheetOpen(false)}
+        serviceToEdit={serviceToEdit}
+        onSaved={() => setRefreshTrigger((prev) => prev + 1)}
+      />
+
+      <StaffSheet
+        isOpen={isStaffSheetOpen}
+        onClose={() => setIsStaffSheetOpen(false)}
+        staffToEdit={staffToEdit}
+        onSaved={() => setRefreshTrigger((prev) => prev + 1)}
+      />
+
+      <SalonBillSheet
+        isOpen={isBillSheetOpen}
+        onClose={() => setIsBillSheetOpen(false)}
+        shopName={settings.shopName}
+        defaultAppointment={billDefaultAppointment}
+        defaultCustomer={billDefaultCustomer}
+        onSaved={() => setRefreshTrigger((prev) => prev + 1)}
+      />
+
       <PaywallModal
         isOpen={isPaywallOpen}
         onClose={() => setIsPaywallOpen(false)}
-        language={language}
         onActivated={() => setRefreshTrigger((prev) => prev + 1)}
-        trialDaysRemaining={trialDays}
-      />
-
-      {/* Cloud Login / Account Modal */}
-      <LoginModal
-        isOpen={isLoginModalOpen}
-        onClose={() => setIsLoginModalOpen(false)}
-        onSuccess={() => setRefreshTrigger((prev) => prev + 1)}
-        language={language}
       />
     </div>
   );

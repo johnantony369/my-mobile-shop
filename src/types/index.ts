@@ -11,6 +11,97 @@ export interface SyncMetadata {
   deletedAt?: string | null; // ISO 8601
 }
 
+// ==========================================
+// SALON DATA MODELS
+// ==========================================
+
+export interface Customer extends SyncMetadata {
+  id?: number;
+  name: string;
+  phone: string; // 10-digit Indian mobile
+  notes?: string;
+  lastVisit?: string; // 'YYYY-MM-DD'
+  totalSpent?: number;
+  visitCount?: number;
+  createdAt: number;
+}
+
+export type AppointmentStatus =
+  | 'booked'
+  | 'confirmed'
+  | 'checked-in'
+  | 'completed'
+  | 'cancelled'
+  | 'no-show';
+
+export interface Appointment extends SyncMetadata {
+  id?: number;
+  customerId?: number;
+  customerName: string;
+  customerPhone: string;
+  serviceId?: number;
+  serviceName: string;
+  staffId?: number;
+  staffName?: string;
+  date: string; // 'YYYY-MM-DD'
+  time: string; // e.g. '10:00 AM' or '14:30'
+  durationMinutes: number; // e.g. 30, 45, 60
+  price: number;
+  notes?: string;
+  status: AppointmentStatus;
+  billId?: number;
+  createdAt: number;
+}
+
+export interface SalonService extends SyncMetadata {
+  id?: number;
+  name: string;
+  category: string; // e.g. 'Hair', 'Skin', 'Makeup', 'Nails', 'Grooming'
+  price: number;
+  durationMinutes: number; // e.g. 30
+  active: boolean;
+  notes?: string;
+  createdAt: number;
+}
+
+export interface StaffMember extends SyncMetadata {
+  id?: number;
+  name: string;
+  phone?: string;
+  role: string; // e.g. 'Stylist', 'Beautician', 'Senior Stylist', 'Manager'
+  active: boolean;
+  workingSchedule?: string; // e.g. '10:00 AM - 7:00 PM'
+  createdAt: number;
+}
+
+export interface BillItem {
+  serviceId?: number;
+  name: string;
+  qty: number;
+  price: number;
+  staffName?: string;
+  stockId?: number; // legacy compatibility
+}
+
+export interface Bill extends SyncMetadata {
+  id?: number;
+  invoiceNo: string; // e.g. SALON-0001
+  date: string; // 'YYYY-MM-DD'
+  customerId?: number;
+  customerName?: string;
+  customerPhone?: string;
+  appointmentId?: number;
+  items: BillItem[];
+  subtotal: number;
+  discount: number;
+  total: number;
+  paidAmount: number;
+  balanceAmount: number;
+  paymentMethod: PaymentMethod;
+  entryId?: number; // linked Day Book entry
+  createdAt: number;
+}
+
 export interface Entry extends SyncMetadata {
   id?: number;
   type: EntryType;
@@ -21,41 +112,27 @@ export interface Entry extends SyncMetadata {
   paymentMethod?: PaymentMethod;
   date: string; // 'YYYY-MM-DD'
   createdAt: number; // timestamp ms
-  repairId?: number; // link to job if created from repair delivery
-}
-
-export type JobStatus = 'received' | 'waiting' | 'ready' | 'delivered' | 'returned';
-
-export interface Job extends SyncMetadata {
-  id?: number;
-  customerName: string;
-  phone: string; // 10-digit Indian mobile
-  model: string;
-  complaint: string;
-  imei?: string;
-  estimate?: number;
-  advance: number;
-  finalAmount?: number | null;
-  status: JobStatus;
-  expectedDate?: string; // 'YYYY-MM-DD'
-  receivedAt: number; // timestamp ms
-  readyAt?: number | null; // timestamp ms
-  deliveredAt?: number | null; // timestamp ms
-  bookEntryId?: number | null; // link to entries table
+  appointmentId?: number;
+  billId?: number;
+  repairId?: number;
 }
 
 export interface AppSettings extends SyncMetadata {
   id?: number;
-  shopName: string;
+  shopName: string; // Salon Name
+  ownerName?: string;
+  ownerPhone?: string;
+  address?: string;
+  businessHours?: string;
   language: Language;
   firstLaunchDate: string; // 'YYYY-MM-DD' or ISO
   activated: boolean;
-  proPlan?: 'monthly' | 'yearly' | 'lifetime' | null; // plan granted when activated
-  proExpiresAt?: string | null; // ISO expiry for monthly/yearly; null/absent = lifetime
+  proPlan?: 'monthly' | 'yearly' | 'lifetime' | null;
+  proExpiresAt?: string | null;
   lastBackupAt: string | null;
-  showRepairs: boolean; // toggle for repairs module
-  showStock?: boolean; // toggle for stock/inventory module
-  ownerUid?: string; // Firebase user UID owning these settings
+  showRepairs?: boolean;
+  showStock?: boolean;
+  ownerUid?: string;
 }
 
 export interface DaySummary {
@@ -68,6 +145,27 @@ export interface DaySummary {
   cardTotal: number;
 }
 
+// Legacy definitions for existing test suite compatibility
+export type JobStatus = 'received' | 'waiting' | 'ready' | 'delivered' | 'returned';
+
+export interface Job extends SyncMetadata {
+  id?: number;
+  customerName: string;
+  phone: string;
+  model: string;
+  complaint: string;
+  imei?: string;
+  estimate?: number;
+  advance: number;
+  finalAmount?: number | null;
+  status: JobStatus;
+  expectedDate?: string;
+  receivedAt: number;
+  readyAt?: number | null;
+  deliveredAt?: number | null;
+  bookEntryId?: number | null;
+}
+
 export type StockCategory = 'product' | 'service';
 
 export interface StockItem extends SyncMetadata {
@@ -76,10 +174,10 @@ export interface StockItem extends SyncMetadata {
   category: StockCategory;
   sellingPrice: number;
   costPrice?: number;
-  quantity?: number; // Stock count for products; undefined/null for services
-  unit?: string; // e.g. 'pcs', 'unit', 'job', etc.
-  sku?: string; // Barcode or item code
-  lowStockThreshold?: number; // Alert threshold when quantity is low (default 5)
+  quantity?: number;
+  unit?: string;
+  sku?: string;
+  lowStockThreshold?: number;
   notes?: string;
   createdAt: number;
 }
@@ -90,27 +188,5 @@ export interface PurchaseItem extends SyncMetadata {
   quantity: number;
   note?: string;
   isPurchased: boolean;
-  createdAt: number;
-}
-
-export interface BillItem {
-  name: string;
-  qty: number;
-  price: number;
-  stockId?: number;
-}
-
-export interface Bill extends SyncMetadata {
-  id?: number;
-  invoiceNo: string; // e.g. INV-0001
-  date: string; // 'YYYY-MM-DD'
-  customerName?: string;
-  customerPhone?: string;
-  items: BillItem[];
-  subtotal: number;
-  discount: number;
-  total: number;
-  paymentMethod: PaymentMethod;
-  entryId?: number; // linked Day Book entry
   createdAt: number;
 }

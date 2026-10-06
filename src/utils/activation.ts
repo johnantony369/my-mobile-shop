@@ -47,11 +47,11 @@ export function generateValidCode(): string {
   return `${full.slice(0, 4)}-${full.slice(4, 8)}-${full.slice(8, 12)}-${full.slice(12, 16)}`;
 }
 
-export const TRIAL_DURATION_DAYS = 2;
+export const TRIAL_DURATION_DAYS = 14;
 
 /**
  * Calculates remaining trial days given the first launch date string ('YYYY-MM-DD').
- * Trial lasts TRIAL_DURATION_DAYS (2 days) from first launch.
+ * Trial lasts TRIAL_DURATION_DAYS (14 days) from first launch.
  */
 export function getTrialDaysRemaining(firstLaunchDateStr: string): number {
   if (!firstLaunchDateStr) return TRIAL_DURATION_DAYS;

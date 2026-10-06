@@ -5,20 +5,27 @@ import {
   writeBatch,
   getDocs,
   onSnapshot,
-  Unsubscribe
+  Unsubscribe,
 } from 'firebase/firestore';
 import { db, getAppSettings, generateCloudId } from '../db/db';
 import { dbFirestore, auth, isFirebaseConfigured } from './config';
-import { Entry, Job, AppSettings, StockItem, Bill } from '../types';
+import {
+  Customer,
+  Appointment,
+  SalonService,
+  StaffMember,
+  Bill,
+  Entry,
+  AppSettings,
+  Job,
+  StockItem,
+} from '../types';
 import { upsertAccountSummary, calculateDataSize } from './admin';
 import { isSuperAdmin } from '../utils/admin';
 import { isProCurrentlyActive } from '../utils/proPlan';
 
 export type SyncState = 'idle' | 'syncing' | 'synced' | 'offline' | 'error';
 
-/**
- * Strips out any keys with `undefined` values to prevent Firestore from rejecting batch writes.
- */
 export function cleanForFirestore<T extends Record<string, any>>(obj: T): Record<string, any> {
   const clean: Record<string, any> = {};
   for (const [key, value] of Object.entries(obj)) {
@@ -29,41 +36,191 @@ export function cleanForFirestore<T extends Record<string, any>>(obj: T): Record
   return clean;
 }
 
-export async function reconcileRemoteEntries(remoteEntries: Entry[]): Promise<number> {
-  let updatedCount = 0;
-  for (const remote of remoteEntries) {
+// ==========================================
+// RECONCILIATION FOR SALON ENTITIES
+// ==========================================
+
+export async function reconcileRemoteCustomers(remoteList: Customer[]): Promise<number> {
+  if (!db.customers) return 0;
+  let count = 0;
+  for (const remote of remoteList) {
+    if (!remote.cloudId) continue;
+    const local = await db.customers.where('cloudId').equals(remote.cloudId).first();
+    if (!local) {
+      if (remote.deletedAt) continue;
+      const { id, ...toInsert } = remote;
+      await db.customers.add({ ...toInsert, syncStatus: 'synced' } as Customer);
+      count++;
+    } else {
+      if (remote.deletedAt) {
+        await db.customers.delete(local.id!);
+        count++;
+      } else {
+        const remoteTime = remote.updatedAt ? new Date(remote.updatedAt).getTime() : 0;
+        const localTime = local.updatedAt ? new Date(local.updatedAt).getTime() : 0;
+        if (remoteTime > localTime) {
+          const { id, ...toUpdate } = remote;
+          await db.customers.update(local.id!, { ...toUpdate, syncStatus: 'synced' });
+          count++;
+        }
+      }
+    }
+  }
+  return count;
+}
+
+export async function reconcileRemoteAppointments(remoteList: Appointment[]): Promise<number> {
+  if (!db.appointments) return 0;
+  let count = 0;
+  for (const remote of remoteList) {
+    if (!remote.cloudId) continue;
+    const local = await db.appointments.where('cloudId').equals(remote.cloudId).first();
+    if (!local) {
+      if (remote.deletedAt) continue;
+      const { id, ...toInsert } = remote;
+      await db.appointments.add({ ...toInsert, syncStatus: 'synced' } as Appointment);
+      count++;
+    } else {
+      if (remote.deletedAt) {
+        await db.appointments.delete(local.id!);
+        count++;
+      } else {
+        const remoteTime = remote.updatedAt ? new Date(remote.updatedAt).getTime() : 0;
+        const localTime = local.updatedAt ? new Date(local.updatedAt).getTime() : 0;
+        if (remoteTime > localTime) {
+          const { id, ...toUpdate } = remote;
+          await db.appointments.update(local.id!, { ...toUpdate, syncStatus: 'synced' });
+          count++;
+        }
+      }
+    }
+  }
+  return count;
+}
+
+export async function reconcileRemoteServices(remoteList: SalonService[]): Promise<number> {
+  if (!db.services) return 0;
+  let count = 0;
+  for (const remote of remoteList) {
+    if (!remote.cloudId) continue;
+    const local = await db.services.where('cloudId').equals(remote.cloudId).first();
+    if (!local) {
+      if (remote.deletedAt) continue;
+      const { id, ...toInsert } = remote;
+      await db.services.add({ ...toInsert, syncStatus: 'synced' } as SalonService);
+      count++;
+    } else {
+      if (remote.deletedAt) {
+        await db.services.delete(local.id!);
+        count++;
+      } else {
+        const remoteTime = remote.updatedAt ? new Date(remote.updatedAt).getTime() : 0;
+        const localTime = local.updatedAt ? new Date(local.updatedAt).getTime() : 0;
+        if (remoteTime > localTime) {
+          const { id, ...toUpdate } = remote;
+          await db.services.update(local.id!, { ...toUpdate, syncStatus: 'synced' });
+          count++;
+        }
+      }
+    }
+  }
+  return count;
+}
+
+export async function reconcileRemoteStaff(remoteList: StaffMember[]): Promise<number> {
+  if (!db.staff) return 0;
+  let count = 0;
+  for (const remote of remoteList) {
+    if (!remote.cloudId) continue;
+    const local = await db.staff.where('cloudId').equals(remote.cloudId).first();
+    if (!local) {
+      if (remote.deletedAt) continue;
+      const { id, ...toInsert } = remote;
+      await db.staff.add({ ...toInsert, syncStatus: 'synced' } as StaffMember);
+      count++;
+    } else {
+      if (remote.deletedAt) {
+        await db.staff.delete(local.id!);
+        count++;
+      } else {
+        const remoteTime = remote.updatedAt ? new Date(remote.updatedAt).getTime() : 0;
+        const localTime = local.updatedAt ? new Date(local.updatedAt).getTime() : 0;
+        if (remoteTime > localTime) {
+          const { id, ...toUpdate } = remote;
+          await db.staff.update(local.id!, { ...toUpdate, syncStatus: 'synced' });
+          count++;
+        }
+      }
+    }
+  }
+  return count;
+}
+
+export async function reconcileRemoteBills(remoteList: Bill[]): Promise<number> {
+  if (!db.bills) return 0;
+  let count = 0;
+  for (const remote of remoteList) {
+    if (!remote.cloudId) continue;
+    const local = await db.bills.where('cloudId').equals(remote.cloudId).first();
+    if (!local) {
+      if (remote.deletedAt) continue;
+      const { id, ...toInsert } = remote;
+      await db.bills.add({ ...toInsert, syncStatus: 'synced' } as Bill);
+      count++;
+    } else {
+      if (remote.deletedAt) {
+        await db.bills.delete(local.id!);
+        count++;
+      } else {
+        const remoteTime = remote.updatedAt ? new Date(remote.updatedAt).getTime() : 0;
+        const localTime = local.updatedAt ? new Date(local.updatedAt).getTime() : 0;
+        if (remoteTime > localTime) {
+          const { id, ...toUpdate } = remote;
+          await db.bills.update(local.id!, { ...toUpdate, syncStatus: 'synced' });
+          count++;
+        }
+      }
+    }
+  }
+  return count;
+}
+
+export async function reconcileRemoteEntries(remoteList: Entry[]): Promise<number> {
+  if (!db.entries) return 0;
+  let count = 0;
+  for (const remote of remoteList) {
     if (!remote.cloudId) continue;
     const local = await db.entries.where('cloudId').equals(remote.cloudId).first();
-
     if (!local) {
-      if (remote.deletedAt) continue; // Don't resurrect deleted records
+      if (remote.deletedAt) continue;
       const { id, ...toInsert } = remote;
       await db.entries.add({ ...toInsert, syncStatus: 'synced' } as Entry);
-      updatedCount++;
+      count++;
     } else {
       if (remote.deletedAt) {
         await db.entries.delete(local.id!);
-        updatedCount++;
+        count++;
       } else {
         const remoteTime = remote.updatedAt ? new Date(remote.updatedAt).getTime() : 0;
         const localTime = local.updatedAt ? new Date(local.updatedAt).getTime() : 0;
         if (remoteTime > localTime) {
           const { id, ...toUpdate } = remote;
           await db.entries.update(local.id!, { ...toUpdate, syncStatus: 'synced' });
-          updatedCount++;
+          count++;
         }
       }
     }
   }
-  return updatedCount;
+  return count;
 }
 
+// Backward compatibility legacy reconcilers for test suites
 export async function reconcileRemoteJobs(remoteJobs: Job[]): Promise<number> {
+  if (!db.jobs) return 0;
   let updatedCount = 0;
   for (const remote of remoteJobs) {
     if (!remote.cloudId) continue;
     const local = await db.jobs.where('cloudId').equals(remote.cloudId).first();
-
     if (!local) {
       if (remote.deletedAt) continue;
       const { id, ...toInsert } = remote;
@@ -88,11 +245,11 @@ export async function reconcileRemoteJobs(remoteJobs: Job[]): Promise<number> {
 }
 
 export async function reconcileRemoteStock(remoteStock: StockItem[]): Promise<number> {
+  if (!db.stock) return 0;
   let updatedCount = 0;
   for (const remote of remoteStock) {
     if (!remote.cloudId) continue;
     const local = await db.stock.where('cloudId').equals(remote.cloudId).first();
-
     if (!local) {
       if (remote.deletedAt) continue;
       const { id, ...toInsert } = remote;
@@ -108,36 +265,6 @@ export async function reconcileRemoteStock(remoteStock: StockItem[]): Promise<nu
         if (remoteTime > localTime) {
           const { id, ...toUpdate } = remote;
           await db.stock.update(local.id!, { ...toUpdate, syncStatus: 'synced' });
-          updatedCount++;
-        }
-      }
-    }
-  }
-  return updatedCount;
-}
-
-export async function reconcileRemoteBills(remoteBills: Bill[]): Promise<number> {
-  if (!db.bills) return 0;
-  let updatedCount = 0;
-  for (const remote of remoteBills) {
-    if (!remote.cloudId) continue;
-    const local = await db.bills.where('cloudId').equals(remote.cloudId).first();
-
-    if (!local) {
-      if (remote.deletedAt) continue;
-      const { id, ...toInsert } = remote;
-      await db.bills.add({ ...toInsert, syncStatus: 'synced' } as Bill);
-      updatedCount++;
-    } else {
-      if (remote.deletedAt) {
-        await db.bills.delete(local.id!);
-        updatedCount++;
-      } else {
-        const remoteTime = remote.updatedAt ? new Date(remote.updatedAt).getTime() : 0;
-        const localTime = local.updatedAt ? new Date(local.updatedAt).getTime() : 0;
-        if (remoteTime > localTime) {
-          const { id, ...toUpdate } = remote;
-          await db.bills.update(local.id!, { ...toUpdate, syncStatus: 'synced' });
           updatedCount++;
         }
       }
@@ -165,6 +292,10 @@ export async function reconcileRemoteSettings(remoteSettings: AppSettings, uid?:
   return false;
 }
 
+// ==========================================
+// PUSH PENDING CHANGES
+// ==========================================
+
 export async function pushPendingChanges(uid: string): Promise<number> {
   if (!dbFirestore) return 0;
   let pushedCount = 0;
@@ -179,138 +310,61 @@ export async function pushPendingChanges(uid: string): Promise<number> {
     }
   };
 
-  // 1. Pending / Deleted entries
-  const allEntries = await db.entries.toArray();
-  const dirtyEntries = allEntries.filter(e => e.syncStatus !== 'synced');
-
-  for (const entry of dirtyEntries) {
-    if (!entry.cloudId) continue;
-    const docRef = doc(dbFirestore, 'users', uid, 'entries', entry.cloudId);
-
-    if (entry.syncStatus === 'deleted') {
-      const now = new Date().toISOString();
-      const deletedAt = entry.deletedAt || now;
-      // Soft-delete tombstone in Firestore so other devices receive the deletion
-      currentBatch.set(docRef, cleanForFirestore({
-        cloudId: entry.cloudId,
-        deletedAt,
-        updatedAt: now,
-        syncStatus: 'synced',
-      }), { merge: true });
-      if (entry.id) await db.entries.delete(entry.id);
-      batchOps++;
-      pushedCount++;
-      await commitBatchIfNeeded();
-    } else {
-      const { id, ...dataToSync } = entry;
-      currentBatch.set(docRef, cleanForFirestore({ ...dataToSync, syncStatus: 'synced' }), { merge: true });
-      if (entry.id) await db.entries.update(entry.id, { syncStatus: 'synced' });
-      batchOps++;
-      pushedCount++;
-      await commitBatchIfNeeded();
+  const syncTable = async (table: any, collName: string) => {
+    if (!table) return;
+    const all = await table.toArray();
+    const dirty = all.filter((i: any) => i.syncStatus !== 'synced');
+    for (const item of dirty) {
+      if (!item.cloudId) continue;
+      const docRef = doc(dbFirestore!, 'users', uid, collName, item.cloudId);
+      if (item.syncStatus === 'deleted') {
+        const now = new Date().toISOString();
+        const deletedAt = item.deletedAt || now;
+        currentBatch.set(
+          docRef,
+          cleanForFirestore({
+            cloudId: item.cloudId,
+            deletedAt,
+            updatedAt: now,
+            syncStatus: 'synced',
+          }),
+          { merge: true }
+        );
+        if (item.id) await table.delete(item.id);
+        batchOps++;
+        pushedCount++;
+        await commitBatchIfNeeded();
+      } else {
+        const { id, ...dataToSync } = item;
+        currentBatch.set(docRef, cleanForFirestore({ ...dataToSync, syncStatus: 'synced' }), { merge: true });
+        if (item.id) await table.update(item.id, { syncStatus: 'synced' });
+        batchOps++;
+        pushedCount++;
+        await commitBatchIfNeeded();
+      }
     }
-  }
+  };
 
-  // 2. Pending / Deleted jobs
-  const allJobs = await db.jobs.toArray();
-  const dirtyJobs = allJobs.filter(j => j.syncStatus !== 'synced');
+  await syncTable(db.customers, 'customers');
+  await syncTable(db.appointments, 'appointments');
+  await syncTable(db.services, 'services');
+  await syncTable(db.staff, 'staff');
+  await syncTable(db.bills, 'bills');
+  await syncTable(db.entries, 'entries');
+  if (db.jobs) await syncTable(db.jobs, 'jobs');
+  if (db.stock) await syncTable(db.stock, 'stock');
 
-  for (const job of dirtyJobs) {
-    if (!job.cloudId) continue;
-    const docRef = doc(dbFirestore, 'users', uid, 'jobs', job.cloudId);
-
-    if (job.syncStatus === 'deleted') {
-      const now = new Date().toISOString();
-      const deletedAt = job.deletedAt || now;
-      currentBatch.set(docRef, cleanForFirestore({
-        cloudId: job.cloudId,
-        deletedAt,
-        updatedAt: now,
-        syncStatus: 'synced',
-      }), { merge: true });
-      if (job.id) await db.jobs.delete(job.id);
-      batchOps++;
-      pushedCount++;
-      await commitBatchIfNeeded();
-    } else {
-      const { id, ...dataToSync } = job;
-      currentBatch.set(docRef, cleanForFirestore({ ...dataToSync, syncStatus: 'synced' }), { merge: true });
-      if (job.id) await db.jobs.update(job.id, { syncStatus: 'synced' });
-      batchOps++;
-      pushedCount++;
-      await commitBatchIfNeeded();
-    }
-  }
-
-  // 3. Pending / Deleted stock
-  const allStock = db.stock ? await db.stock.toArray() : [];
-  const dirtyStock = allStock.filter(s => s.syncStatus !== 'synced');
-
-  for (const item of dirtyStock) {
-    if (!item.cloudId) continue;
-    const docRef = doc(dbFirestore, 'users', uid, 'stock', item.cloudId);
-
-    if (item.syncStatus === 'deleted') {
-      const now = new Date().toISOString();
-      const deletedAt = item.deletedAt || now;
-      currentBatch.set(docRef, cleanForFirestore({
-        cloudId: item.cloudId,
-        deletedAt,
-        updatedAt: now,
-        syncStatus: 'synced',
-      }), { merge: true });
-      if (item.id) await db.stock.delete(item.id);
-      batchOps++;
-      pushedCount++;
-      await commitBatchIfNeeded();
-    } else {
-      const { id, ...dataToSync } = item;
-      currentBatch.set(docRef, cleanForFirestore({ ...dataToSync, syncStatus: 'synced' }), { merge: true });
-      if (item.id) await db.stock.update(item.id, { syncStatus: 'synced' });
-      batchOps++;
-      pushedCount++;
-      await commitBatchIfNeeded();
-    }
-  }
-
-  // 4. Pending / Deleted bills
-  const allBills = db.bills ? await db.bills.toArray() : [];
-  const dirtyBills = allBills.filter(b => b.syncStatus !== 'synced');
-
-  for (const bill of dirtyBills) {
-    if (!bill.cloudId) continue;
-    const docRef = doc(dbFirestore, 'users', uid, 'bills', bill.cloudId);
-
-    if (bill.syncStatus === 'deleted') {
-      const now = new Date().toISOString();
-      const deletedAt = bill.deletedAt || now;
-      currentBatch.set(docRef, cleanForFirestore({
-        cloudId: bill.cloudId,
-        deletedAt,
-        updatedAt: now,
-        syncStatus: 'synced',
-      }), { merge: true });
-      if (bill.id) await db.bills.delete(bill.id);
-      batchOps++;
-      pushedCount++;
-      await commitBatchIfNeeded();
-    } else {
-      const { id, ...dataToSync } = bill;
-      currentBatch.set(docRef, cleanForFirestore({ ...dataToSync, syncStatus: 'synced' }), { merge: true });
-      if (bill.id) await db.bills.update(bill.id, { syncStatus: 'synced' });
-      batchOps++;
-      pushedCount++;
-      await commitBatchIfNeeded();
-    }
-  }
-
-  // 5. Settings
+  // Settings
   const localSettings = await getAppSettings();
   if (localSettings && localSettings.syncStatus !== 'synced') {
     if (!localSettings.ownerUid || localSettings.ownerUid === uid) {
       const docRef = doc(dbFirestore, 'users', uid, 'settings', 'appSettings');
       const { id, ...settingsData } = localSettings;
-      currentBatch.set(docRef, cleanForFirestore({ ...settingsData, ownerUid: uid, syncStatus: 'synced' }), { merge: true });
+      currentBatch.set(
+        docRef,
+        cleanForFirestore({ ...settingsData, ownerUid: uid, syncStatus: 'synced' }),
+        { merge: true }
+      );
       if (localSettings.id) {
         await db.settings.update(localSettings.id, { ownerUid: uid, syncStatus: 'synced' });
       }
@@ -323,72 +377,113 @@ export async function pushPendingChanges(uid: string): Promise<number> {
     await currentBatch.commit();
   }
 
-  // 4. Update centralized account summary for admin monitoring
+  // Update central account directory
   try {
-    const totalEntries = allEntries.filter(e => !e.deletedAt);
-    const totalJobs = allJobs.filter(j => !j.deletedAt);
-    const estimatedBytes = calculateDataSize(totalEntries, totalJobs, localSettings);
+    const totalEntries = db.entries ? (await db.entries.toArray()).filter((e) => !e.deletedAt) : [];
+    const totalAppointments = db.appointments ? (await db.appointments.toArray()).filter((a) => !a.deletedAt) : [];
+    const estimatedBytes = calculateDataSize(totalEntries, totalAppointments, localSettings);
     const currentUser = auth?.currentUser;
 
     await upsertAccountSummary(uid, {
       uid,
       email: currentUser?.email || null,
       phoneNumber: currentUser?.phoneNumber || null,
-      shopName: localSettings?.shopName || 'My Mobile Shop',
+      shopName: localSettings?.shopName || 'MySalon',
       activated: isSuperAdmin(currentUser) || isProCurrentlyActive(localSettings),
       proPlan: localSettings?.proPlan ?? null,
       proExpiresAt: localSettings?.proExpiresAt ?? null,
       entryCount: totalEntries.length,
-      jobCount: totalJobs.length,
+      jobCount: totalAppointments.length,
       estimatedBytes,
       createdAt: localSettings?.firstLaunchDate || new Date().toISOString(),
       lastActiveAt: new Date().toISOString(),
     });
-  } catch (summaryErr) {
-    console.warn('Failed to update account directory summary during push:', summaryErr);
+  } catch (err) {
+    console.warn('Failed to update account directory summary during push:', err);
   }
 
   return pushedCount;
 }
 
-export async function pullCloudChanges(uid: string): Promise<{ pulledEntries: number; pulledJobs: number; pulledStock?: number; pulledBills?: number; settingsRestored: boolean }> {
-  if (!dbFirestore) return { pulledEntries: 0, pulledJobs: 0, pulledStock: 0, pulledBills: 0, settingsRestored: false };
+// ==========================================
+// PULL CLOUD CHANGES
+// ==========================================
 
-  // 1. Pull entries
-  const entriesSnap = await getDocs(collection(dbFirestore, 'users', uid, 'entries'));
-  const remoteEntries = entriesSnap.docs.map(d => d.data() as Entry);
-  const pulledEntries = await reconcileRemoteEntries(remoteEntries);
-
-  // 2. Pull jobs
-  const jobsSnap = await getDocs(collection(dbFirestore, 'users', uid, 'jobs'));
-  const remoteJobs = jobsSnap.docs.map(d => d.data() as Job);
-  const pulledJobs = await reconcileRemoteJobs(remoteJobs);
-
-  // 3. Pull stock
-  let pulledStock = 0;
-  try {
-    const stockSnap = await getDocs(collection(dbFirestore, 'users', uid, 'stock'));
-    const remoteStock = stockSnap.docs.map(d => d.data() as StockItem);
-    pulledStock = await reconcileRemoteStock(remoteStock);
-  } catch (err) {
-    console.warn('Failed to pull stock items:', err);
+export async function pullCloudChanges(uid: string): Promise<{
+  pulledEntries: number;
+  pulledAppointments: number;
+  pulledCustomers: number;
+  pulledServices: number;
+  pulledStaff: number;
+  pulledBills: number;
+  settingsRestored: boolean;
+}> {
+  if (!dbFirestore) {
+    return {
+      pulledEntries: 0,
+      pulledAppointments: 0,
+      pulledCustomers: 0,
+      pulledServices: 0,
+      pulledStaff: 0,
+      pulledBills: 0,
+      settingsRestored: false,
+    };
   }
 
-  // 4. Pull bills
+  let pulledEntries = 0;
+  let pulledAppointments = 0;
+  let pulledCustomers = 0;
+  let pulledServices = 0;
+  let pulledStaff = 0;
   let pulledBills = 0;
+
+  try {
+    const entriesSnap = await getDocs(collection(dbFirestore, 'users', uid, 'entries'));
+    pulledEntries = await reconcileRemoteEntries(entriesSnap.docs.map((d) => d.data() as Entry));
+  } catch (e) {
+    console.warn('Error pulling entries:', e);
+  }
+
+  try {
+    const apptsSnap = await getDocs(collection(dbFirestore, 'users', uid, 'appointments'));
+    pulledAppointments = await reconcileRemoteAppointments(apptsSnap.docs.map((d) => d.data() as Appointment));
+  } catch (e) {
+    console.warn('Error pulling appointments:', e);
+  }
+
+  try {
+    const custSnap = await getDocs(collection(dbFirestore, 'users', uid, 'customers'));
+    pulledCustomers = await reconcileRemoteCustomers(custSnap.docs.map((d) => d.data() as Customer));
+  } catch (e) {
+    console.warn('Error pulling customers:', e);
+  }
+
+  try {
+    const servSnap = await getDocs(collection(dbFirestore, 'users', uid, 'services'));
+    pulledServices = await reconcileRemoteServices(servSnap.docs.map((d) => d.data() as SalonService));
+  } catch (e) {
+    console.warn('Error pulling services:', e);
+  }
+
+  try {
+    const staffSnap = await getDocs(collection(dbFirestore, 'users', uid, 'staff'));
+    pulledStaff = await reconcileRemoteStaff(staffSnap.docs.map((d) => d.data() as StaffMember));
+  } catch (e) {
+    console.warn('Error pulling staff:', e);
+  }
+
   try {
     const billsSnap = await getDocs(collection(dbFirestore, 'users', uid, 'bills'));
-    const remoteBills = billsSnap.docs.map(d => d.data() as Bill);
-    pulledBills = await reconcileRemoteBills(remoteBills);
-  } catch (err) {
-    console.warn('Failed to pull bills:', err);
+    pulledBills = await reconcileRemoteBills(billsSnap.docs.map((d) => d.data() as Bill));
+  } catch (e) {
+    console.warn('Error pulling bills:', e);
   }
 
-  // 5. Pull settings
+  // Pull settings
   let settingsRestored = false;
   try {
     const settingsSnap = await getDocs(collection(dbFirestore, 'users', uid, 'settings'));
-    const settingsDoc = settingsSnap.docs.find(d => d.id === 'appSettings');
+    const settingsDoc = settingsSnap.docs.find((d) => d.id === 'appSettings');
     if (settingsDoc) {
       await reconcileRemoteSettings(settingsDoc.data() as AppSettings, uid);
       settingsRestored = true;
@@ -397,51 +492,51 @@ export async function pullCloudChanges(uid: string): Promise<{ pulledEntries: nu
     console.warn('Failed to pull user settings doc:', err);
   }
 
-  // 6. Fallback for existing users: check account directory or recovered entries/jobs
+  // Fallback restoration
   const currentLocal = await getAppSettings();
   if (!currentLocal) {
     try {
       const accountSnap = await getDoc(doc(dbFirestore, 'accounts', uid));
       const accountData = accountSnap.exists() ? accountSnap.data() : null;
+      const currentUser = auth?.currentUser;
+      const recoveredShopName =
+        accountData?.shopName ||
+        currentUser?.displayName ||
+        (currentUser?.email ? currentUser.email.split('@')[0] : 'MySalon');
 
-      const hasRemoteData = remoteEntries.length > 0 || remoteJobs.length > 0 || !!accountData;
-      if (hasRemoteData) {
-        const currentUser = auth?.currentUser;
-        const recoveredShopName =
-          accountData?.shopName ||
-          currentUser?.displayName ||
-          (currentUser?.email ? currentUser.email.split('@')[0] : 'My Mobile Shop');
-
-        const now = new Date().toISOString();
-        const restoredSettings: AppSettings = {
-          shopName: recoveredShopName,
-          language: 'en',
-          firstLaunchDate: accountData?.createdAt || now.split('T')[0],
-          activated: isSuperAdmin(currentUser) || isProCurrentlyActive(accountData),
-          proPlan: accountData?.proPlan ?? null,
-          proExpiresAt: accountData?.proExpiresAt ?? null,
-          lastBackupAt: now,
-          showRepairs: true,
-          ownerUid: uid,
-          cloudId: generateCloudId(),
-          updatedAt: now,
-          syncStatus: 'synced',
-        };
-
-        await db.settings.add(restoredSettings);
-        settingsRestored = true;
-      }
+      const now = new Date().toISOString();
+      const restoredSettings: AppSettings = {
+        shopName: recoveredShopName,
+        language: 'en',
+        firstLaunchDate: accountData?.createdAt || now.split('T')[0],
+        activated: isSuperAdmin(currentUser) || isProCurrentlyActive(accountData),
+        proPlan: accountData?.proPlan ?? null,
+        proExpiresAt: accountData?.proExpiresAt ?? null,
+        lastBackupAt: now,
+        ownerUid: uid,
+        cloudId: generateCloudId(),
+        updatedAt: now,
+        syncStatus: 'synced',
+      };
+      await db.settings.add(restoredSettings);
+      settingsRestored = true;
     } catch (fallbackErr) {
       console.warn('Fallback settings restoration failed:', fallbackErr);
     }
-  } else {
-    if (!currentLocal.ownerUid) {
-      await db.settings.update(currentLocal.id!, { ownerUid: uid });
-    }
+  } else if (!currentLocal.ownerUid) {
+    await db.settings.update(currentLocal.id!, { ownerUid: uid });
     settingsRestored = true;
   }
 
-  return { pulledEntries, pulledJobs, pulledStock, pulledBills, settingsRestored };
+  return {
+    pulledEntries,
+    pulledAppointments,
+    pulledCustomers,
+    pulledServices,
+    pulledStaff,
+    pulledBills,
+    settingsRestored,
+  };
 }
 
 export async function syncNow(userId?: string): Promise<{
@@ -465,8 +560,15 @@ export async function syncNow(userId?: string): Promise<{
 
   try {
     const pushed = await pushPendingChanges(uid);
-    const { pulledEntries, pulledJobs, pulledStock, pulledBills } = await pullCloudChanges(uid);
-    return { success: true, pushed, pulled: pulledEntries + pulledJobs + (pulledStock || 0) + (pulledBills || 0) };
+    const pullResult = await pullCloudChanges(uid);
+    const pulled =
+      pullResult.pulledEntries +
+      pullResult.pulledAppointments +
+      pullResult.pulledCustomers +
+      pullResult.pulledServices +
+      pullResult.pulledStaff +
+      pullResult.pulledBills;
+    return { success: true, pushed, pulled };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     console.error('Cloud sync error:', err);
@@ -502,10 +604,8 @@ export function startAutoSync(
     }
   };
 
-  // Immediate sync
   triggerSync();
 
-  // Network online listener
   const handleOnline = () => triggerSync();
   const handleOffline = () => onStatusChange?.('offline');
 
@@ -514,66 +614,34 @@ export function startAutoSync(
     window.addEventListener('offline', handleOffline);
   }
 
-  // Live snapshot listeners for real-time multi-device changes using delta docChanges()
-  try {
-    const entriesRef = collection(dbFirestore, 'users', uid, 'entries');
-    const unsubEntries = onSnapshot(entriesRef, snapshot => {
-      if (snapshot.metadata.hasPendingWrites) return;
-      const changed = snapshot.docChanges().map(change => change.doc.data() as Entry);
-      if (changed.length > 0) {
-        reconcileRemoteEntries(changed).then(() => {
-          onStatusChange?.('synced', new Date());
-        });
-      }
-    }, (err) => {
-      onStatusChange?.('error', undefined, err.message);
-    });
-    unsubscribers.push(unsubEntries);
+  const listenToCollection = (collName: string, reconciler: (items: any[]) => Promise<any>) => {
+    try {
+      const collRef = collection(dbFirestore!, 'users', uid, collName);
+      const unsub = onSnapshot(
+        collRef,
+        (snapshot) => {
+          if (snapshot.metadata.hasPendingWrites) return;
+          const changed = snapshot.docChanges().map((c) => c.doc.data());
+          if (changed.length > 0) {
+            reconciler(changed).then(() => {
+              onStatusChange?.('synced', new Date());
+            });
+          }
+        },
+        (err) => onStatusChange?.('error', undefined, err.message)
+      );
+      unsubscribers.push(unsub);
+    } catch (e) {
+      console.warn(`Failed to attach snapshot listener to ${collName}:`, e);
+    }
+  };
 
-    const jobsRef = collection(dbFirestore, 'users', uid, 'jobs');
-    const unsubJobs = onSnapshot(jobsRef, snapshot => {
-      if (snapshot.metadata.hasPendingWrites) return;
-      const changed = snapshot.docChanges().map(change => change.doc.data() as Job);
-      if (changed.length > 0) {
-        reconcileRemoteJobs(changed).then(() => {
-          onStatusChange?.('synced', new Date());
-        });
-      }
-    }, (err) => {
-      onStatusChange?.('error', undefined, err.message);
-    });
-    unsubscribers.push(unsubJobs);
-
-    const stockRef = collection(dbFirestore, 'users', uid, 'stock');
-    const unsubStock = onSnapshot(stockRef, snapshot => {
-      if (snapshot.metadata.hasPendingWrites) return;
-      const changed = snapshot.docChanges().map(change => change.doc.data() as StockItem);
-      if (changed.length > 0) {
-        reconcileRemoteStock(changed).then(() => {
-          onStatusChange?.('synced', new Date());
-        });
-      }
-    }, (err) => {
-      onStatusChange?.('error', undefined, err.message);
-    });
-    unsubscribers.push(unsubStock);
-
-    const billsRef = collection(dbFirestore, 'users', uid, 'bills');
-    const unsubBills = onSnapshot(billsRef, snapshot => {
-      if (snapshot.metadata.hasPendingWrites) return;
-      const changed = snapshot.docChanges().map(change => change.doc.data() as Bill);
-      if (changed.length > 0) {
-        reconcileRemoteBills(changed).then(() => {
-          onStatusChange?.('synced', new Date());
-        });
-      }
-    }, (err) => {
-      onStatusChange?.('error', undefined, err.message);
-    });
-    unsubscribers.push(unsubBills);
-  } catch (e) {
-    console.warn('Real-time listeners could not be attached:', e);
-  }
+  listenToCollection('appointments', reconcileRemoteAppointments);
+  listenToCollection('customers', reconcileRemoteCustomers);
+  listenToCollection('services', reconcileRemoteServices);
+  listenToCollection('staff', reconcileRemoteStaff);
+  listenToCollection('bills', reconcileRemoteBills);
+  listenToCollection('entries', reconcileRemoteEntries);
 
   return () => {
     isSubscribed = false;
@@ -581,6 +649,6 @@ export function startAutoSync(
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     }
-    unsubscribers.forEach(unsub => unsub());
+    unsubscribers.forEach((u) => u());
   };
 }

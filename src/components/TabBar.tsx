@@ -1,78 +1,49 @@
 import React from 'react';
-import { BookOpen, Package, Wrench, BarChart3, Settings } from 'lucide-react';
-import { Language } from '../types';
-import { t } from '../i18n';
+import { Home, Calendar, Users, MoreHorizontal } from 'lucide-react';
 
-export type TabType = 'book' | 'stock' | 'repairs' | 'reports' | 'settings';
+export type MainTab = 'home' | 'appointments' | 'customers' | 'more';
 
 interface TabBarProps {
-  currentTab: TabType;
-  onTabChange: (tab: TabType) => void;
-  language: Language;
-  showRepairs?: boolean;
-  showStock?: boolean;
-  readyCount?: number;
-  lowStockCount?: number;
+  currentTab: MainTab;
+  onTabChange: (tab: MainTab) => void;
+  todayAppointmentsCount?: number;
 }
 
 export const TabBar: React.FC<TabBarProps> = ({
   currentTab,
   onTabChange,
-  language,
-  showRepairs = false,
-  showStock = true,
-  readyCount = 0,
-  lowStockCount = 0,
+  todayAppointmentsCount = 0,
 }) => {
   const tabs = [
     {
-      id: 'book' as TabType,
-      label: t('tab_book', language),
-      icon: BookOpen,
+      id: 'home' as MainTab,
+      label: 'Home',
+      icon: Home,
       badge: 0,
-      badgeColor: 'bg-iosGreen',
-    },
-    ...(showStock
-      ? [
-          {
-            id: 'stock' as TabType,
-            label: t('tab_stock', language),
-            icon: Package,
-            badge: lowStockCount,
-            badgeColor: 'bg-amber-500',
-          },
-        ]
-      : []),
-    ...(showRepairs
-      ? [
-          {
-            id: 'repairs' as TabType,
-            label: t('tab_repairs', language),
-            icon: Wrench,
-            badge: readyCount,
-            badgeColor: 'bg-iosGreen',
-          },
-        ]
-      : []),
-    {
-      id: 'reports' as TabType,
-      label: t('tab_reports', language),
-      icon: BarChart3,
-      badge: 0,
-      badgeColor: 'bg-iosGreen',
     },
     {
-      id: 'settings' as TabType,
-      label: t('tab_settings', language),
-      icon: Settings,
+      id: 'appointments' as MainTab,
+      label: 'Appointments',
+      icon: Calendar,
+      badge: todayAppointmentsCount,
+    },
+    {
+      id: 'customers' as MainTab,
+      label: 'Customers',
+      icon: Users,
       badge: 0,
-      badgeColor: 'bg-iosGreen',
+    },
+    {
+      id: 'more' as MainTab,
+      label: 'More',
+      icon: MoreHorizontal,
+      badge: 0,
     },
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/90 backdrop-blur-xl border-t border-[#3C3C43]/15 pb-[env(safe-area-inset-bottom)]">
-      <div className="flex items-center justify-around h-[50px] max-w-lg mx-auto">
+    <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/92 backdrop-blur-xl border-t border-[#E5E5EA]/80 pb-[env(safe-area-inset-bottom)] select-none">
+      <div className="flex items-center justify-around h-[56px] max-w-lg mx-auto px-2">
         {tabs.map((tab) => {
           const isActive = currentTab === tab.id;
           const Icon = tab.icon;
@@ -82,25 +53,25 @@ export const TabBar: React.FC<TabBarProps> = ({
               key={tab.id}
               type="button"
               onClick={() => onTabChange(tab.id)}
-              className={`flex-1 flex flex-col items-center justify-center h-full active:scale-95 transition-all duration-150 relative select-none ${
-                isActive ? 'text-iosBlue' : 'text-[#8E8E93] hover:text-black/70'
+              className={`flex-1 flex flex-col items-center justify-center h-full active:scale-95 transition-all duration-150 relative ${
+                isActive ? 'text-[#171717]' : 'text-[#8E8E93] hover:text-[#171717]/80'
               }`}
             >
               <div className="relative">
                 <Icon
-                  className={`w-[22px] h-[22px] transition-transform duration-200 ease-out ${
-                    isActive ? 'stroke-[2.2px] scale-105' : 'stroke-[1.8px] scale-100'
+                  className={`w-[23px] h-[23px] transition-transform duration-200 ease-out ${
+                    isActive ? 'stroke-[2.2px] scale-105 text-[#171717]' : 'stroke-[1.8px] scale-100 text-[#8E8E93]'
                   }`}
                 />
                 {tab.badge > 0 && (
-                  <span className={`absolute -top-1 -right-2 ${tab.badgeColor || 'bg-iosGreen'} text-white text-[10px] font-bold min-w-[16px] h-4 rounded-full px-1 flex items-center justify-center shadow-xs animate-pulse`}>
+                  <span className="absolute -top-1 -right-2 bg-[#171717] text-white text-[10px] font-bold min-w-[17px] h-[17px] rounded-full px-1 flex items-center justify-center shadow-xs">
                     {tab.badge}
                   </span>
                 )}
               </div>
               <span
-                className={`text-[10px] mt-0.5 tracking-tight font-medium transition-colors duration-150 truncate max-w-[62px] text-center ${
-                  isActive ? 'font-semibold text-iosBlue' : 'text-[#8E8E93]'
+                className={`text-[10.5px] mt-1 tracking-tight transition-colors duration-150 ${
+                  isActive ? 'font-semibold text-[#171717]' : 'font-medium text-[#8E8E93]'
                 }`}
               >
                 {tab.label}
@@ -112,3 +83,6 @@ export const TabBar: React.FC<TabBarProps> = ({
     </div>
   );
 };
+
+// Backward-compatibility export for TabType if needed
+export type TabType = any;

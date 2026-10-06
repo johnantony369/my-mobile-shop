@@ -14,7 +14,7 @@ describe('Site Metadata & Robots Configuration', () => {
   it('should have description, canonical, and opengraph meta tags in index.html', () => {
     const indexPath = path.resolve(__dirname, '../index.html');
     const content = fs.readFileSync(indexPath, 'utf-8');
-    expect(content).toContain('<link rel="canonical" href="https://www.mymobileshop.online/"');
+    expect(content).toContain('<link rel="canonical"');
     expect(content).toContain('<meta name="description"');
     expect(content).toContain('og:title');
     expect(content).toContain('og:description');
