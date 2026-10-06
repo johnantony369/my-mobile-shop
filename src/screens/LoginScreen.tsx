@@ -213,17 +213,21 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
   };
 
   return (
-    <div className="min-h-screen bg-iosBg flex flex-col justify-center items-center p-4 sm:p-6 selection:bg-iosBlue/20">
-      <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-sm p-6 sm:p-8 shadow-xl border border-slate-200 dark:border-slate-800">
+    <div className="min-h-screen bg-white sm:bg-iosBg flex flex-col justify-center items-center p-4 sm:p-6 selection:bg-iosBlue/20">
+      <div className="bg-white rounded-3xl w-full max-w-sm p-6 sm:p-8 shadow-none sm:shadow-xl border-0 sm:border sm:border-slate-200">
         {/* Header */}
         <div className="mb-6 text-center">
-          <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-2xl flex items-center justify-center mx-auto mb-3.5 shadow-inner">
-            <Store className="w-8 h-8" />
+          <div className="flex justify-center mx-auto mb-3.5">
+            <img
+              src="/icon-192.png"
+              alt="My Mobile Shop Logo"
+              className="w-16 h-16 rounded-2xl shadow-sm border border-slate-100 object-cover"
+            />
           </div>
-          <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">
             My Mobile Shop
           </h1>
-          <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 mt-1">
+          <h2 className="text-sm font-bold text-slate-700 mt-1">
             {view === 'password'
               ? mode === 'login'
                 ? 'Shop Sign In'
@@ -232,7 +236,7 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
               ? 'Sign in with Phone'
               : 'Enter Verification Code'}
           </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-xs text-slate-500 mt-1">
             {view === 'password'
               ? 'Access your cloud ledger and customer repairs'
               : view === 'phone_number'
@@ -243,14 +247,14 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
 
         {/* Notifications */}
         {error && (
-          <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-xl text-xs flex items-center gap-2 border border-red-200 dark:border-red-900/50">
+          <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-xl text-xs flex items-center gap-2 border border-red-200">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{error}</span>
           </div>
         )}
 
         {successMsg && (
-          <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-xl text-xs flex items-center gap-2 border border-green-200 dark:border-green-900/50">
+          <div className="mb-4 p-3 bg-green-50 text-green-600 rounded-xl text-xs flex items-center gap-2 border border-green-200">
             <CheckCircle2 className="w-4 h-4 shrink-0" />
             <span>{successMsg}</span>
           </div>
@@ -261,39 +265,39 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
           <div>
             <form onSubmit={handlePasswordSubmit} className="space-y-3.5">
               <div>
-                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Login ID / Shop ID
                 </label>
-                <div className="flex items-center gap-2.5 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/80 focus-within:ring-2 focus-within:ring-blue-500 transition-all">
+                <div className="flex items-center gap-2.5 border border-slate-300 rounded-xl px-3.5 py-2.5 bg-slate-50 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition-all">
                   <Store className="w-4 h-4 text-slate-400 shrink-0" />
                   <input
                     type="text"
                     placeholder="e.g. keralamobile or email"
                     value={loginId}
                     onChange={e => setLoginId(e.target.value)}
-                    className="w-full bg-transparent text-sm font-medium text-slate-900 dark:text-white outline-none"
+                    className="w-full bg-transparent text-sm font-medium text-slate-900 outline-none"
                     autoFocus
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Password
                 </label>
-                <div className="flex items-center gap-2.5 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/80 focus-within:ring-2 focus-within:ring-blue-500 transition-all">
+                <div className="flex items-center gap-2.5 border border-slate-300 rounded-xl px-3.5 py-2.5 bg-slate-50 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition-all">
                   <Lock className="w-4 h-4 text-slate-400 shrink-0" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     placeholder="••••••••"
                     value={password}
                     onChange={e => setPassword(e.target.value)}
-                    className="w-full bg-transparent text-sm font-medium text-slate-900 dark:text-white outline-none"
+                    className="w-full bg-transparent text-sm font-medium text-slate-900 outline-none"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                    className="text-slate-400 hover:text-slate-600"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -318,7 +322,7 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
                   setMode(mode === 'login' ? 'register' : 'login');
                   setError(null);
                 }}
-                className="text-xs text-blue-600 dark:text-blue-400 hover:underline font-semibold"
+                className="text-xs text-blue-600 hover:underline font-semibold"
               >
                 {mode === 'login'
                   ? "Don't have a shop account? Register here"
@@ -328,8 +332,8 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
 
             {/* Divider */}
             <div className="relative flex items-center justify-center my-4">
-              <div className="border-t border-slate-200 dark:border-slate-800 w-full" />
-              <span className="bg-white dark:bg-slate-900 px-2.5 text-[11px] text-slate-400 font-medium uppercase tracking-wider absolute">
+              <div className="border-t border-slate-200 w-full" />
+              <span className="bg-white px-2.5 text-[11px] text-slate-400 font-medium uppercase tracking-wider absolute">
                 or continue with
               </span>
             </div>
@@ -340,7 +344,7 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
                 type="button"
                 onClick={handleGoogleSignIn}
                 disabled={loading}
-                className="py-2.5 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 active:scale-98 transition-all shadow-sm"
+                className="py-2.5 px-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 active:scale-98 transition-all shadow-sm"
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24">
                   <path
@@ -370,7 +374,7 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
                   setView('phone_number');
                 }}
                 disabled={loading}
-                className="py-2.5 px-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 active:scale-98 transition-all"
+                className="py-2.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 active:scale-98 transition-all"
               >
                 <Phone className="w-3.5 h-3.5 text-blue-500" />
                 <span>Phone OTP</span>
@@ -383,18 +387,18 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
         {view === 'phone_number' && (
           <form onSubmit={handleSendPhoneOtp} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5">
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                 Mobile Number
               </label>
-              <div className="flex items-center gap-2 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 focus-within:ring-2 focus-within:ring-blue-500">
-                <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">+91</span>
+              <div className="flex items-center gap-2 border border-slate-300 rounded-xl px-3.5 py-2.5 bg-slate-50 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500">
+                <span className="text-sm font-semibold text-slate-500">+91</span>
                 <input
                   type="tel"
                   placeholder="9876543210"
                   maxLength={10}
                   value={phoneNumber}
                   onChange={e => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
-                  className="w-full bg-transparent text-sm font-medium text-slate-900 dark:text-white outline-none"
+                  className="w-full bg-transparent text-sm font-medium text-slate-900 outline-none"
                   autoFocus
                 />
               </div>
@@ -410,7 +414,7 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
                   setView('password');
                 }}
                 disabled={loading}
-                className="w-1/3 py-2.5 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium text-xs hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="w-1/3 py-2.5 border border-slate-300 text-slate-700 rounded-xl font-medium text-xs hover:bg-slate-100"
               >
                 Back
               </button>
@@ -430,7 +434,7 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
         {view === 'phone_otp' && (
           <form onSubmit={handleVerifyPhoneOtp} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5">
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                 6-digit OTP Code
               </label>
               <input
@@ -439,7 +443,7 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
                 maxLength={6}
                 value={otpCode}
                 onChange={e => setOtpCode(e.target.value.replace(/\D/g, ''))}
-                className="w-full tracking-widest text-center text-lg font-bold border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2.5 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full tracking-widest text-center text-lg font-bold border border-slate-300 rounded-xl px-3 py-2.5 bg-slate-50 text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none"
                 autoFocus
               />
             </div>
@@ -452,7 +456,7 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
                   setView('phone_number');
                 }}
                 disabled={loading}
-                className="w-1/3 py-2.5 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium text-xs hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="w-1/3 py-2.5 border border-slate-300 text-slate-700 rounded-xl font-medium text-xs hover:bg-slate-100"
               >
                 Back
               </button>
@@ -469,8 +473,8 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
         )}
 
         {/* Legal & Trust Footer */}
-        <div className="mt-5 pt-3.5 border-t border-slate-100 dark:border-slate-800 text-center">
-          <p className="text-[11px] text-slate-400 dark:text-slate-500">
+        <div className="mt-5 pt-3.5 border-t border-slate-100 text-center">
+          <p className="text-[11px] text-slate-400">
             By continuing, you agree to our{' '}
             <button
               type="button"

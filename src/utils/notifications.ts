@@ -85,12 +85,15 @@ export async function triggerDailySummaryNotification(options?: {
     // 2. Fetch delivered repairs for today
     let deliveredCount = 0;
     try {
-      const repairs = await db.repairs.toArray();
-      deliveredCount = repairs.filter(
-        (r) => !r.deletedAt && r.status === 'delivered' && (r.deliveryDate === today || (!r.deliveryDate && r.updatedAt && new Date(r.updatedAt).toISOString().split('T')[0] === today))
+      const jobs = await db.jobs.toArray();
+      deliveredCount = jobs.filter(
+        (job) => !job.deletedAt && job.status === 'delivered' && (
+          (job.deliveredAt && getLocalDateString(new Date(job.deliveredAt)) === today) ||
+          (!job.deliveredAt && job.updatedAt && getLocalDateString(new Date(job.updatedAt)) === today)
+        )
       ).length;
     } catch {
-      // db.repairs might be empty or optional
+      // db.jobs might be empty or unavailable
     }
 
     const { title, body } = buildDailySummaryMessage({
