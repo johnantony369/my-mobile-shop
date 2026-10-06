@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, ZoomIn, ZoomOut } from 'lucide-react';
 
 export interface PhotoItem {
@@ -20,6 +20,21 @@ export const PhotoViewerModal: React.FC<PhotoViewerModalProps> = ({
   onClose,
 }) => {
   const [isZoomed, setIsZoomed] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen || typeof window === 'undefined') return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onClose]);
 
   if (!isOpen || !photo) return null;
 

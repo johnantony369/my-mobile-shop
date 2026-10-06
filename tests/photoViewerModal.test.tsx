@@ -42,9 +42,12 @@ class TestNode {
 let renderedTree: any = null;
 let currentZoomState = false;
 let onRerender: (() => void) | null = null;
+let activeCleanups: Array<() => void> = [];
 
 function render(componentElement: React.ReactElement) {
   currentZoomState = false;
+  activeCleanups.forEach((c) => c());
+  activeCleanups = [];
 
   const renderComponent = () => {
     // Inject dispatcher for React hooks support
@@ -60,7 +63,12 @@ function render(componentElement: React.ReactElement) {
           };
           return [currentZoomState, setState];
         },
-        useEffect: () => {},
+        useEffect: (cb: () => any) => {
+          const cleanup = cb();
+          if (typeof cleanup === 'function') {
+            activeCleanups.push(cleanup);
+          }
+        },
         useLayoutEffect: () => {},
         useCallback: (fn: any) => fn,
         useMemo: (fn: any) => fn(),
@@ -122,7 +130,45 @@ const fireEvent = {
   },
 };
 
+const eventListeners: Record<string, Function[]> = {};
+
+if (typeof (globalThis as any).window === 'undefined') {
+  (globalThis as any).window = {
+    addEventListener: (event: string, fn: Function) => {
+      eventListeners[event] = eventListeners[event] || [];
+      eventListeners[event].push(fn);
+    },
+    removeEventListener: (event: string, fn: Function) => {
+      if (eventListeners[event]) {
+        eventListeners[event] = eventListeners[event].filter((f) => f !== fn);
+      }
+    },
+    dispatchEvent: (event: any) => {
+      const type = event?.type || 'keydown';
+      (eventListeners[type] || []).forEach((fn) => fn(event));
+      return true;
+    },
+  };
+}
+
+if (typeof (globalThis as any).KeyboardEvent === 'undefined') {
+  (globalThis as any).KeyboardEvent = class KeyboardEvent {
+    type: string;
+    key: string;
+    constructor(type: string, init?: { key?: string }) {
+      this.type = type;
+      this.key = init?.key || '';
+    }
+  };
+}
+
 describe('PhotoViewerModal', () => {
+  beforeEach(() => {
+    activeCleanups.forEach((c) => c());
+    activeCleanups = [];
+    Object.keys(eventListeners).forEach((k) => delete eventListeners[k]);
+  });
+
   const mockPhoto = {
     photoId: 'p_1',
     dataUrl: 'data:image/jpeg;base64,abc',
@@ -246,5 +292,55 @@ describe('PhotoViewerModal', () => {
     fireEvent.click(zoomBtn);
     const imgAfter = screen.getByRole('img');
     expect(imgAfter.props.className).toContain('scale-150');
+  });
+
+  it('calls onClose when Escape key is pressed', () => {
+    const handleClose = vi.fn();
+    render(
+      <PhotoViewerModal
+        isOpen={true}
+        photo={mockPhoto}
+        onClose={handleClose}
+      />
+    );
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    expect(handleClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not call onClose when keys other than Escape are pressed', () => {
+    const handleClose = vi.fn();
+    render(
+      <PhotoViewerModal
+        isOpen={true}
+        photo={mockPhoto}
+        onClose={handleClose}
+      />
+    );
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    expect(handleClose).not.toHaveBeenCalled();
+  });
+
+  it('removes Escape key listener when unmounted or closed', () => {
+    const handleClose = vi.fn();
+    render(
+      <PhotoViewerModal
+        isOpen={true}
+        photo={mockPhoto}
+        onClose={handleClose}
+      />
+    );
+
+    render(
+      <PhotoViewerModal
+        isOpen={false}
+        photo={mockPhoto}
+        onClose={handleClose}
+      />
+    );
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    expect(handleClose).not.toHaveBeenCalled();
   });
 });

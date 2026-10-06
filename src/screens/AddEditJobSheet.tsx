@@ -200,6 +200,7 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
   const handleSave = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (isSubmittingRef.current) return;
+    if (isCompressing) return;
     isSubmittingRef.current = true;
     setIsSubmitting(true);
 
@@ -258,6 +259,7 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
           const targetCloudId = updatedJob.cloudId || jobToEdit.cloudId || generateCloudId();
           if (!updatedJob.cloudId) {
             await db.jobs.update(jobToEdit.id, { cloudId: targetCloudId });
+            updatedJob.cloudId = targetCloudId;
           }
           for (const pid of deletedPhotoIds) {
             await deleteJobPhoto(pid);
@@ -343,9 +345,9 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
             e.preventDefault();
             return handleSave();
           }}
-          disabled={isSubmitting}
+          disabled={isSubmitting || isCompressing}
           className={`w-full h-12 bg-iosBlue text-white rounded-[12px] font-semibold text-[16px] active:opacity-85 shadow-md shadow-iosBlue/20 transition-opacity ${
-            isSubmitting ? 'opacity-70 cursor-not-allowed' : ''
+            isSubmitting || isCompressing ? 'opacity-70 cursor-not-allowed' : ''
           }`}
         >
           {jobToEdit ? t('update_job', language) : t('save_job', language)}
