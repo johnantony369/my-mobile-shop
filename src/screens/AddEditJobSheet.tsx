@@ -3,12 +3,20 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { BottomSheet } from '../components/BottomSheet';
 import { Job, Language, StockItem } from '../types';
 import { t } from '../i18n';
-import { db, cleanIndianPhone, isValidIndianPhone } from '../db/db';
+import { db, cleanIndianPhone, isValidIndianPhone, generateCloudId, saveJobPhotos, getJobPhotos, deleteJobPhoto } from '../db/db';
 import { getLocalDateString } from '../utils/date';
 import { openWhatsAppNotification, buildIntakeSlipMessage, buildTrackingUrl } from '../utils/repairs';
+import { compressImageFile } from '../utils/image';
 import { pushSinglePublicRepair } from '../firebase/sync';
 import { StockPickerSheet } from '../components/StockPickerSheet';
-import { Wrench, X, Check, MessageSquare } from 'lucide-react';
+import { Wrench, X, Check, MessageSquare, Camera } from 'lucide-react';
+
+interface PendingPhoto {
+  photoId: string;
+  dataUrl: string;
+  label?: string;
+  tag?: 'intake' | 'ready';
+}
 
 interface AddEditJobSheetProps {
   isOpen: boolean;
@@ -38,6 +46,10 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
   const [phoneError, setPhoneError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [sendWhatsAppSlip, setSendWhatsAppSlip] = useState(true);
+  const [photos, setPhotos] = useState<PendingPhoto[]>([]);
+  const [deletedPhotoIds, setDeletedPhotoIds] = useState<string[]>([]);
+  const [isCompressing, setIsCompressing] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isSubmittingRef = useRef(false);
 
@@ -72,6 +84,25 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
         setAdvanceStr(jobToEdit.advance ? jobToEdit.advance.toString() : '');
         setExpectedDate(jobToEdit.expectedDate || '');
         setImei(jobToEdit.imei || '');
+
+        if (jobToEdit.cloudId) {
+          getJobPhotos(jobToEdit.cloudId)
+            .then((existingPhotos) => {
+              setPhotos(
+                existingPhotos.map((p) => ({
+                  photoId: p.photoId,
+                  dataUrl: p.dataUrl || p.downloadUrl || '',
+                  label: p.label,
+                }))
+              );
+            })
+            .catch((err) => {
+              console.error('Failed to load existing job photos:', err);
+              setPhotos([]);
+            });
+        } else {
+          setPhotos([]);
+        }
       } else {
         setCustomerName('');
         setPhone('');
@@ -81,7 +112,9 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
         setAdvanceStr('');
         setExpectedDate('');
         setImei('');
+        setPhotos([]);
       }
+      setDeletedPhotoIds([]);
       setSelectedStockItem(null);
       setPhoneError(null);
       setFormError(null);
@@ -94,6 +127,56 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
       return () => clearTimeout(timer);
     }
   }, [isOpen, jobToEdit]);
+
+  const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    if (photos.length >= 4) {
+      if (typeof alert !== 'undefined') alert('Maximum 4 photos allowed');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    const availableSlots = 4 - photos.length;
+    const fileList = Array.from(files).slice(0, availableSlots);
+
+    if (files.length > availableSlots) {
+      if (typeof alert !== 'undefined') alert('Maximum 4 photos allowed');
+    }
+
+    setIsCompressing(true);
+    try {
+      for (const file of fileList) {
+        try {
+          const { dataUrl } = await compressImageFile(file);
+          setPhotos((prev) => {
+            if (prev.length >= 4) return prev;
+            return [
+              ...prev,
+              {
+                photoId: generateCloudId(),
+                dataUrl,
+                tag: 'intake',
+              },
+            ];
+          });
+        } catch (err) {
+          console.error('Error compressing intake photo:', err);
+        }
+      }
+    } finally {
+      setIsCompressing(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleRemovePhoto = (photoIdToRemove: string) => {
+    setPhotos((prev) => prev.filter((p) => p.photoId !== photoIdToRemove));
+    setDeletedPhotoIds((prev) => [...prev, photoIdToRemove]);
+  };
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -171,7 +254,19 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
           imei: imei.trim() || undefined,
         });
         const updatedJob = await db.jobs.get(jobToEdit.id);
-        if (updatedJob) pushSinglePublicRepair(updatedJob).catch(() => {});
+        if (updatedJob) {
+          const targetCloudId = updatedJob.cloudId || jobToEdit.cloudId || generateCloudId();
+          if (!updatedJob.cloudId) {
+            await db.jobs.update(jobToEdit.id, { cloudId: targetCloudId });
+          }
+          for (const pid of deletedPhotoIds) {
+            await deleteJobPhoto(pid);
+          }
+          if (photos.length > 0) {
+            await saveJobPhotos(targetCloudId, photos);
+          }
+          pushSinglePublicRepair(updatedJob).catch(() => {});
+        }
         onSaved(jobToEdit.id);
       } else {
         const id = await db.jobs.add({
@@ -208,12 +303,21 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
         }
 
         const savedJob = await db.jobs.get(id);
-        if (savedJob) pushSinglePublicRepair(savedJob).catch(() => {});
+        if (savedJob) {
+          if (savedJob.cloudId && photos.length > 0) {
+            await saveJobPhotos(savedJob.cloudId, photos);
+          }
+          pushSinglePublicRepair(savedJob).catch(() => {});
+        }
 
         // Send WhatsApp intake slip if selected
         if (sendWhatsAppSlip && savedJob) {
           const trackingUrl = savedJob.cloudId ? buildTrackingUrl(savedJob.cloudId) : undefined;
-          openWhatsAppNotification(savedJob, shopName || 'My Mobile Shop', buildIntakeSlipMessage(savedJob, shopName || 'My Mobile Shop', trackingUrl));
+          openWhatsAppNotification(
+            savedJob,
+            shopName || 'My Mobile Shop',
+            buildIntakeSlipMessage(savedJob, shopName || 'My Mobile Shop', trackingUrl, photos.length)
+          );
         }
 
         onSaved(id);
@@ -237,7 +341,7 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
           type="button"
           onClick={(e) => {
             e.preventDefault();
-            handleSave();
+            return handleSave();
           }}
           disabled={isSubmitting}
           className={`w-full h-12 bg-iosBlue text-white rounded-[12px] font-semibold text-[16px] active:opacity-85 shadow-md shadow-iosBlue/20 transition-opacity ${
@@ -248,7 +352,7 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
         </button>
       }
     >
-      <form id="add-job-form" onSubmit={(e) => { e.preventDefault(); handleSave(e); }} className="space-y-3.5 pt-1">
+      <form id="add-job-form" onSubmit={(e) => { e.preventDefault(); return handleSave(e); }} className="space-y-3.5 pt-1">
         {formError && (
           <div className="bg-red-50 text-iosRed p-2.5 rounded-[10px] text-xs font-medium">
             {formError}
@@ -400,6 +504,71 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
               </span>
             </div>
           )}
+        </div>
+
+        {/* Condition Photos (Max 4) */}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between ml-1">
+            <label className="text-xs font-semibold text-[#8E8E93]">
+              Condition Photos (Max 4)
+            </label>
+            <span className="text-[11px] text-[#8E8E93] font-medium">
+              {photos.length}/4
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+            {photos.map((photo, index) => (
+              <div
+                key={photo.photoId || index}
+                className="relative w-16 h-16 rounded-[10px] overflow-hidden border border-black/[0.08] bg-[#E5E5EA] shrink-0"
+              >
+                <img
+                  src={photo.dataUrl}
+                  alt={photo.label || `Condition photo ${index + 1}`}
+                  className="w-full h-full object-cover select-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleRemovePhoto(photo.photoId)}
+                  aria-label={`Remove photo ${index + 1}`}
+                  className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 hover:bg-black/80 active:scale-95 text-white flex items-center justify-center transition-all shadow-sm"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+
+            {photos.length < 4 && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (photos.length >= 4) {
+                    if (typeof alert !== 'undefined') alert('Maximum 4 photos allowed');
+                    return;
+                  }
+                  fileInputRef.current?.click();
+                }}
+                disabled={isCompressing}
+                aria-label="Add intake photo"
+                className="w-16 h-16 rounded-[10px] border-2 border-dashed border-[#C7C7CC] hover:border-iosBlue bg-[#F2F2F7] active:bg-[#E5E5EA] flex flex-col items-center justify-center text-[#8E8E93] hover:text-iosBlue transition-colors shrink-0"
+              >
+                <Camera className="w-5 h-5" />
+                <span className="text-[10px] font-medium mt-1">
+                  {isCompressing ? '...' : 'Add'}
+                </span>
+              </button>
+            )}
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handlePhotoSelect}
+              className="hidden"
+            />
+          </div>
         </div>
 
         {/* Money Row: Estimate & Advance */}
