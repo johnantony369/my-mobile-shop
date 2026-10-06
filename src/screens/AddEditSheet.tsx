@@ -9,7 +9,7 @@ import { getLocalDateString } from '../utils/date';
 import { buildBillText, buildWhatsAppUrl } from '../utils/billing';
 import { shareSummary } from '../utils/share';
 import { StockPickerSheet } from '../components/StockPickerSheet';
-import { Package, X, Check, Trash2, Receipt, Share2, Download } from 'lucide-react';
+import { Package, X, Check, Trash2, Receipt, Share2, Download, ArrowRight, ArrowLeft } from 'lucide-react';
 import { downloadBillPDF } from '../utils/pdf';
 
 interface AddEditSheetProps {
@@ -52,6 +52,7 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
   const effectiveShopName = shopName || settings?.shopName || 'My Mobile Shop';
   const effectiveShopAddress = shopAddress || settings?.shopAddress;
 
+  const [step, setStep] = useState<'amount' | 'details'>(entryToEdit ? 'details' : 'amount');
   const [type, setType] = useState<EntryType>('in');
   const [amountStr, setAmountStr] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
@@ -89,9 +90,31 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
 
   const amountInputRef = useRef<HTMLInputElement>(null);
 
+  const parsedAmount = parseFloat(amountStr.replace(/,/g, ''));
+  const isAmountValid = !isNaN(parsedAmount) && parsedAmount > 0;
+
+  const handleNextStep = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!isAmountValid) {
+      setError(t('amount_error', language));
+      return;
+    }
+    setError(null);
+    setStep('details');
+  };
+
+  const handlePrevStep = () => {
+    setError(null);
+    setStep('amount');
+    setTimeout(() => {
+      amountInputRef.current?.focus();
+    }, 100);
+  };
+
   useEffect(() => {
     if (isOpen) {
       if (entryToEdit) {
+        setStep('details');
         setType(entryToEdit.type);
         setAmountStr(entryToEdit.amount.toString());
         setPaymentMethod(entryToEdit.paymentMethod || 'cash');
@@ -112,6 +135,7 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
         }
       } else {
         // Reset defaults
+        setStep('amount');
         setType('in');
         setAmountStr('');
         setPaymentMethod('cash');
@@ -327,8 +351,24 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
               Done
             </button>
           </div>
+        ) : step === 'amount' ? (
+          <div className="w-full">
+            <button
+              type="button"
+              onClick={handleNextStep}
+              disabled={!isAmountValid || isReadOnly}
+              className={`w-full h-12 rounded-[14px] font-semibold text-[16px] text-white flex items-center justify-center space-x-2 transition-all ${
+                !isAmountValid || isReadOnly
+                  ? 'bg-gray-300 cursor-not-allowed text-gray-500'
+                  : 'bg-iosBlue active:scale-98 shadow-md shadow-iosBlue/25'
+              }`}
+            >
+              <span>Continue</span>
+              <ArrowRight className="w-5 h-5" />
+            </button>
+          </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-2 w-full">
             {/* Generate Bill / View Bill Button for In Entries */}
             {entryToEdit && type === 'in' && (
               <button
@@ -386,47 +426,104 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
             </button>
           </div>
         </div>
+      ) : step === 'amount' ? (
+        <div className="space-y-6 pt-2 pb-6 text-center animate-fade-in">
+          {isReadOnly && (
+            <div className="bg-red-50 text-iosRed p-3 rounded-[10px] text-xs font-medium">
+              {t('read_only_locked_msg', language)}
+            </div>
+          )}
+
+          {/* 1. Type Segmented Control (In / Out) */}
+          <div className="max-w-xs mx-auto">
+            <SegmentedControl<EntryType>
+              value={type}
+              onChange={(val) => setType(val)}
+              size="md"
+              options={[
+                { value: 'in', label: t('type_in_label', language) },
+                { value: 'out', label: t('type_out_label', language) },
+              ]}
+            />
+          </div>
+
+          {/* 2. Giant Amount Display */}
+          <div className="py-8 flex flex-col items-center justify-center">
+            <span className="text-xs font-semibold text-[#8E8E93] uppercase tracking-wider mb-2">
+              {t('amount_label', language)}
+            </span>
+            <div className="flex items-center justify-center space-x-1">
+              <span className="text-4xl sm:text-5xl font-black text-black select-none">₹</span>
+              <input
+                ref={amountInputRef}
+                type="text"
+                inputMode="decimal"
+                value={amountStr}
+                onChange={handleAmountChange}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleNextStep();
+                  }
+                }}
+                placeholder="0"
+                disabled={isReadOnly}
+                className="text-5xl sm:text-6xl font-black text-black bg-transparent w-64 text-center focus:outline-none placeholder:text-gray-300 tracking-tight"
+              />
+            </div>
+            {error && <p className="text-xs text-iosRed font-medium mt-3">{error}</p>}
+          </div>
+
+          <p className="text-xs text-[#8E8E93] max-w-xs mx-auto">
+            Enter amount, then tap continue to select payment mode and optional details
+          </p>
+        </div>
       ) : (
-      <form id="add-entry-form" onSubmit={(e) => { e.preventDefault(); handleSave(e); }} className="space-y-4 pt-1">
+      <form id="add-entry-form" onSubmit={(e) => { e.preventDefault(); handleSave(e); }} className="space-y-4 pt-1 animate-fade-in">
         {isReadOnly && (
           <div className="bg-red-50 text-iosRed p-3 rounded-[10px] text-xs font-medium">
             {t('read_only_locked_msg', language)}
           </div>
         )}
 
-        {/* 1. Large Amount Field FIRST */}
-        <div className="bg-[#F2F2F7] rounded-[14px] p-3 text-center border border-black/[0.04]">
-          <span className="text-xs font-semibold text-[#8E8E93] uppercase tracking-wider block mb-1">
-            {t('amount_label', language)}
-          </span>
-          <div className="flex items-center justify-center space-x-1">
-            <span className="text-3xl font-bold text-black select-none">₹</span>
-            <input
-              ref={amountInputRef}
-              type="text"
-              inputMode="decimal"
-              value={amountStr}
-              onChange={handleAmountChange}
-              placeholder="0"
-              disabled={isReadOnly}
-              className="text-4xl font-extrabold text-black bg-transparent w-48 text-center focus:outline-none placeholder:text-gray-300"
-            />
-          </div>
-          {error && <p className="text-xs text-iosRed font-medium mt-1">{error}</p>}
+        {/* Top Return Chip (Change Amount) */}
+        <div className="flex items-center justify-between bg-blue-50/70 border border-blue-100 rounded-[12px] p-2.5 px-3">
+          <button
+            type="button"
+            onClick={handlePrevStep}
+            className="flex items-center space-x-1.5 text-iosBlue hover:opacity-80 active:scale-95 transition-all text-xs font-semibold"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Change Amount</span>
+          </button>
+          <button
+            type="button"
+            onClick={handlePrevStep}
+            className="flex items-center space-x-1 text-sm font-bold text-black hover:opacity-80 transition-opacity"
+          >
+            <span>₹{amountStr || '0'}</span>
+            <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${type === 'in' ? 'bg-green-100 text-iosGreen' : 'bg-red-100 text-iosRed'}`}>
+              {type === 'in' ? 'In (Sale)' : 'Out (Expense)'}
+            </span>
+          </button>
         </div>
 
-        {/* 2. Type Segmented Control (In / Out) */}
-        <div>
-          <SegmentedControl<EntryType>
-            value={type}
-            onChange={(val) => setType(val)}
-            size="md"
-            options={[
-              { value: 'in', label: t('type_in_label', language) },
-              { value: 'out', label: t('type_out_label', language) },
-            ]}
-          />
-        </div>
+        {error && <p className="text-xs text-iosRed font-medium mt-1">{error}</p>}
+
+        {/* If editing an existing entry, show quick type toggle */}
+        {entryToEdit && (
+          <div>
+            <SegmentedControl<EntryType>
+              value={type}
+              onChange={(val) => setType(val)}
+              size="sm"
+              options={[
+                { value: 'in', label: t('type_in_label', language) },
+                { value: 'out', label: t('type_out_label', language) },
+              ]}
+            />
+          </div>
+        )}
 
         {/* 3. Payment Method (If In) */}
         {type === 'in' && (
