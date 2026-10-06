@@ -2,10 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { dbFirestore, isFirebaseConfigured } from '../firebase/config';
-import { db } from '../db/db';
+import { db, getJobPhotos } from '../db/db';
 import { PublicRepairTrack } from '../types';
 import { formatINR } from '../i18n';
 import { buildPublicRepairTrack } from '../firebase/sync';
+import { PhotoViewerModal, PhotoItem } from '../components/PhotoViewerModal';
 import {
   Smartphone,
   CheckCircle2,
@@ -18,6 +19,7 @@ import {
   AlertTriangle,
   RefreshCw,
   ShieldCheck,
+  Camera,
 } from 'lucide-react';
 
 function formatDateTime(ms?: number | null): string {
@@ -48,6 +50,12 @@ export const TrackRepairView: React.FC<TrackRepairViewProps> = ({
   const isDelivered = repair.status === 'delivered';
   const isReady = repair.status === 'ready';
   const isInProgress = repair.status === 'waiting' || repair.status === 'received';
+
+  const [selectedPhoto, setSelectedPhoto] = useState<PhotoItem | null>(null);
+
+  const intakePhotos = (repair.photos || []).filter((p) => !p.tag || p.tag === 'intake');
+  const readyPhotos = (repair.photos || []).filter((p) => p.tag === 'ready');
+  const hasPhotos = (repair.photos || []).length > 0;
 
   // Step active checks:
   // 1: Received is always done
@@ -289,7 +297,7 @@ export const TrackRepairView: React.FC<TrackRepairViewProps> = ({
                   Delivered
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
-                  Handed over to customer. Thank you for your visit!
+                  Thank you for choosing us
                 </p>
                 {repair.deliveredAt && (
                   <span className="text-[11px] text-slate-400 font-medium block mt-1">
@@ -325,7 +333,7 @@ export const TrackRepairView: React.FC<TrackRepairViewProps> = ({
             <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
               <div>
                 <span className="text-sm font-bold text-slate-900 block leading-tight">
-                  {isDelivered ? 'Total Amount Paid' : 'Balance Due on Pickup'}
+                  {isDelivered ? 'Total Amount Paid' : 'Amount To Pay'}
                 </span>
                 <span className="text-[11px] text-slate-400">
                   {isDelivered ? 'Settled on delivery' : 'Payable upon collection'}
@@ -337,6 +345,74 @@ export const TrackRepairView: React.FC<TrackRepairViewProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Device Photos Card (Intake & Ready) */}
+        {hasPhotos && (
+          <div className="bg-white rounded-[20px] p-5 shadow-sm border border-black/[0.04] space-y-4">
+            <div className="flex items-center space-x-2">
+              <Camera className="w-4 h-4 text-iosBlue" />
+              <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                Device Condition &amp; Work Photos
+              </h2>
+            </div>
+
+            {/* Intake Photos */}
+            {intakePhotos.length > 0 && (
+              <div>
+                <span className="text-[12px] font-bold text-slate-700 block mb-2">
+                  Received Condition ({intakePhotos.length})
+                </span>
+                <div className="grid grid-cols-4 gap-2">
+                  {intakePhotos.map((p) => {
+                    const src = p.dataUrl || p.downloadUrl || '';
+                    return (
+                      <button
+                        key={p.photoId}
+                        type="button"
+                        onClick={() => setSelectedPhoto(p)}
+                        className="aspect-square rounded-[12px] overflow-hidden bg-slate-100 border border-slate-200/80 active:scale-95 transition-transform relative group focus:outline-hidden"
+                      >
+                        <img
+                          src={src}
+                          alt={p.label || 'Intake Condition'}
+                          className="w-full h-full object-cover"
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Ready Photos */}
+            {readyPhotos.length > 0 && (
+              <div>
+                <span className="text-[12px] font-bold text-emerald-700 block mb-2">
+                  Repaired / Ready for Pickup ({readyPhotos.length})
+                </span>
+                <div className="grid grid-cols-4 gap-2">
+                  {readyPhotos.map((p) => {
+                    const src = p.dataUrl || p.downloadUrl || '';
+                    return (
+                      <button
+                        key={p.photoId}
+                        type="button"
+                        onClick={() => setSelectedPhoto(p)}
+                        className="aspect-square rounded-[12px] overflow-hidden bg-emerald-50/50 border border-emerald-300 active:scale-95 transition-transform relative group focus:outline-hidden"
+                      >
+                        <img
+                          src={src}
+                          alt={p.label || 'Repaired Device'}
+                          className="w-full h-full object-cover"
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Shop Contact Card */}
         <div className="bg-white rounded-[20px] p-5 shadow-sm border border-black/[0.04]">
@@ -393,6 +469,12 @@ export const TrackRepairView: React.FC<TrackRepairViewProps> = ({
           </p>
         </div>
       </main>
+
+      <PhotoViewerModal
+        isOpen={Boolean(selectedPhoto)}
+        photo={selectedPhoto}
+        onClose={() => setSelectedPhoto(null)}
+      />
     </div>
   );
 };
@@ -416,7 +498,8 @@ export const TrackRepairScreen: React.FC = () => {
       const localJob = await db.jobs.where('cloudId').equals(trackingId).first();
       if (localJob) {
         const settings = await db.settings.toCollection().first();
-        setRepair(buildPublicRepairTrack(localJob, settings));
+        const photos = await getJobPhotos(trackingId);
+        setRepair(buildPublicRepairTrack(localJob, settings, photos));
         setLoading(false);
       }
 

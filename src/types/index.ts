@@ -61,6 +61,14 @@ export interface PublicRepairTrack {
   advance?: number;
   balanceDue?: number;
   finalAmount?: number | null;
+  photos?: Array<{
+    photoId: string;
+    dataUrl?: string;
+    downloadUrl?: string;
+    label?: string;
+    tag?: 'intake' | 'ready';
+    createdAt: number;
+  }>;
   updatedAt: string;
 }
 
@@ -146,6 +154,7 @@ export interface JobPhoto extends SyncMetadata {
   dataUrl?: string;
   downloadUrl?: string;
   label?: string;
+  tag?: 'intake' | 'ready';
   createdAt: number;
   uploadedAt?: number;
   uploadStatus: 'pending' | 'uploading' | 'uploaded' | 'failed';

@@ -89,7 +89,8 @@ describe('Repair Tracking Feature', () => {
     expect(htmlReceived).toContain('Under Service &amp; Diagnosis');
     expect(htmlReceived).toContain('Ready for Pickup');
     expect(htmlReceived).toContain('Delivered');
-    expect(htmlReceived).toContain('Balance Due on Pickup');
+    expect(htmlReceived).toContain('Thank you for choosing us');
+    expect(htmlReceived).toContain('Amount To Pay');
 
     // Test Ready state
     const htmlReady = renderToString(

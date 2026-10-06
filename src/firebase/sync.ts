@@ -7,7 +7,7 @@ import {
   onSnapshot,
   Unsubscribe
 } from 'firebase/firestore';
-import { db, getAppSettings, generateCloudId } from '../db/db';
+import { db, getAppSettings, generateCloudId, getJobPhotos } from '../db/db';
 import { dbFirestore, auth, isFirebaseConfigured } from './config';
 import { Entry, Job, AppSettings, StockItem, Bill, PublicRepairTrack } from '../types';
 import { upsertAccountSummary, calculateDataSize } from './admin';
@@ -22,18 +22,37 @@ export type SyncState = 'idle' | 'syncing' | 'synced' | 'offline' | 'error';
 export function cleanForFirestore<T extends Record<string, any>>(obj: T): Record<string, any> {
   const clean: Record<string, any> = {};
   for (const [key, value] of Object.entries(obj)) {
-    if (value !== undefined) {
+    if (value === undefined) continue;
+    if (Array.isArray(value)) {
+      clean[key] = value.map((item) =>
+        item && typeof item === 'object' ? cleanForFirestore(item) : item
+      );
+    } else if (value && typeof value === 'object' && !(value instanceof Date)) {
+      clean[key] = cleanForFirestore(value);
+    } else {
       clean[key] = value;
     }
   }
   return clean;
 }
 
-export function buildPublicRepairTrack(job: Job, settings?: AppSettings | null): PublicRepairTrack {
+export function buildPublicRepairTrack(
+  job: Job,
+  settings?: AppSettings | null,
+  photos?: Array<{
+    photoId: string;
+    dataUrl?: string;
+    downloadUrl?: string;
+    label?: string;
+    tag?: 'intake' | 'ready';
+    createdAt: number;
+  }>
+): PublicRepairTrack {
   return {
     cloudId: job.cloudId || '',
     shopName: settings?.shopName || 'Mobile Repair Center',
     shopAddress: settings?.shopAddress || undefined,
+    shopPhone: undefined,
     customerName: job.customerName,
     model: job.model,
     complaint: job.complaint,
@@ -46,6 +65,7 @@ export function buildPublicRepairTrack(job: Job, settings?: AppSettings | null):
     advance: job.advance,
     balanceDue: Math.max(0, (job.estimate || 0) - (job.advance || 0)),
     finalAmount: job.finalAmount,
+    photos: photos && photos.length > 0 ? photos : undefined,
     updatedAt: job.updatedAt || new Date().toISOString(),
   };
 }
@@ -60,7 +80,8 @@ export async function pushSinglePublicRepair(job: Job): Promise<void> {
       await deleteDoc(publicDocRef);
     } else {
       const { setDoc } = await import('firebase/firestore');
-      const publicTrack = buildPublicRepairTrack(job, settings);
+      const photos = await getJobPhotos(job.cloudId);
+      const publicTrack = buildPublicRepairTrack(job, settings, photos);
       await setDoc(publicDocRef, cleanForFirestore(publicTrack), { merge: true });
     }
   } catch (err) {

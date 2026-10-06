@@ -2,10 +2,14 @@ import React, { useState } from 'react';
 import { BottomSheet } from '../components/BottomSheet';
 import { Job, Language, JobStatus } from '../types';
 import { t, formatINR } from '../i18n';
-import { db, calculateDaysInShop, cleanIndianPhone } from '../db/db';
+import { db, calculateDaysInShop, cleanIndianPhone, generateCloudId, saveJobPhotos, getJobPhotos } from '../db/db';
 import { formatTime } from '../utils/date';
 import { openWhatsAppNotification, copyNotificationMessage, buildTrackingUrl, buildJobNotificationMessage } from '../utils/repairs';
 import { pushSinglePublicRepair } from '../firebase/sync';
+import { compressImageFile } from '../utils/image';
+import { Camera } from 'lucide-react';
+import { PhotoViewerModal, PhotoItem } from '../components/PhotoViewerModal';
+import { JobPhoto } from '../types';
 import {
   Phone,
   MessageSquare,
@@ -46,8 +50,21 @@ export const JobDetailSheet: React.FC<JobDetailSheetProps> = ({
 }) => {
   const [showOtherStatuses, setShowOtherStatuses] = useState(false);
   const [showReturnConfirm, setShowReturnConfirm] = useState(false);
+  const [showReadyPhotoPrompt, setShowReadyPhotoPrompt] = useState(false);
+  const [isUploadingReadyPhoto, setIsUploadingReadyPhoto] = useState(false);
+  const readyFileInputRef = React.useRef<HTMLInputElement>(null);
   const [copiedToast, setCopiedToast] = useState(false);
   const [copiedLinkToast, setCopiedLinkToast] = useState(false);
+  const [photos, setPhotos] = useState<JobPhoto[]>([]);
+  const [selectedViewerPhoto, setSelectedViewerPhoto] = useState<PhotoItem | null>(null);
+
+  React.useEffect(() => {
+    if (isOpen && job?.cloudId) {
+      getJobPhotos(job.cloudId).then(setPhotos).catch(() => {});
+    } else {
+      setPhotos([]);
+    }
+  }, [isOpen, job?.cloudId]);
 
   if (!job) return null;
 
@@ -73,6 +90,61 @@ export const JobDetailSheet: React.FC<JobDetailSheetProps> = ({
 
   const badge = getStatusBadge(job.status);
 
+  const confirmMarkReady = async () => {
+    if (!job.id) return;
+    const now = Date.now();
+    await db.jobs.update(job.id, { status: 'ready', readyAt: now });
+    pushSinglePublicRepair({ ...job, status: 'ready', readyAt: now }).catch(() => {});
+    setShowReadyPhotoPrompt(false);
+    onJobUpdated();
+  };
+
+  const handleReadyPhotoCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0 || !job.id) return;
+
+    setIsUploadingReadyPhoto(true);
+    try {
+      const targetCloudId = job.cloudId || generateCloudId();
+      if (!job.cloudId) {
+        await db.jobs.update(job.id, { cloudId: targetCloudId });
+      }
+
+      for (const file of Array.from(files)) {
+        try {
+          const { dataUrl } = await compressImageFile(file);
+          await saveJobPhotos(targetCloudId, [
+            {
+              photoId: generateCloudId(),
+              dataUrl,
+              tag: 'ready',
+              label: 'Repaired Condition',
+            },
+          ]);
+        } catch (err) {
+          console.error('Error compressing ready photo:', err);
+        }
+      }
+
+      // If not already ready, mark ready as well
+      const now = Date.now();
+      const updates: Partial<Job> = {
+        status: 'ready',
+        readyAt: job.readyAt || now,
+      };
+      await db.jobs.update(job.id, updates);
+      const freshJob = await db.jobs.get(job.id);
+      if (freshJob) {
+        pushSinglePublicRepair(freshJob).catch(() => {});
+      }
+      setShowReadyPhotoPrompt(false);
+      onJobUpdated();
+    } finally {
+      setIsUploadingReadyPhoto(false);
+      if (readyFileInputRef.current) readyFileInputRef.current.value = '';
+    }
+  };
+
   // Status advancement
   const handleAdvanceStatus = async () => {
     if (!job.id) return;
@@ -81,10 +153,7 @@ export const JobDetailSheet: React.FC<JobDetailSheetProps> = ({
       pushSinglePublicRepair({ ...job, status: 'waiting' }).catch(() => {});
       onJobUpdated();
     } else if (job.status === 'waiting') {
-      const now = Date.now();
-      await db.jobs.update(job.id, { status: 'ready', readyAt: now });
-      pushSinglePublicRepair({ ...job, status: 'ready', readyAt: now }).catch(() => {});
-      onJobUpdated();
+      setShowReadyPhotoPrompt(true);
     } else if (job.status === 'ready') {
       onOpenDelivery(job);
     }
@@ -92,10 +161,12 @@ export const JobDetailSheet: React.FC<JobDetailSheetProps> = ({
 
   const handleSetStatus = async (newStatus: 'received' | 'waiting' | 'ready') => {
     if (!job.id) return;
-    const updates: Partial<Job> = { status: newStatus };
-    if (newStatus === 'ready' && !job.readyAt) {
-      updates.readyAt = Date.now();
+    if (newStatus === 'ready') {
+      setShowOtherStatuses(false);
+      setShowReadyPhotoPrompt(true);
+      return;
     }
+    const updates: Partial<Job> = { status: newStatus };
     await db.jobs.update(job.id, updates);
     pushSinglePublicRepair({ ...job, ...updates, status: newStatus }).catch(() => {});
     setShowOtherStatuses(false);
@@ -173,6 +244,46 @@ export const JobDetailSheet: React.FC<JobDetailSheetProps> = ({
             )}
           </div>
         </div>
+
+        {/* Condition & Repaired Photos Card */}
+        {photos.length > 0 && (
+          <div className="bg-white rounded-[14px] p-4 shadow-sm border border-black/[0.04] space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-[#8E8E93] uppercase tracking-wider block">
+                Condition &amp; Work Photos ({photos.length})
+              </span>
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+              {photos.map((p) => {
+                const src = p.dataUrl || p.downloadUrl || '';
+                const isReadyPhoto = p.tag === 'ready';
+                return (
+                  <button
+                    key={p.photoId}
+                    type="button"
+                    onClick={() => setSelectedViewerPhoto(p)}
+                    className={`relative shrink-0 w-16 h-16 rounded-[10px] overflow-hidden border active:scale-95 transition-transform ${
+                      isReadyPhoto ? 'border-emerald-400 bg-emerald-50' : 'border-gray-200 bg-gray-100'
+                    }`}
+                  >
+                    <img
+                      src={src}
+                      alt={p.label || 'Job Photo'}
+                      className="w-full h-full object-cover"
+                    />
+                    <span
+                      className={`absolute bottom-0 inset-x-0 text-[8px] font-bold py-0.5 text-center text-white truncate ${
+                        isReadyPhoto ? 'bg-emerald-600/90' : 'bg-black/60'
+                      }`}
+                    >
+                      {isReadyPhoto ? 'Ready' : 'Intake'}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Customer Live Tracking Link Card */}
         {trackingUrl && (
@@ -429,15 +540,38 @@ export const JobDetailSheet: React.FC<JobDetailSheetProps> = ({
             )}
 
             {job.status === 'ready' && (
-              <button
-                type="button"
-                onClick={() => onOpenDelivery(job)}
-                className="w-full h-12 bg-iosBlue text-white rounded-[12px] font-semibold text-[15px] flex items-center justify-center space-x-1.5 shadow-md shadow-iosBlue/20 active:opacity-85"
-              >
-                <span>{t('mark_delivered_action', language)}</span>
-                <Check className="w-4 h-4" />
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => onOpenDelivery(job)}
+                  className="w-full h-12 bg-iosBlue text-white rounded-[12px] font-semibold text-[15px] flex items-center justify-center space-x-1.5 shadow-md shadow-iosBlue/20 active:opacity-85"
+                >
+                  <span>{t('mark_delivered_action', language)}</span>
+                  <Check className="w-4 h-4" />
+                </button>
+
+                {/* Take Photo button above other status button */}
+                <button
+                  type="button"
+                  disabled={isUploadingReadyPhoto}
+                  onClick={() => readyFileInputRef.current?.click()}
+                  className="w-full py-2.5 bg-emerald-50 text-emerald-800 border border-emerald-200/80 rounded-[10px] text-xs font-bold flex items-center justify-center space-x-1.5 active:bg-emerald-100 transition-colors"
+                >
+                  <Camera className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>{isUploadingReadyPhoto ? 'Processing photo...' : 'Take Photo (Repaired Device)'}</span>
+                </button>
+              </>
             )}
+
+            {/* Hidden file input for ready photo capture */}
+            <input
+              ref={readyFileInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={handleReadyPhotoCapture}
+            />
 
             {/* Other status dropdown/menu button */}
             <div className="relative">
@@ -544,6 +678,61 @@ export const JobDetailSheet: React.FC<JobDetailSheetProps> = ({
         isDestructive={true}
         onConfirm={handleReturnWithoutRepair}
         onCancel={() => setShowReturnConfirm(false)}
+      />
+
+      {/* Mark as Ready Photo Prompt Modal */}
+      {showReadyPhotoPrompt && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-black/45 backdrop-blur-[3px] transition-opacity"
+            onClick={() => setShowReadyPhotoPrompt(false)}
+          />
+          <div className="relative z-10 w-full max-w-[310px] bg-white/95 rounded-[16px] shadow-2xl overflow-hidden text-center transform transition-all animate-dialog-pop">
+            <div className="pt-5 pb-4 px-4">
+              <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-2.5">
+                <Camera className="w-5 h-5" />
+              </div>
+              <h4 className="text-[17px] font-bold text-black tracking-tight">Mark as Ready</h4>
+              <p className="mt-1 text-[13px] text-slate-600 leading-relaxed">
+                Take photo of repaired phone?
+              </p>
+            </div>
+
+            <div className="border-t border-slate-200/80 flex flex-col divide-y divide-slate-200/80">
+              <button
+                type="button"
+                onClick={() => {
+                  readyFileInputRef.current?.click();
+                }}
+                className="w-full py-3 text-[16px] font-bold text-iosBlue hover:bg-black/[0.03] active:bg-black/[0.06] transition-colors flex items-center justify-center space-x-1.5"
+              >
+                <Camera className="w-4 h-4 text-iosBlue" />
+                <span>Take Photo</span>
+              </button>
+              <button
+                type="button"
+                onClick={confirmMarkReady}
+                className="w-full py-3 text-[15px] font-medium text-slate-700 hover:bg-black/[0.03] active:bg-black/[0.06] transition-colors"
+              >
+                Skip / Mark Ready
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowReadyPhotoPrompt(false)}
+                className="w-full py-2.5 text-[14px] text-slate-400 hover:bg-black/[0.03] active:bg-black/[0.06] transition-colors"
+              >
+                {t('cancel_action', language)}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Full-Screen Photo Viewer Modal */}
+      <PhotoViewerModal
+        isOpen={Boolean(selectedViewerPhoto)}
+        photo={selectedViewerPhoto}
+        onClose={() => setSelectedViewerPhoto(null)}
       />
     </BottomSheet>
   );
