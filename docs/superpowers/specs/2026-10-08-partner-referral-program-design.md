@@ -2,7 +2,7 @@
 
 **Date:** 2026-10-08  
 **Status:** Approved for Implementation  
-**Target:** Distribution via Wholesale Partners, Dedicated `/partner` Portal, Standee QR Generator, Attribution Lifecycle, and Super Admin UPI Payout Settlement with Bank UTR Tracking.
+**Target:** Distribution via Wholesale Partners, Dedicated `/partner` Portal, Standee QR Generator, CSV Lead Import (Partner & Admin), Attribution Lifecycle, and Super Admin UPI Payout Settlement with Bank UTR Tracking.
 
 ---
 
@@ -15,13 +15,17 @@ Local wholesale markets (spare parts dealers, accessory distributors, tool vendo
    * **Monthly Plan (₹249):** **₹75 flat commission** per paid conversion.
    * **Yearly Plan (₹2,499):** **₹499 flat commission** per paid conversion.
 3. **Retailer Incentive (Win-Win):**
-   * Retailers scanning a Partner QR or entering a Partner code receive an **Extended 30-Day Pro Trial** (standard public trial is 7 days).
-4. **Distributor / Partner Experience (`/partner`):**
+   * Retailers scanning a Partner QR or entering a Partner code receive an **Extended 7-Day Pro Trial** (standard public trial is 3 days).
+4. **CSV Lead Import Capability (Partners & Super Admin):**
+   * Partners can upload a CSV of their existing retail customer contacts (Shop Name, Phone Number, City) directly from `/partner`.
+   * Super Admin can also upload a CSV of leads in `/admin` and select the target Partner for attribution.
+   * Pre-attributes leads so when a retailer signs up with their matching mobile number, the attribution is automatically bound.
+5. **Distributor / Partner Experience (`/partner`):**
    * Fast self-serve onboarding with neutral input placeholders.
    * Instant printable counter standee QR code & 1-tap WhatsApp sharing.
-   * Live real-time KPIs and shop conversion tracking.
+   * Live real-time KPIs, referred shops ledger, and CSV lead importer.
    * **Real Data Only:** Zero mock data; clear, friendly empty states when no leads or settlements exist.
-5. **Admin Settlement Flow (`/admin`):**
+6. **Admin Settlement Flow (`/admin`):**
    * Dedicated "Partners & Payouts" management tab.
    * Partner verification and status toggle.
    * Manual UPI payout queue with 1-tap UPI ID copy and Bank UTR / Reference ID verification.
@@ -50,8 +54,8 @@ Local wholesale markets (spare parts dealers, accessory distributors, tool vendo
 export type PartnerStatus = 'pending_verification' | 'active' | 'suspended';
 
 export interface PartnerStats {
-  totalLeads: number;          // Total retail shops attributed
-  activeTrials: number;        // Shops currently in 30-day trial
+  totalLeads: number;          // Total retail shops attributed (QR + CSV)
+  activeTrials: number;        // Shops currently in 7-day trial
   paidConversions: number;     // Shops that bought Monthly or Yearly Pro
   lifetimeEarnings: number;    // Cumulative ₹ earned
   paidEarnings: number;        // Cumulative ₹ settled via UPI
@@ -76,15 +80,17 @@ export interface PartnerProfile {
 ### 3.2 `referral_leads` Collection (`/referral_leads/{leadId}`)
 ```typescript
 export type ReferralLeadStatus = 'trial' | 'pro_active' | 'expired';
+export type LeadSource = 'qr_link' | 'csv_import' | 'manual_code';
 export type LeadPayoutStatus = 'unpaid' | 'paid';
 
 export interface ReferralLead {
-  id: string;                  // `${partnerUid}_${referredShopUid}`
+  id: string;                  // `${partnerUid}_${phone_or_shopUid}`
   partnerUid: string;
   referralCode: string;
-  referredShopUid: string;
+  referredShopUid?: string | null; // Set when account registers/claims
   shopName: string;
-  ownerPhone: string | null;
+  ownerPhone: string;          // 10-digit phone number (used for CSV matching)
+  source: LeadSource;
   status: ReferralLeadStatus;
   planPurchased: 'monthly' | 'yearly' | null;
   commissionEarned: number;    // 75 for monthly, 499 for yearly, 0 while trial
@@ -115,7 +121,7 @@ export interface PartnerPayout {
 // Additions to ShopAccountSummary in src/firebase/admin.ts:
 referredByPartnerUid?: string | null;
 referredByCode?: string | null;
-referralTrialGranted?: boolean; // True if extended 30-day trial was awarded
+referralTrialGranted?: boolean; // True if extended 7-day trial was awarded
 ```
 
 ---
@@ -128,26 +134,37 @@ referralTrialGranted?: boolean; // True if extended 30-day trial was awarded
   2. Saves to `localStorage.setItem('mms_partner_code', code)` and `localStorage.setItem('mms_partner_code_time', Date.now())`.
   3. Attribution window: 30 days validity.
 
-### 4.2 Shop Onboarding & Linking (`OnboardingScreen.tsx` / `LoginScreen.tsx`)
+### 4.2 CSV Lead Pre-Attribution Workflow
+* **Partner & Admin CSV Import**:
+  1. Accepts CSV with headers: `Shop Name`, `Phone Number`, `City` (optional).
+  2. Cleans & normalizes 10-digit mobile numbers (stripping +91, 0, spaces, dashes).
+  3. Pre-creates `referral_leads` records with `source = 'csv_import'` and `status = 'trial'`.
+  4. Automatically updates `partner.stats.totalLeads`.
+* **Automatic Phone Match on Signup**:
+  * When a retailer registers with phone number or enters it in Settings/Onboarding:
+  * The system checks `referral_leads` for any existing lead matching that phone number.
+  * If a pre-imported lead exists: Automatically binds `referredShopUid = user.uid`, grants the **Extended 7-Day Pro Trial**, and links the shop to the partner.
+
+### 4.3 Shop Onboarding & Linking (`OnboardingScreen.tsx` / `LoginScreen.tsx`)
 * During shop registration / onboarding:
-  1. Checks `localStorage` for `mms_partner_code` OR optional input field *"Have a partner referral code?"*.
+  1. Checks `localStorage` for `mms_partner_code` OR matching pre-imported phone OR optional input field *"Have a partner referral code?"*.
   2. If present: Queries Firestore `partners` collection where `referralCode == code` and `status != 'suspended'`.
   3. If partner found and `partner.phoneNumber !== shopOwner.phoneNumber`:
      - Sets `referredByPartnerUid = partner.uid`.
      - Sets `referredByCode = partner.referralCode`.
-     - Sets initial trial days to **30 days** in local settings and Firestore.
-     - Creates `/referral_leads/{partnerUid}_{shopUid}` with status `'trial'`.
-     - Atomically increments `partner.stats.totalLeads` and `partner.stats.activeTrials`.
+     - Sets initial trial days to **7 days** (extended from standard 3 days).
+     - Creates/updates `/referral_leads/{partnerUid}_{shopUid}` with status `'trial'`.
+     - Increments `partner.stats.totalLeads` (if not already from CSV) and `partner.stats.activeTrials`.
      - Clears `mms_partner_code` from `localStorage`.
 
-### 4.3 Pro Plan Upgrade Trigger
+### 4.4 Pro Plan Upgrade Trigger
 * When a shop account is upgraded to Pro (via `/admin` plan dialog or payment checkout):
   1. System checks if `accounts/{uid}.referredByPartnerUid` is populated.
   2. If yes:
      - Fetches `/referral_leads/{partnerUid}_{shopUid}`.
      - Calculates commission:
-       * If plan is `'monthly'` $\rightarrow$ ₹75
-       * If plan is `'yearly'` $\rightarrow$ ₹499
+       * If plan is `'monthly'` $\rightarrow$ **₹75**
+       * If plan is `'yearly'` $\rightarrow$ **₹499**
      - Updates `referral_leads`:
        * `status = 'pro_active'`
        * `planPurchased = plan`
@@ -186,16 +203,20 @@ referralTrialGranted?: boolean; // True if extended 30-day trial was awarded
   * Display of Partner Code in bold mono pill.
   * **1-Tap WhatsApp Share:** Fires pre-formatted WhatsApp message with direct link.
   * **1-Tap Print Standee:** Renders a clean printable A5 counter card layout.
+* **CSV Lead Importer Card / Button:**
+  * Button: **"Import Leads via CSV"** with modal allowing upload of `.csv` file.
+  * Download sample CSV template (`Shop Name, Phone Number, City`).
+  * Instant feedback: *"Imported 45 leads successfully"*.
 * **Real-time KPI Metric Cards (No Mock Data):**
   * `Total Shops`: `stats.totalLeads`
-  * `Active 30-Day Trials`: `stats.activeTrials`
+  * `Active 7-Day Trials`: `stats.activeTrials`
   * `Paid Pro Conversions`: `stats.paidConversions`
   * `Pending Payout Balance`: `₹stats.pendingBalance` (highlighted)
   * `Total Settled`: `₹stats.paidEarnings`
 * **Referred Shops Ledger:**
   * Real-time list of shops from `referral_leads`.
-  * Row columns: Shop Name, Date Joined, Status (`Trial Active` / `Monthly (+₹75)` / `Yearly (+₹499)`), Settlement Status (`Pending Settlement` / `Paid`).
-  * Empty State: *"No shops joined yet. Share your counter QR code with visiting shop owners to start earning."*
+  * Row columns: Shop Name, Phone Number, Date Joined / Imported, Source (`QR Link` / `CSV Import`), Status (`Trial Active` / `Monthly (+₹75)` / `Yearly (+₹499)`), Settlement Status (`Pending Settlement` / `Paid`).
+  * Empty State: *"No shops joined yet. Share your counter QR code or import a customer CSV to start earning."*
 * **Payout Settlements History:**
   * Real-time list from `payouts` where `partnerUid == currentUid`.
   * Row columns: Date, Amount (₹), UPI ID, Bank UTR Reference.
@@ -225,6 +246,7 @@ referralTrialGranted?: boolean; // True if extended 30-day trial was awarded
 3. **Partner Directory Table:**
    * Lists all registered partners.
    * Toggle button to change status between `Active`, `Pending`, and `Suspended`.
+   * **Admin CSV Lead Import:** Admin can upload a CSV and assign it to any selected partner.
    * View full lead history for any partner.
 
 ---
@@ -269,6 +291,7 @@ match /payouts/{payoutId} {
 1. **`tests/referralAttribution.test.ts`**:
    * Validates query parameter capture (`?ref=CODE`), sanitization, and 30-day expiration in `localStorage`.
    * Tests self-referral rejection when partner and shop share credentials.
+   * Tests CSV pre-attribution phone matching logic.
 2. **`tests/partnerCommissions.test.ts`**:
    * Validates exact fixed commission calculations:
      * ₹75 on Monthly plan (₹249)
@@ -279,3 +302,5 @@ match /payouts/{payoutId} {
    * Simulates Admin recording UPI UTR reference.
    * Verifies pending balance reset to 0 and `paidEarnings` increment.
    * Validates lead status transition from `unpaid` to `paid`.
+4. **`tests/partnerCsvImport.test.ts`**:
+   * Tests CSV parsing, header validation, 10-digit phone normalization, and bulk lead creation.
