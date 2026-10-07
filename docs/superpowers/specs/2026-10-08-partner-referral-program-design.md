@@ -2,7 +2,7 @@
 
 **Date:** 2026-10-08  
 **Status:** Approved for Implementation  
-**Target:** Distribution via Wholesale Partners, Dedicated `/partner` Portal, Standee QR Generator, CSV Lead Import (Partner & Admin), Attribution Lifecycle, and Super Admin UPI Payout Settlement with Bank UTR Tracking.
+**Target:** Distribution via Wholesale Partners, Dedicated `/partner` Portal, Standee QR Generator, CSV Lead Import (Partner & Admin), Lead Lifecycle CRM Statuses (`contacted`, `in_trial`, `not_interested`, `plan_purchased`, `payout_in_progress`, `paid`), and Super Admin UPI Payout Settlement with Bank UTR Tracking.
 
 ---
 
@@ -20,14 +20,23 @@ Local wholesale markets (spare parts dealers, accessory distributors, tool vendo
    * Partners can upload a CSV of their existing retail customer contacts (Shop Name, Phone Number, City) directly from `/partner`.
    * Super Admin can also upload a CSV of leads in `/admin` and select the target Partner for attribution.
    * Pre-attributes leads so when a retailer signs up with their matching mobile number, the attribution is automatically bound.
-5. **Distributor / Partner Experience (`/partner`):**
+5. **Full Lead CRM Lifecycle Statuses (Managed by Super Admin & Tracked by Partners):**
+   * Super Admin can manually update or auto-advance lead statuses:
+     * `contacted`: Initial outreach done.
+     * `in_trial`: Shop actively running 7-day extended trial.
+     * `not_interested`: Shop declined or dropped off.
+     * `plan_purchased`: Shop bought Monthly (+₹75) or Yearly (+₹499) Pro plan.
+     * `payout_in_progress`: Settlement initiated / queued.
+     * `paid`: Bank UPI transfer completed with UTR number.
+6. **Distributor / Partner Experience (`/partner`):**
    * Fast self-serve onboarding with neutral input placeholders.
    * Instant printable counter standee QR code & 1-tap WhatsApp sharing.
-   * Live real-time KPIs, referred shops ledger, and CSV lead importer.
+   * Live real-time KPIs, referred shops ledger with CRM statuses, and CSV lead importer.
    * **Real Data Only:** Zero mock data; clear, friendly empty states when no leads or settlements exist.
-6. **Admin Settlement Flow (`/admin`):**
+7. **Admin Settlement Flow (`/admin`):**
    * Dedicated "Partners & Payouts" management tab.
    * Partner verification and status toggle.
+   * Lead status updater dropdown for every lead.
    * Manual UPI payout queue with 1-tap UPI ID copy and Bank UTR / Reference ID verification.
 
 ---
@@ -79,9 +88,15 @@ export interface PartnerProfile {
 
 ### 3.2 `referral_leads` Collection (`/referral_leads/{leadId}`)
 ```typescript
-export type ReferralLeadStatus = 'trial' | 'pro_active' | 'expired';
+export type ReferralLeadStatus =
+  | 'contacted'
+  | 'in_trial'
+  | 'not_interested'
+  | 'plan_purchased'
+  | 'payout_in_progress'
+  | 'paid';
+
 export type LeadSource = 'qr_link' | 'csv_import' | 'manual_code';
-export type LeadPayoutStatus = 'unpaid' | 'paid';
 
 export interface ReferralLead {
   id: string;                  // `${partnerUid}_${phone_or_shopUid}`
@@ -90,14 +105,17 @@ export interface ReferralLead {
   referredShopUid?: string | null; // Set when account registers/claims
   shopName: string;
   ownerPhone: string;          // 10-digit phone number (used for CSV matching)
+  city?: string | null;
   source: LeadSource;
-  status: ReferralLeadStatus;
+  status: ReferralLeadStatus;  // Lead CRM state
   planPurchased: 'monthly' | 'yearly' | null;
   commissionEarned: number;    // 75 for monthly, 499 for yearly, 0 while trial
-  payoutStatus: LeadPayoutStatus;
   payoutId?: string | null;    // ID of payout batch once settled
+  utrReference?: string | null;
+  notes?: string | null;
   registeredAt: string;        // ISO timestamp
   convertedAt?: string | null; // ISO timestamp
+  updatedAt: string;           // ISO timestamp
 }
 ```
 
@@ -109,6 +127,7 @@ export interface PartnerPayout {
   partnerBusinessName: string;
   partnerUpiId: string;
   amount: number;              // In ₹
+  leadIds: string[];           // Array of lead IDs included in this payout
   utrReference: string;        // Bank 12-digit UPI UTR number
   notes?: string | null;
   processedByUid: string;      // Admin UID
@@ -126,55 +145,33 @@ referralTrialGranted?: boolean; // True if extended 7-day trial was awarded
 
 ---
 
-## 4. Attribution & Conversion Lifecycle
+## 4. Attribution & Lead CRM Lifecycle
 
 ### 4.1 URL Sniffing & Storage (`useReferralCapture.ts`)
 * When any visitor lands on `/`, `/login`, or `/app` with query params `?ref=CODE` or `?partner=CODE`:
-  1. Sniffs the query parameter and sanitizes it (trims and converts to uppercase).
-  2. Saves to `localStorage.setItem('mms_partner_code', code)` and `localStorage.setItem('mms_partner_code_time', Date.now())`.
-  3. Attribution window: 30 days validity.
+  1. Sniffs query parameter, sanitizes (trims, uppercase).
+  2. Saves to `localStorage.setItem('mms_partner_code', code)` with 30-day validity window.
 
 ### 4.2 CSV Lead Pre-Attribution Workflow
 * **Partner & Admin CSV Import**:
   1. Accepts CSV with headers: `Shop Name`, `Phone Number`, `City` (optional).
-  2. Cleans & normalizes 10-digit mobile numbers (stripping +91, 0, spaces, dashes).
-  3. Pre-creates `referral_leads` records with `source = 'csv_import'` and `status = 'trial'`.
+  2. Normalizes 10-digit mobile number.
+  3. Pre-creates `referral_leads` records with `source = 'csv_import'` and initial status `contacted`.
   4. Automatically updates `partner.stats.totalLeads`.
 * **Automatic Phone Match on Signup**:
-  * When a retailer registers with phone number or enters it in Settings/Onboarding:
-  * The system checks `referral_leads` for any existing lead matching that phone number.
-  * If a pre-imported lead exists: Automatically binds `referredShopUid = user.uid`, grants the **Extended 7-Day Pro Trial**, and links the shop to the partner.
+  * When a retailer registers with that mobile number:
+  * Automatically binds `referredShopUid = user.uid`, transitions status to `in_trial`, grants **Extended 7-Day Pro Trial**, and links the shop to the partner.
 
-### 4.3 Shop Onboarding & Linking (`OnboardingScreen.tsx` / `LoginScreen.tsx`)
-* During shop registration / onboarding:
-  1. Checks `localStorage` for `mms_partner_code` OR matching pre-imported phone OR optional input field *"Have a partner referral code?"*.
-  2. If present: Queries Firestore `partners` collection where `referralCode == code` and `status != 'suspended'`.
-  3. If partner found and `partner.phoneNumber !== shopOwner.phoneNumber`:
-     - Sets `referredByPartnerUid = partner.uid`.
-     - Sets `referredByCode = partner.referralCode`.
-     - Sets initial trial days to **7 days** (extended from standard 3 days).
-     - Creates/updates `/referral_leads/{partnerUid}_{shopUid}` with status `'trial'`.
-     - Increments `partner.stats.totalLeads` (if not already from CSV) and `partner.stats.activeTrials`.
-     - Clears `mms_partner_code` from `localStorage`.
-
-### 4.4 Pro Plan Upgrade Trigger
-* When a shop account is upgraded to Pro (via `/admin` plan dialog or payment checkout):
-  1. System checks if `accounts/{uid}.referredByPartnerUid` is populated.
-  2. If yes:
-     - Fetches `/referral_leads/{partnerUid}_{shopUid}`.
-     - Calculates commission:
-       * If plan is `'monthly'` $\rightarrow$ **₹75**
-       * If plan is `'yearly'` $\rightarrow$ **₹499**
-     - Updates `referral_leads`:
-       * `status = 'pro_active'`
-       * `planPurchased = plan`
-       * `commissionEarned = commission`
-       * `convertedAt = new Date().toISOString()`
-     - Updates `partners/{partnerUid}`:
-       * `stats.paidConversions += 1`
-       * `stats.activeTrials = Math.max(0, stats.activeTrials - 1)`
-       * `stats.lifetimeEarnings += commission`
-       * `stats.pendingBalance += commission`
+### 4.3 Super Admin CRM Lead Status Management
+In `/admin`, Super Admin can view all leads per partner and change status via a simple dropdown:
+* `contacted`: Admin/Partner contacted shop via call/WhatsApp.
+* `in_trial`: Shop active on 7-day trial.
+* `not_interested`: Marked as declined/dropped.
+* `plan_purchased`: If marked or automatically detected on Pro plan activation:
+  * Prompts for plan tier (`monthly` $\rightarrow$ ₹75 commission, `yearly` $\rightarrow$ ₹499 commission).
+  * Automatically updates partner balances (`pendingBalance += commission`, `lifetimeEarnings += commission`).
+* `payout_in_progress`: In settlement review.
+* `paid`: Marked paid upon entering Bank UTR number (deducts `pendingBalance`, increases `paidEarnings`).
 
 ---
 
@@ -208,14 +205,24 @@ referralTrialGranted?: boolean; // True if extended 7-day trial was awarded
   * Download sample CSV template (`Shop Name, Phone Number, City`).
   * Instant feedback: *"Imported 45 leads successfully"*.
 * **Real-time KPI Metric Cards (No Mock Data):**
-  * `Total Shops`: `stats.totalLeads`
+  * `Total Leads`: `stats.totalLeads`
   * `Active 7-Day Trials`: `stats.activeTrials`
-  * `Paid Pro Conversions`: `stats.paidConversions`
+  * `Plan Purchased`: `stats.paidConversions`
   * `Pending Payout Balance`: `₹stats.pendingBalance` (highlighted)
   * `Total Settled`: `₹stats.paidEarnings`
 * **Referred Shops Ledger:**
   * Real-time list of shops from `referral_leads`.
-  * Row columns: Shop Name, Phone Number, Date Joined / Imported, Source (`QR Link` / `CSV Import`), Status (`Trial Active` / `Monthly (+₹75)` / `Yearly (+₹499)`), Settlement Status (`Pending Settlement` / `Paid`).
+  * Row columns:
+    * Shop Name & Phone Number
+    * Date Joined / Imported
+    * Source (`QR Link` / `CSV Import`)
+    * CRM Status Badge:
+      * `Contacted` (Slate badge)
+      * `In Trial` (Blue badge)
+      * `Not Interested` (Gray badge)
+      * `Plan Purchased` (Green badge with `+₹75` or `+₹499`)
+      * `Payout in Progress` (Amber badge)
+      * `Paid` (Purple badge with UTR)
   * Empty State: *"No shops joined yet. Share your counter QR code or import a customer CSV to start earning."*
 * **Payout Settlements History:**
   * Real-time list from `payouts` where `partnerUid == currentUid`.
@@ -238,16 +245,20 @@ referralTrialGranted?: boolean; // True if extended 7-day trial was awarded
      * Pending Amount in bold green.
      * Action Button: **"Settle Payout"**.
 2. **Settle Payout Modal:**
-   * Step 1: Displays total amount to transfer and target UPI ID.
-   * Step 2: Input field *"Bank UTR / UPI Reference ID"* (placeholder: *"Enter 12-digit UPI UTR number"*).
-   * Step 3: Optional notes input.
-   * Step 4: Click *"Mark as Paid"*.
-   * **Result:** Creates record in `payouts`, marks attributed leads as `paid`, sets `partner.pendingBalance = 0`, and increases `partner.paidEarnings += amount`.
-3. **Partner Directory Table:**
+   * Displays total amount to transfer and target UPI ID.
+   * Input field *"Bank UTR / UPI Reference ID"* (placeholder: *"Enter 12-digit UPI UTR number"*).
+   * Optional notes input.
+   * Action *"Mark as Paid"*:
+     * Writes record to `payouts`.
+     * Updates leads to status `paid` and sets `utrReference`.
+     * Zeroes `pendingBalance` and increments `paidEarnings`.
+3. **Partner Directory & Lead CRM Management:**
    * Lists all registered partners.
-   * Toggle button to change status between `Active`, `Pending`, and `Suspended`.
-   * **Admin CSV Lead Import:** Admin can upload a CSV and assign it to any selected partner.
-   * View full lead history for any partner.
+   * Partner status toggle: `Active` / `Pending` / `Suspended`.
+   * **Expand Partner Leads Drawer**:
+     * View all leads attributed to this partner.
+     * Status Dropdown for each lead: `Contacted`, `In Trial`, `Not Interested`, `Plan Purchased`, `Payout in Progress`, `Paid`.
+   * **Admin CSV Lead Import**: Upload CSV directly assigned to any partner.
 
 ---
 
@@ -270,7 +281,11 @@ match /partners/{partnerId} {
 match /referral_leads/{leadId} {
   allow read: if request.auth != null && (resource.data.partnerUid == request.auth.uid || isSuperAdmin(request.auth.uid));
   allow create: if request.auth != null;
-  allow update, delete: if request.auth != null && isSuperAdmin(request.auth.uid);
+  allow update: if request.auth != null && (
+    (resource.data.partnerUid == request.auth.uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['notes'])) ||
+    isSuperAdmin(request.auth.uid)
+  );
+  allow delete: if request.auth != null && isSuperAdmin(request.auth.uid);
 }
 
 // payouts collection
@@ -280,27 +295,20 @@ match /payouts/{payoutId} {
 }
 ```
 
-### 7.2 Anti-Fraud & Self-Referral Prevention
-* Self-referral validation: Blocks attribution if `shopOwner.phoneNumber === partner.phoneNumber` or `shopOwner.uid === partner.uid`.
-* One-time attribution lock: Once `referredByPartnerUid` is written to an account, it cannot be overridden.
-
 ---
 
 ## 8. Automated Testing Strategy
 
 1. **`tests/referralAttribution.test.ts`**:
    * Validates query parameter capture (`?ref=CODE`), sanitization, and 30-day expiration in `localStorage`.
-   * Tests self-referral rejection when partner and shop share credentials.
-   * Tests CSV pre-attribution phone matching logic.
+   * Tests phone matching from CSV import.
 2. **`tests/partnerCommissions.test.ts`**:
-   * Validates exact fixed commission calculations:
+   * Validates commission math:
      * ₹75 on Monthly plan (₹249)
      * ₹499 on Yearly plan (₹2,499)
-     * ₹0 on Free trial
-   * Verifies stats update math (pending balance, lifetime earnings).
-3. **`tests/partnerSettlement.test.ts`**:
-   * Simulates Admin recording UPI UTR reference.
-   * Verifies pending balance reset to 0 and `paidEarnings` increment.
-   * Validates lead status transition from `unpaid` to `paid`.
-4. **`tests/partnerCsvImport.test.ts`**:
-   * Tests CSV parsing, header validation, 10-digit phone normalization, and bulk lead creation.
+3. **`tests/partnerLeadStatus.test.ts`**:
+   * Tests transition across all 6 CRM statuses (`contacted` $\rightarrow$ `in_trial` $\rightarrow$ `plan_purchased` $\rightarrow$ `payout_in_progress` $\rightarrow$ `paid` / `not_interested`).
+4. **`tests/partnerSettlement.test.ts`**:
+   * Validates UTR recording, balance zeroing, and lead status update to `paid`.
+5. **`tests/partnerCsvImport.test.ts`**:
+   * Tests CSV parsing, header verification, phone normalization, and bulk lead generation.
