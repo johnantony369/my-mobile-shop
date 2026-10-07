@@ -709,6 +709,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isAuthenticated = fals
             <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
             <button
               type="button"
+              onClick={() => navigate('/partner')}
+              className="hover:text-white text-iosBlue font-bold transition-colors"
+            >
+              Partner Program
+            </button>
+            <button
+              type="button"
               onClick={() => handleOpenLegal('privacy')}
               className="hover:text-white transition-colors"
             >

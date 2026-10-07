@@ -18,8 +18,25 @@ import { WebApp } from './screens/web/WebApp';
 import { PrivacyScreen } from './screens/legal/PrivacyScreen';
 import { TermsScreen } from './screens/legal/TermsScreen';
 import { DeleteAccountScreen } from './screens/legal/DeleteAccountScreen';
+import React, { Suspense } from 'react';
 
-/** Component handling protected app entry */
+const PartnerPortalScreen = React.lazy(() => import('./screens/partner/PartnerPortalScreen'));
+
+function PartnerRouteWrapper() {
+  return (
+    <Suspense
+      fallback={
+        <LoadingScreen
+          message="Opening Partner Portal..."
+          submessage="Connecting to distribution network"
+        />
+      }
+    >
+      <PartnerPortalScreen />
+    </Suspense>
+  );
+}
+
 function AppRouteWrapper() {
   const { user, loading: authLoading } = useAuth();
   const [checkingCloud, setCheckingCloud] = useState(false);
@@ -383,6 +400,7 @@ export function AppRouter() {
         <Route path="/web/app" element={<WebRouteWrapper />} />
         <Route path="/web/app/*" element={<WebRouteWrapper />} />
         <Route path="/admin" element={<AdminRouteWrapper />} />
+        <Route path="/partner" element={<PartnerRouteWrapper />} />
         <Route path="/track/:trackingId" element={<TrackRepairScreen />} />
         <Route path="/privacy" element={<PrivacyScreen />} />
         <Route path="/terms" element={<TermsScreen />} />
