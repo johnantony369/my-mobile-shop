@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { isAndroidNativeApp } from './platform';
 
 const DISMISSED_SESSION_KEY = 'pwa_install_banner_dismissed_session';
 
@@ -57,6 +58,7 @@ export function detectPlatform(): InstallPlatform {
 
 export function detectIsInstalled(): boolean {
   if (typeof window === 'undefined') return false;
+  if (isAndroidNativeApp()) return true;
   // Chromium / Android standalone
   if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) return true;
   // iOS Safari "Add to Home Screen"
@@ -185,7 +187,7 @@ export function usePWAInstall(): UsePWAInstallReturn {
   };
 
   // Show banner for all users who have not installed the app and haven't dismissed this session
-  const showBanner = !isInstalled && !dismissed;
+  const showBanner = !isInstalled && !dismissed && !isAndroidNativeApp();
 
   return { isInstalled, canInstall, platform, showBanner, triggerInstall, dismissBanner };
 }

@@ -11,6 +11,7 @@ import { OnboardingScreen } from './screens/OnboardingScreen';
 import { AdminScreen } from './screens/AdminScreen';
 import { TrackRepairScreen } from './screens/TrackRepairScreen';
 import { isSuperAdmin } from './utils/admin';
+import { isAndroidNativeApp } from './utils/platform';
 import { LoadingScreen } from './components/LoadingScreen';
 import App from './App';
 import { WebApp } from './screens/web/WebApp';
@@ -262,8 +263,11 @@ function OnboardingRouteWrapper() {
 /** Root Landing Page wrapper */
 function LandingRouteWrapper() {
   const { user } = useAuth();
-  // When launched from Android/iOS home screen in standalone mode, go directly into app
-  if (typeof window !== 'undefined' && window.matchMedia('(display-mode: standalone)').matches) {
+  // When launched from Android/iOS native app or home screen standalone mode, go directly into app
+  if (
+    isAndroidNativeApp() ||
+    (typeof window !== 'undefined' && window.matchMedia('(display-mode: standalone)').matches)
+  ) {
     return <Navigate to="/app" replace />;
   }
   return <LandingPage isAuthenticated={!!user} />;
