@@ -4,6 +4,7 @@ import { Language } from '../types';
 import { t } from '../i18n';
 import { checkCode, formatActivationCode } from '../utils/activation';
 import { updateAppSettings } from '../db/db';
+import { isAndroidNativeApp } from '../utils/platform';
 import {
   Check,
   CheckCircle2,
@@ -12,6 +13,8 @@ import {
   ChevronDown,
   ChevronUp,
   X,
+  MessageCircle,
+  KeyRound,
 } from 'lucide-react';
 
 const RAZORPAY_MONTHLY_URL = 'https://rzp.io/rzp/AIScmrWq';
@@ -33,8 +36,9 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
 }) => {
   const [rendered, setRendered] = useState(isOpen);
   const [animate, setAnimate] = useState(false);
+  const isAndroid = isAndroidNativeApp();
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('yearly');
-  const [showCodeInput, setShowCodeInput] = useState(false);
+  const [showCodeInput, setShowCodeInput] = useState(isAndroid);
   const [code, setCode] = useState('');
   const [codeError, setCodeError] = useState<string | null>(null);
   const [isActivating, setIsActivating] = useState(false);
@@ -241,45 +245,18 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
             </button>
           </div>
 
-          {/* Action Button */}
-          <div className="pt-1">
-            <button
-              type="button"
-              onClick={handleOpenRazorpay}
-              className="w-full py-3.5 px-4 bg-gradient-to-r from-iosBlue via-blue-600 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-[14px] font-bold text-[15px] flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25 active:scale-[0.98] transition-all"
-            >
-              <span>
-                {selectedPlan === 'yearly' ? 'Subscribe • ₹2,499 / year' : 'Subscribe • ₹249 / month'}
-              </span>
-              <ExternalLink className="w-4 h-4 ml-0.5 opacity-80" />
-            </button>
-          </div>
+          {/* Action Area */}
+          {isAndroid ? (
+            <div className="space-y-3 pt-1">
+              <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl flex items-start gap-2.5 text-xs text-blue-900 leading-relaxed">
+                <KeyRound className="w-4 h-4 text-iosBlue shrink-0 mt-0.5" />
+                <div>
+                  <strong>Redeem License Code:</strong> Enter the activation code provided with your Pro plan purchase to unlock unlimited entries.
+                </div>
+              </div>
 
-          {/* Trust note */}
-          <div className="text-center pt-0.5">
-            <div className="flex items-center justify-center gap-1.5 text-[11px] font-medium text-[#8E8E93]">
-              <ShieldCheck className="w-3.5 h-3.5 text-iosGreen" />
-              <span>100% Secure via Razorpay (UPI, GPay, Cards)</span>
-            </div>
-          </div>
-
-          {/* Collapsible: Already paid? Enter Activation Code */}
-          <div className="border-t border-[#E5E5EA] pt-2.5">
-            <button
-              type="button"
-              onClick={() => setShowCodeInput(!showCodeInput)}
-              className="w-full flex items-center justify-between text-xs font-semibold text-iosBlue py-1 px-1 hover:opacity-80 transition-opacity"
-            >
-              <span>{t('paywall_have_code', language)}</span>
-              {showCodeInput ? (
-                <ChevronUp className="w-4 h-4" />
-              ) : (
-                <ChevronDown className="w-4 h-4" />
-              )}
-            </button>
-
-            {showCodeInput && (
-              <form onSubmit={handleActivateWithCode} className="mt-2 space-y-2.5 animate-fade-slide-in">
+              {/* Direct Code Input on Android */}
+              <form onSubmit={handleActivateWithCode} className="space-y-2.5">
                 <div>
                   <input
                     type="text"
@@ -307,13 +284,103 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
                 <button
                   type="submit"
                   disabled={isActivating || activationSuccess}
-                  className="w-full py-2.5 bg-iosBlue text-white font-semibold text-xs rounded-[10px] active:opacity-85 shadow-sm transition-opacity disabled:opacity-50"
+                  className="w-full py-3 bg-iosBlue text-white font-bold text-sm rounded-[12px] active:scale-[0.98] shadow-sm transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
                 >
-                  {isActivating ? 'Verifying...' : t('paywall_verify_btn', language)}
+                  <KeyRound className="w-4 h-4" />
+                  <span>{isActivating ? 'Verifying...' : t('paywall_verify_btn', language)}</span>
                 </button>
               </form>
-            )}
-          </div>
+
+              {/* WhatsApp Support Assistance */}
+              <div className="pt-0.5">
+                <a
+                  href="https://wa.me/919876543210?text=Hello%2C%20I%20want%20to%20activate%20My%20Mobile%20Shop%20Pro"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-2.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold rounded-xl flex items-center justify-center gap-2 transition-colors"
+                >
+                  <MessageCircle className="w-4 h-4 text-emerald-600" />
+                  <span>Contact Support for Pro License</span>
+                </a>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Web Action Button */}
+              <div className="pt-1">
+                <button
+                  type="button"
+                  onClick={handleOpenRazorpay}
+                  className="w-full py-3.5 px-4 bg-gradient-to-r from-iosBlue via-blue-600 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-[14px] font-bold text-[15px] flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25 active:scale-[0.98] transition-all"
+                >
+                  <span>
+                    {selectedPlan === 'yearly' ? 'Subscribe • ₹2,499 / year' : 'Subscribe • ₹249 / month'}
+                  </span>
+                  <ExternalLink className="w-4 h-4 ml-0.5 opacity-80" />
+                </button>
+              </div>
+
+              {/* Trust note */}
+              <div className="text-center pt-0.5">
+                <div className="flex items-center justify-center gap-1.5 text-[11px] font-medium text-[#8E8E93]">
+                  <ShieldCheck className="w-3.5 h-3.5 text-iosGreen" />
+                  <span>100% Secure via Razorpay (UPI, GPay, Cards)</span>
+                </div>
+              </div>
+
+              {/* Collapsible: Already paid? Enter Activation Code */}
+              <div className="border-t border-[#E5E5EA] pt-2.5">
+                <button
+                  type="button"
+                  onClick={() => setShowCodeInput(!showCodeInput)}
+                  className="w-full flex items-center justify-between text-xs font-semibold text-iosBlue py-1 px-1 hover:opacity-80 transition-opacity"
+                >
+                  <span>{t('paywall_have_code', language)}</span>
+                  {showCodeInput ? (
+                    <ChevronUp className="w-4 h-4" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4" />
+                  )}
+                </button>
+
+                {showCodeInput && (
+                  <form onSubmit={handleActivateWithCode} className="mt-2 space-y-2.5 animate-fade-slide-in">
+                    <div>
+                      <input
+                        type="text"
+                        maxLength={19}
+                        value={code}
+                        onChange={handleCodeChange}
+                        placeholder="XXXX-XXXX-XXXX-XXXX"
+                        className="w-full bg-[#F2F2F7] rounded-[10px] px-3 py-2.5 text-center font-mono tracking-widest text-[15px] font-semibold text-black uppercase focus:outline-none focus:ring-2 focus:ring-iosBlue/40 border border-black/[0.06]"
+                      />
+                    </div>
+
+                    {codeError && (
+                      <p className="text-xs text-iosRed font-medium text-center">
+                        {codeError}
+                      </p>
+                    )}
+
+                    {activationSuccess && (
+                      <div className="p-2.5 bg-green-50 text-iosGreen border border-green-200 rounded-[10px] text-xs font-semibold flex items-center justify-center gap-1.5">
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>{t('activated_success_msg', language)}</span>
+                      </div>
+                    )}
+
+                    <button
+                      type="submit"
+                      disabled={isActivating || activationSuccess}
+                      className="w-full py-2.5 bg-iosBlue text-white font-semibold text-xs rounded-[10px] active:opacity-85 shadow-sm transition-opacity disabled:opacity-50"
+                    >
+                      {isActivating ? 'Verifying...' : t('paywall_verify_btn', language)}
+                    </button>
+                  </form>
+                )}
+              </div>
+            </>
+          )}
 
           {/* Dismiss button */}
           <div className="pt-0 pb-1">
