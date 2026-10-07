@@ -6,7 +6,9 @@ import { initAppSettings } from '../db/db';
 import { isFirebaseConfigured, auth } from '../firebase/config';
 import { pullCloudChanges } from '../firebase/sync';
 import { LoginModal } from '../components/LoginModal';
-import { Smartphone, ArrowRight, Store } from 'lucide-react';
+import { Smartphone, ArrowRight, Store, Sparkles, Tag } from 'lucide-react';
+import { getStoredReferralCode, clearStoredReferralCode } from '../utils/useReferralCapture';
+import { bindLeadToAccount } from '../firebase/partner';
 
 interface OnboardingScreenProps {
   onComplete: () => void;
@@ -16,6 +18,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
   const language: Language = 'en';
   const [shopName, setShopName] = useState('');
   const [repairsChoice, setRepairsChoice] = useState<'no' | 'yes'>('no');
+  const [partnerCode, setPartnerCode] = useState<string>(getStoredReferralCode() || '');
   const [error, setError] = useState<string | null>(null);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
@@ -37,6 +40,17 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
 
     try {
       const uid = auth?.currentUser?.uid;
+      const userPhone = auth?.currentUser?.phoneNumber || '';
+
+      if (uid) {
+        try {
+          await bindLeadToAccount(uid, trimmed, userPhone, partnerCode.trim());
+          clearStoredReferralCode();
+        } catch (err) {
+          console.warn('Could not bind partner lead during onboarding:', err);
+        }
+      }
+
       await initAppSettings(trimmed, language, repairsChoice === 'yes', true, uid);
       onComplete();
     } catch (err) {
@@ -87,20 +101,30 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
           {error && <p className="text-xs text-iosRed font-medium mt-1.5">{error}</p>}
         </div>
 
-        {/* Repairs Question: Do you offer phone repairs? (Yes / No) */}
-        <div className="bg-white rounded-[14px] p-4 shadow-sm border border-black/[0.04]">
-          <label className="text-xs font-semibold text-[#8E8E93] uppercase tracking-wider block mb-2">
-            {t('onboarding_repairs_question', language)}
-          </label>
-          <SegmentedControl<'no' | 'yes'>
-            value={repairsChoice}
-            onChange={(val) => setRepairsChoice(val)}
-            size="md"
-            options={[
-              { value: 'no', label: t('onboarding_repairs_no', language) },
-              { value: 'yes', label: t('onboarding_repairs_yes', language) },
-            ]}
+        {/* Partner Referral Code (Optional) */}
+        <div className="bg-white rounded-[14px] p-4 shadow-sm border border-black/[0.04] space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-semibold text-[#8E8E93] uppercase tracking-wider flex items-center gap-1.5">
+              <Tag className="size-3.5 text-iosBlue" />
+              <span>Partner Code (Optional)</span>
+            </label>
+            {partnerCode && (
+              <span className="text-[10px] font-bold text-iosGreen flex items-center gap-1">
+                <Sparkles className="size-3" />
+                <span>7-Day Pro Active</span>
+              </span>
+            )}
+          </div>
+          <input
+            type="text"
+            value={partnerCode}
+            onChange={(e) => setPartnerCode(e.target.value.toUpperCase())}
+            placeholder="Enter distributor code (e.g. METRO99)"
+            className="w-full bg-[#F2F2F7] rounded-[10px] px-3.5 py-2.5 text-sm font-mono font-bold text-black focus:outline-none focus:ring-2 focus:ring-iosBlue/40 border border-black/[0.04]"
           />
+          <p className="text-[11px] text-[#8E8E93]">
+            Have a wholesale counter code? Enter it to get an extended <strong>7-Day Free Pro trial</strong>.
+          </p>
         </div>
       </form>
 

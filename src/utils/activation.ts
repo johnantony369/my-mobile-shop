@@ -51,10 +51,11 @@ export const TRIAL_DURATION_DAYS = 2;
 
 /**
  * Calculates remaining trial days given the first launch date string ('YYYY-MM-DD').
- * Trial lasts TRIAL_DURATION_DAYS (2 days) from first launch.
+ * Allows custom duration (e.g. 7 days for partner referrals).
  */
-export function getTrialDaysRemaining(firstLaunchDateStr: string): number {
-  if (!firstLaunchDateStr) return TRIAL_DURATION_DAYS;
+export function getTrialDaysRemaining(firstLaunchDateStr: string, customDurationDays?: number): number {
+  const duration = customDurationDays !== undefined && customDurationDays > 0 ? customDurationDays : TRIAL_DURATION_DAYS;
+  if (!firstLaunchDateStr) return duration;
   const firstLaunch = new Date(firstLaunchDateStr);
   const now = new Date();
   
@@ -63,6 +64,6 @@ export function getTrialDaysRemaining(firstLaunchDateStr: string): number {
   const d2 = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
   
   const diffDays = Math.floor((d2 - d1) / (1000 * 60 * 60 * 24));
-  const remaining = TRIAL_DURATION_DAYS - diffDays;
+  const remaining = duration - diffDays;
   return Math.max(0, remaining);
 }
