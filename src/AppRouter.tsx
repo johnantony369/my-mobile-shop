@@ -13,6 +13,9 @@ import { TrackRepairScreen } from './screens/TrackRepairScreen';
 import { isSuperAdmin } from './utils/admin';
 import { LoadingScreen } from './components/LoadingScreen';
 import App from './App';
+import { WebApp } from './screens/web/WebApp';
+import { PrivacyScreen } from './screens/legal/PrivacyScreen';
+import { TermsScreen } from './screens/legal/TermsScreen';
 
 /** Component handling protected app entry */
 function AppRouteWrapper() {
@@ -291,6 +294,78 @@ function AdminRouteWrapper() {
   return <AdminScreen />;
 }
 
+/** Component handling protected web desktop app entry */
+function WebRouteWrapper() {
+  const { user, loading: authLoading } = useAuth();
+  const [checkingCloud, setCheckingCloud] = useState(false);
+  const [checkedCloudUid, setCheckedCloudUid] = useState<string | null>(null);
+
+  const settingsList = useLiveQuery(async () => {
+    try {
+      await db.open();
+      return await db.settings.toArray();
+    } catch {
+      return [];
+    }
+  }, []);
+
+  const isMismatched = Boolean(
+    user &&
+    settingsList &&
+    settingsList.length > 0 &&
+    settingsList[0].ownerUid &&
+    settingsList[0].ownerUid !== user.uid
+  );
+
+  useEffect(() => {
+    if (!user || settingsList === undefined) return;
+
+    if (isMismatched) {
+      clearLocalDatabase().then(() => {
+        setCheckingCloud(true);
+        pullCloudChanges(user.uid)
+          .catch(err => console.warn('Could not pull cloud changes on web route:', err))
+          .finally(() => {
+            setCheckedCloudUid(user.uid);
+            setCheckingCloud(false);
+          });
+      });
+      return;
+    }
+
+    if (settingsList.length === 0 && checkedCloudUid !== user.uid) {
+      setCheckingCloud(true);
+      pullCloudChanges(user.uid)
+        .catch(err => console.warn('Could not pull cloud changes on web route:', err))
+        .finally(() => {
+          setCheckedCloudUid(user.uid);
+          setCheckingCloud(false);
+        });
+    }
+  }, [user, settingsList, checkedCloudUid, isMismatched]);
+
+  if (authLoading || settingsList === undefined || isMismatched || (user && settingsList.length === 0 && (checkingCloud || checkedCloudUid !== user.uid))) {
+    return (
+      <LoadingScreen
+        message="Opening Web Day Book..."
+        submessage="Syncing latest shop transactions & desktop workspace"
+      />
+    );
+  }
+
+  // Not signed in: redirect to login
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Signed in but no settings: redirect to onboarding
+  if (settingsList.length === 0) {
+    return <Navigate to="/onboarding" replace />;
+  }
+
+  return <WebApp />;
+}
+
 export function AppRouter() {
   return (
     <BrowserRouter>
@@ -300,8 +375,12 @@ export function AppRouter() {
         <Route path="/onboarding" element={<OnboardingRouteWrapper />} />
         <Route path="/app" element={<AppRouteWrapper />} />
         <Route path="/app/*" element={<AppRouteWrapper />} />
+        <Route path="/web/app" element={<WebRouteWrapper />} />
+        <Route path="/web/app/*" element={<WebRouteWrapper />} />
         <Route path="/admin" element={<AdminRouteWrapper />} />
         <Route path="/track/:trackingId" element={<TrackRepairScreen />} />
+        <Route path="/privacy" element={<PrivacyScreen />} />
+        <Route path="/terms" element={<TermsScreen />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
