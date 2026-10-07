@@ -783,32 +783,39 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
         {/* Superadmin Control Center (Visible only to superadmin) */}
         {isSuperAdmin(user) && (
-          <div className="bg-gradient-to-br from-purple-900 via-slate-900 to-indigo-950 rounded-[16px] p-4 text-white shadow-lg shadow-purple-950/20 border border-purple-500/30 relative overflow-hidden">
-            <div className="flex items-center justify-between mb-2">
-              <span className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider bg-purple-500/20 border border-purple-400/30 text-purple-200 px-2.5 py-1 rounded-full">
-                <Crown className="w-3.5 h-3.5 text-amber-400" />
+          <div className="bg-white rounded-[14px] p-4 shadow-sm border border-black/[0.04]">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center space-x-2 text-xs font-semibold text-[#8E8E93] uppercase tracking-wider">
+                <Crown className="w-4 h-4 text-amber-500" />
                 <span>Superadmin Access</span>
-              </span>
-              <span className="text-[11px] font-mono text-purple-300">
+              </div>
+              <span className="text-[11px] font-mono text-[#8E8E93] bg-[#F2F2F7] px-2 py-0.5 rounded-md truncate max-w-[180px]">
                 {user?.email}
               </span>
             </div>
 
-            <h3 className="text-base font-bold text-white mt-1">
-              Central Master Admin
-            </h3>
-            <p className="text-xs text-purple-200/80 mt-0.5 leading-relaxed">
-              Inspect all registered shop accounts, manage cloud data usage quotas, toggle Pro activations, and contact owners.
-            </p>
+            <div className="flex items-start space-x-3 mb-3.5">
+              <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200/50 text-amber-600 flex items-center justify-center shrink-0">
+                <Crown className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-[15px] font-bold text-black tracking-tight">
+                  Central Master Admin
+                </h3>
+                <p className="text-xs text-[#8E8E93] mt-0.5 leading-relaxed">
+                  Manage registered shop accounts, quotas, Pro licenses, and monitor live shops.
+                </p>
+              </div>
+            </div>
 
             <button
               type="button"
               onClick={() => navigate('/admin')}
-              className="mt-3.5 w-full py-2.5 px-4 bg-purple-600 hover:bg-purple-500 text-white rounded-[12px] font-bold text-xs flex items-center justify-center gap-2 shadow-md shadow-purple-600/30 active:scale-[0.98] transition-all"
+              className="w-full py-2.5 px-4 bg-slate-900 hover:bg-black text-white rounded-[11px] font-semibold text-xs flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-xs"
             >
-              <Crown className="w-4 h-4 text-amber-300" />
+              <Crown className="w-3.5 h-3.5 text-amber-400" />
               <span>Open Admin Dashboard</span>
-              <ChevronRight className="w-4 h-4 text-purple-300 ml-auto" />
+              <ChevronRight className="w-4 h-4 text-slate-400 ml-auto" />
             </button>
           </div>
         )}
