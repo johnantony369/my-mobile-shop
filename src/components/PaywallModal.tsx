@@ -169,7 +169,7 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
                   Monthly
                 </span>
                 <div className="mt-1 flex items-baseline gap-0.5">
-                  <span className="text-2xl font-black text-black">₹99</span>
+                  <span className="text-2xl font-black text-black">₹249</span>
                   <span className="text-xs text-slate-500 font-semibold">/mo</span>
                 </div>
               </div>
@@ -215,12 +215,12 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
                   Yearly
                 </span>
                 <div className="mt-1 flex items-baseline gap-0.5">
-                  <span className="text-2xl font-black text-black">₹999</span>
+                  <span className="text-2xl font-black text-black">₹2,499</span>
                   <span className="text-xs text-slate-500 font-semibold">/yr</span>
                 </div>
               </div>
               <p className="text-[11px] text-iosGreen font-bold mt-2">
-                ₹83/mo • Best Value
+                ₹208/mo • Best Value
               </p>
               <div
                 className={`mt-2 flex items-center gap-1.5 text-xs font-semibold ${
@@ -249,7 +249,7 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
               className="w-full py-3.5 px-4 bg-gradient-to-r from-iosBlue via-blue-600 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-[14px] font-bold text-[15px] flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25 active:scale-[0.98] transition-all"
             >
               <span>
-                {selectedPlan === 'yearly' ? 'Subscribe • ₹999 / year' : 'Subscribe • ₹99 / month'}
+                {selectedPlan === 'yearly' ? 'Subscribe • ₹2,499 / year' : 'Subscribe • ₹249 / month'}
               </span>
               <ExternalLink className="w-4 h-4 ml-0.5 opacity-80" />
             </button>
