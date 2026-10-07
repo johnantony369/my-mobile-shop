@@ -49,6 +49,7 @@ import {
 } from '../utils/proPlan';
 import { LegalModal } from '../components/LegalModal';
 import { linkGoogleAccount } from '../firebase/auth';
+import { deleteUserAccountAndData } from '../firebase/accountDeletion';
 import { LinkPhoneModal } from '../components/LinkPhoneModal';
 import { InstallGuideModal } from '../components/InstallBanner';
 import {
@@ -385,6 +386,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const isExpired = trialDays <= 0 && !isProActive;
   const backupWarning = isBackupNeeded(settings.lastBackupAt);
 
+  const [isDeleteAccountModalOpen, setIsDeleteAccountModalOpen] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [deleteAccountError, setDeleteAccountError] = useState<string | null>(null);
+
   const handleSignOutConfirm = async () => {
     if (user) {
       await signOut();
@@ -394,6 +399,27 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     setIsSignOutModalOpen(false);
     onRefreshSettings();
     window.location.reload();
+  };
+
+  const handleDeleteAccountConfirm = async () => {
+    if (!user) {
+      await clearLocalDatabase();
+      setIsDeleteAccountModalOpen(false);
+      onRefreshSettings();
+      window.location.reload();
+      return;
+    }
+    setIsDeletingAccount(true);
+    setDeleteAccountError(null);
+    const result = await deleteUserAccountAndData({ user });
+    setIsDeletingAccount(false);
+    if (result.success) {
+      setIsDeleteAccountModalOpen(false);
+      onRefreshSettings();
+      window.location.reload();
+    } else {
+      setDeleteAccountError(result.error || 'Failed to delete account. Please try again.');
+    }
   };
 
   const handleSaveShopName = async (e: React.FormEvent) => {
@@ -1316,6 +1342,21 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             <span>Log Out</span>
           </button>
         </div>
+
+        {/* Section 8: Delete Account & Cloud Data (Google Play Policy Compliance) */}
+        <div className="bg-white rounded-[14px] p-2 shadow-sm border border-black/[0.04]">
+          <button
+            type="button"
+            onClick={() => {
+              setDeleteAccountError(null);
+              setIsDeleteAccountModalOpen(true);
+            }}
+            className="w-full py-2.5 px-4 flex items-center justify-center space-x-2 text-slate-400 hover:text-iosRed font-medium text-xs rounded-[10px] hover:bg-red-50/40 active:bg-red-100/40 transition-colors"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>Delete Account &amp; All Shop Data</span>
+          </button>
+        </div>
       </div>
 
       {/* Clear Confirmation Modal */}
@@ -1340,6 +1381,26 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         isDestructive={false}
         onConfirm={handleSignOutConfirm}
         onCancel={() => setIsSignOutModalOpen(false)}
+      />
+
+      {/* Delete Account Confirmation Modal */}
+      <ConfirmModal
+        isOpen={isDeleteAccountModalOpen}
+        title="Delete Account & All Data?"
+        message={
+          deleteAccountError ||
+          "This will permanently delete your account, remove all cloud records from Firebase, and wipe your shop register from this device. This action cannot be undone."
+        }
+        confirmLabel={isDeletingAccount ? "Deleting..." : "Permanently Delete Everything"}
+        cancelLabel={t('cancel_action', language)}
+        isDestructive={true}
+        onConfirm={handleDeleteAccountConfirm}
+        onCancel={() => {
+          if (!isDeletingAccount) {
+            setIsDeleteAccountModalOpen(false);
+            setDeleteAccountError(null);
+          }
+        }}
       />
 
       {/* Unified Login Modal */}

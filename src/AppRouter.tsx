@@ -16,6 +16,7 @@ import App from './App';
 import { WebApp } from './screens/web/WebApp';
 import { PrivacyScreen } from './screens/legal/PrivacyScreen';
 import { TermsScreen } from './screens/legal/TermsScreen';
+import { DeleteAccountScreen } from './screens/legal/DeleteAccountScreen';
 
 /** Component handling protected app entry */
 function AppRouteWrapper() {
@@ -381,6 +382,7 @@ export function AppRouter() {
         <Route path="/track/:trackingId" element={<TrackRepairScreen />} />
         <Route path="/privacy" element={<PrivacyScreen />} />
         <Route path="/terms" element={<TermsScreen />} />
+        <Route path="/delete-account" element={<DeleteAccountScreen />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
