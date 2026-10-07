@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 
 const RAZORPAY_MONTHLY_URL = 'https://rzp.io/rzp/AIScmrWq';
-const RAZORPAY_YEARLY_URL = 'https://rzp.io/rzp/2ZGyPsBK';
+const RAZORPAY_YEARLY_URL = 'https://rzp.io/rzp/EyBIPHa';
 
 interface PaywallModalProps {
   isOpen: boolean;
