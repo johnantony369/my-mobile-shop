@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Users,
-  TrendingUp,
-  Clock,
   Sparkles,
   ArrowRight,
   LogOut,
@@ -11,10 +9,7 @@ import {
   RefreshCw,
   Building2,
   CheckCircle2,
-  ShieldCheck,
-  Phone,
   AlertCircle,
-  HelpCircle,
   ChevronLeft,
 } from 'lucide-react';
 import { auth } from '../../firebase/config';
@@ -136,10 +131,10 @@ export const PartnerPortalScreen: React.FC = () => {
       setFormLoading(true);
       // Register Firebase Auth account using pseudo-email for phone login
       const email = `${normPhone}@partner.mymobileshop.online`;
-      const cred = await registerWithPassword(email, password);
+      const authUser = await registerWithPassword(email, password);
 
       const profile = await registerPartner({
-        uid: cred.user.uid,
+        uid: authUser.uid,
         fullName: fullName.trim(),
         businessName: businessName.trim(),
         marketCity: marketCity.trim(),
@@ -170,8 +165,8 @@ export const PartnerPortalScreen: React.FC = () => {
     try {
       setFormLoading(true);
       const email = `${normPhone}@partner.mymobileshop.online`;
-      const cred = await loginWithPassword(email, loginPassword);
-      await loadPartnerData(cred.user.uid);
+      const authUser = await loginWithPassword(email, loginPassword);
+      await loadPartnerData(authUser.uid);
     } catch (err: unknown) {
       setFormError(err instanceof Error ? err.message : 'Invalid mobile number or password.');
     } finally {

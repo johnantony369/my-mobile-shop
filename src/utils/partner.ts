@@ -26,7 +26,6 @@ export function parseLeadsCsv(csvContent: string): {
     return { leads: [], errors: ['CSV contains no data rows.'] };
   }
 
-  const header = lines[0].toLowerCase();
   const shopNameIdx = 0;
   const phoneIdx = 1;
   const cityIdx = 2;

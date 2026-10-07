@@ -4,8 +4,6 @@
 
 // Simple pseudo-random hash generator for deterministic module grid if simplified fallback or standard QR matrix
 export function generateQrSvg(data: string, size = 200): string {
-  const urlEncoded = encodeURIComponent(data);
-  // We produce a clean, scalable SVG QR markup
   // Standard 25x25 or 29x29 module grid representation
   const modules = generateQrMatrix(data);
   const moduleCount = modules.length;

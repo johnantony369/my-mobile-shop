@@ -39,7 +39,7 @@ import {
   executePartnerPayout,
 } from '../firebase/partnerAdmin';
 import { importLeadsBatch, recordPlanConversion } from '../firebase/partner';
-import { formatCurrencyINR, CRM_STATUS_LABELS } from '../utils/partner';
+import { formatCurrencyINR } from '../utils/partner';
 import { LeadStatusBadge } from '../components/partner/LeadStatusBadge';
 import { CsvImportModal } from '../components/partner/CsvImportModal';
 import { useAuth } from '../firebase/useAuth';
@@ -52,7 +52,7 @@ import {
   isProExpired,
   formatProExpiry,
 } from '../utils/proPlan';
-import { Copy, Check, Upload, ChevronRight, Layers } from 'lucide-react';
+import { Copy, Check, Building2 } from 'lucide-react';
 
 export const AdminScreen: React.FC = () => {
   const navigate = useNavigate();
@@ -690,8 +690,10 @@ export const AdminScreen: React.FC = () => {
             })}
           </div>
         )}
+      </div>
+    )}
 
-        {/* Partners & Payouts Tab */}
+    {/* Partners & Payouts Tab */}
         {adminTab === 'partners' && (
           <div className="space-y-6">
             {/* Partner Metric Cards */}
@@ -855,7 +857,11 @@ export const AdminScreen: React.FC = () => {
                 </div>
               </div>
 
-              {partners.length === 0 ? (
+              {partnersLoading ? (
+                <div className="p-8 text-center text-slate-400 text-xs">
+                  Loading partner directory...
+                </div>
+              ) : partners.length === 0 ? (
                 <div className="p-8 text-center text-slate-400 text-xs">
                   No partners registered yet. Distributors can sign up at <code className="text-iosBlue font-mono">/partner</code>.
                 </div>

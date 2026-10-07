@@ -101,6 +101,22 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
           {error && <p className="text-xs text-iosRed font-medium mt-1.5">{error}</p>}
         </div>
 
+        {/* Repairs Question: Do you offer phone repairs? (Yes / No) */}
+        <div className="bg-white rounded-[14px] p-4 shadow-sm border border-black/[0.04]">
+          <label className="text-xs font-semibold text-[#8E8E93] uppercase tracking-wider block mb-2">
+            {t('onboarding_repairs_question', language)}
+          </label>
+          <SegmentedControl<'no' | 'yes'>
+            value={repairsChoice}
+            onChange={(val) => setRepairsChoice(val)}
+            size="md"
+            options={[
+              { value: 'no', label: t('onboarding_repairs_no', language) },
+              { value: 'yes', label: t('onboarding_repairs_yes', language) },
+            ]}
+          />
+        </div>
+
         {/* Partner Referral Code (Optional) */}
         <div className="bg-white rounded-[14px] p-4 shadow-sm border border-black/[0.04] space-y-2">
           <div className="flex items-center justify-between">
