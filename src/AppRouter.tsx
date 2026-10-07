@@ -11,6 +11,7 @@ import { OnboardingScreen } from './screens/OnboardingScreen';
 import { AdminScreen } from './screens/AdminScreen';
 import { TrackRepairScreen } from './screens/TrackRepairScreen';
 import { isSuperAdmin } from './utils/admin';
+import { LoadingScreen } from './components/LoadingScreen';
 import App from './App';
 
 /** Component handling protected app entry */
@@ -65,9 +66,10 @@ function AppRouteWrapper() {
 
   if (authLoading || settingsList === undefined || isMismatched || (user && settingsList.length === 0 && (checkingCloud || checkedCloudUid !== user.uid))) {
     return (
-      <div className="min-h-screen bg-iosBg flex items-center justify-center p-6 text-center select-none">
-        <div className="w-9 h-9 border-3 border-iosBlue border-t-transparent rounded-full animate-spin" />
-      </div>
+      <LoadingScreen
+        message="Opening your Day Book..."
+        submessage="Syncing latest shop transactions & repairs"
+      />
     );
   }
 
@@ -137,9 +139,10 @@ function LoginRouteWrapper() {
 
   if (authLoading || settingsList === undefined || isMismatched || (user && settingsList.length === 0 && (checkingCloud || checkedCloudUid !== user.uid))) {
     return (
-      <div className="min-h-screen bg-iosBg flex items-center justify-center p-6 text-center select-none">
-        <div className="w-9 h-9 border-3 border-iosBlue border-t-transparent rounded-full animate-spin" />
-      </div>
+      <LoadingScreen
+        message={user ? "Signing in to your shop..." : "Connecting..."}
+        submessage="Securing your cloud and offline ledger"
+      />
     );
   }
 
@@ -228,9 +231,10 @@ function OnboardingRouteWrapper() {
 
   if (authLoading || settingsList === undefined || isMismatched || (user && settingsList.length === 0 && (checkingCloud || checkedCloudUid !== user.uid))) {
     return (
-      <div className="min-h-screen bg-iosBg flex items-center justify-center p-6 text-center select-none">
-        <div className="w-9 h-9 border-3 border-iosBlue border-t-transparent rounded-full animate-spin" />
-      </div>
+      <LoadingScreen
+        message="Preparing setup..."
+        submessage="Getting your shop counter ready"
+      />
     );
   }
 
@@ -267,9 +271,10 @@ function AdminRouteWrapper() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-iosBg flex items-center justify-center p-6 text-center select-none">
-        <div className="w-9 h-9 border-3 border-iosBlue border-t-transparent rounded-full animate-spin" />
-      </div>
+      <LoadingScreen
+        message="Verifying admin credentials..."
+        submessage="Connecting to superadmin dashboard"
+      />
     );
   }
 

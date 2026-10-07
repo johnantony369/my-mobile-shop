@@ -24,5 +24,8 @@ dist-ssr
 *.ntvs*
 *.njsproj
 *.sln
-*.sw?
 .vercel
+.agents/
+.claude/
+agent/
+skills-lock.json

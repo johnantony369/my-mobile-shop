@@ -45,7 +45,18 @@ export const BookScreen: React.FC<BookScreenProps> = ({
   const entries = useLiveQuery(
     async () => {
       const items = await db.entries.where('date').equals(selectedDate).toArray();
-      return items.filter((e) => !e.deletedAt && e.syncStatus !== 'deleted');
+      const valid = items.filter((e) => !e.deletedAt && e.syncStatus !== 'deleted');
+      // Extra rendering defense: ensure unique cloudId so no duplicates can visually render
+      const seen = new Set<string>();
+      const deduplicated: Entry[] = [];
+      for (const item of valid) {
+        if (item.cloudId) {
+          if (seen.has(item.cloudId)) continue;
+          seen.add(item.cloudId);
+        }
+        deduplicated.push(item);
+      }
+      return deduplicated;
     },
     [selectedDate, refreshKey]
   ) ?? [];

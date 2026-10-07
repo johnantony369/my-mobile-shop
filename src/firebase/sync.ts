@@ -7,7 +7,7 @@ import {
   onSnapshot,
   Unsubscribe
 } from 'firebase/firestore';
-import { db, getAppSettings, generateCloudId, getJobPhotos } from '../db/db';
+import { db, getAppSettings, generateCloudId, getJobPhotos, deduplicateLocalDatabase } from '../db/db';
 import { dbFirestore, auth, isFirebaseConfigured } from './config';
 import { Entry, Job, AppSettings, StockItem, Bill, PublicRepairTrack } from '../types';
 import { upsertAccountSummary, calculateDataSize } from './admin';
@@ -15,6 +15,10 @@ import { isSuperAdmin } from '../utils/admin';
 import { isProCurrentlyActive } from '../utils/proPlan';
 
 export type SyncState = 'idle' | 'syncing' | 'synced' | 'offline' | 'error';
+
+// Mutex lock to prevent duplicate concurrent pulls for the same user account
+const activePullPromises = new Map<string, Promise<{ pulledEntries: number; pulledJobs: number; pulledStock?: number; pulledBills?: number; settingsRestored: boolean }>>();
+
 
 /**
  * Strips out any keys with `undefined` values to prevent Firestore from rejecting batch writes.
@@ -92,118 +96,160 @@ export async function pushSinglePublicRepair(job: Job): Promise<void> {
 
 export async function reconcileRemoteEntries(remoteEntries: Entry[]): Promise<number> {
   let updatedCount = 0;
-  for (const remote of remoteEntries) {
-    if (!remote.cloudId) continue;
-    const local = await db.entries.where('cloudId').equals(remote.cloudId).first();
+  await db.transaction('rw', db.entries, async () => {
+    for (const remote of remoteEntries) {
+      if (!remote.cloudId) continue;
+      const matching = await db.entries.where('cloudId').equals(remote.cloudId).toArray();
 
-    if (!local) {
-      if (remote.deletedAt) continue; // Don't resurrect deleted records
-      const { id, ...toInsert } = remote;
-      await db.entries.add({ ...toInsert, syncStatus: 'synced' } as Entry);
-      updatedCount++;
-    } else {
-      if (remote.deletedAt) {
-        await db.entries.delete(local.id!);
+      if (matching.length === 0) {
+        if (remote.deletedAt) continue; // Don't resurrect deleted records
+        const { id, ...toInsert } = remote;
+        await db.entries.add({ ...toInsert, syncStatus: 'synced' } as Entry);
         updatedCount++;
       } else {
-        const remoteTime = remote.updatedAt ? new Date(remote.updatedAt).getTime() : 0;
-        const localTime = local.updatedAt ? new Date(local.updatedAt).getTime() : 0;
-        if (remoteTime > localTime) {
-          const { id, ...toUpdate } = remote;
-          await db.entries.update(local.id!, { ...toUpdate, syncStatus: 'synced' });
+        const local = matching[0];
+        // If duplicates exist locally from prior race conditions, prune them
+        if (matching.length > 1) {
+          const duplicateIds = matching.slice(1).map(m => m.id!).filter(Boolean);
+          if (duplicateIds.length > 0) {
+            await db.entries.bulkDelete(duplicateIds);
+          }
+        }
+
+        if (remote.deletedAt) {
+          await db.entries.delete(local.id!);
           updatedCount++;
+        } else {
+          const remoteTime = remote.updatedAt ? new Date(remote.updatedAt).getTime() : 0;
+          const localTime = local.updatedAt ? new Date(local.updatedAt).getTime() : 0;
+          if (remoteTime > localTime) {
+            const { id, ...toUpdate } = remote;
+            await db.entries.update(local.id!, { ...toUpdate, syncStatus: 'synced' });
+            updatedCount++;
+          }
         }
       }
     }
-  }
+  });
   return updatedCount;
 }
 
 export async function reconcileRemoteJobs(remoteJobs: Job[]): Promise<number> {
   let updatedCount = 0;
-  for (const remote of remoteJobs) {
-    if (!remote.cloudId) continue;
-    const local = await db.jobs.where('cloudId').equals(remote.cloudId).first();
+  await db.transaction('rw', db.jobs, async () => {
+    for (const remote of remoteJobs) {
+      if (!remote.cloudId) continue;
+      const matching = await db.jobs.where('cloudId').equals(remote.cloudId).toArray();
 
-    if (!local) {
-      if (remote.deletedAt) continue;
-      const { id, ...toInsert } = remote;
-      await db.jobs.add({ ...toInsert, syncStatus: 'synced' } as Job);
-      updatedCount++;
-    } else {
-      if (remote.deletedAt) {
-        await db.jobs.delete(local.id!);
+      if (matching.length === 0) {
+        if (remote.deletedAt) continue;
+        const { id, ...toInsert } = remote;
+        await db.jobs.add({ ...toInsert, syncStatus: 'synced' } as Job);
         updatedCount++;
       } else {
-        const remoteTime = remote.updatedAt ? new Date(remote.updatedAt).getTime() : 0;
-        const localTime = local.updatedAt ? new Date(local.updatedAt).getTime() : 0;
-        if (remoteTime > localTime) {
-          const { id, ...toUpdate } = remote;
-          await db.jobs.update(local.id!, { ...toUpdate, syncStatus: 'synced' });
+        const local = matching[0];
+        if (matching.length > 1) {
+          const duplicateIds = matching.slice(1).map(m => m.id!).filter(Boolean);
+          if (duplicateIds.length > 0) {
+            await db.jobs.bulkDelete(duplicateIds);
+          }
+        }
+
+        if (remote.deletedAt) {
+          await db.jobs.delete(local.id!);
           updatedCount++;
+        } else {
+          const remoteTime = remote.updatedAt ? new Date(remote.updatedAt).getTime() : 0;
+          const localTime = local.updatedAt ? new Date(local.updatedAt).getTime() : 0;
+          if (remoteTime > localTime) {
+            const { id, ...toUpdate } = remote;
+            await db.jobs.update(local.id!, { ...toUpdate, syncStatus: 'synced' });
+            updatedCount++;
+          }
         }
       }
     }
-  }
+  });
   return updatedCount;
 }
 
 export async function reconcileRemoteStock(remoteStock: StockItem[]): Promise<number> {
+  if (!db.stock) return 0;
   let updatedCount = 0;
-  for (const remote of remoteStock) {
-    if (!remote.cloudId) continue;
-    const local = await db.stock.where('cloudId').equals(remote.cloudId).first();
+  await db.transaction('rw', db.stock, async () => {
+    for (const remote of remoteStock) {
+      if (!remote.cloudId) continue;
+      const matching = await db.stock.where('cloudId').equals(remote.cloudId).toArray();
 
-    if (!local) {
-      if (remote.deletedAt) continue;
-      const { id, ...toInsert } = remote;
-      await db.stock.add({ ...toInsert, syncStatus: 'synced' } as StockItem);
-      updatedCount++;
-    } else {
-      if (remote.deletedAt) {
-        await db.stock.delete(local.id!);
+      if (matching.length === 0) {
+        if (remote.deletedAt) continue;
+        const { id, ...toInsert } = remote;
+        await db.stock.add({ ...toInsert, syncStatus: 'synced' } as StockItem);
         updatedCount++;
       } else {
-        const remoteTime = remote.updatedAt ? new Date(remote.updatedAt).getTime() : 0;
-        const localTime = local.updatedAt ? new Date(local.updatedAt).getTime() : 0;
-        if (remoteTime > localTime) {
-          const { id, ...toUpdate } = remote;
-          await db.stock.update(local.id!, { ...toUpdate, syncStatus: 'synced' });
+        const local = matching[0];
+        if (matching.length > 1) {
+          const duplicateIds = matching.slice(1).map(m => m.id!).filter(Boolean);
+          if (duplicateIds.length > 0) {
+            await db.stock.bulkDelete(duplicateIds);
+          }
+        }
+
+        if (remote.deletedAt) {
+          await db.stock.delete(local.id!);
           updatedCount++;
+        } else {
+          const remoteTime = remote.updatedAt ? new Date(remote.updatedAt).getTime() : 0;
+          const localTime = local.updatedAt ? new Date(local.updatedAt).getTime() : 0;
+          if (remoteTime > localTime) {
+            const { id, ...toUpdate } = remote;
+            await db.stock.update(local.id!, { ...toUpdate, syncStatus: 'synced' });
+            updatedCount++;
+          }
         }
       }
     }
-  }
+  });
   return updatedCount;
 }
 
 export async function reconcileRemoteBills(remoteBills: Bill[]): Promise<number> {
   if (!db.bills) return 0;
   let updatedCount = 0;
-  for (const remote of remoteBills) {
-    if (!remote.cloudId) continue;
-    const local = await db.bills.where('cloudId').equals(remote.cloudId).first();
+  await db.transaction('rw', db.bills, async () => {
+    for (const remote of remoteBills) {
+      if (!remote.cloudId) continue;
+      const matching = await db.bills.where('cloudId').equals(remote.cloudId).toArray();
 
-    if (!local) {
-      if (remote.deletedAt) continue;
-      const { id, ...toInsert } = remote;
-      await db.bills.add({ ...toInsert, syncStatus: 'synced' } as Bill);
-      updatedCount++;
-    } else {
-      if (remote.deletedAt) {
-        await db.bills.delete(local.id!);
+      if (matching.length === 0) {
+        if (remote.deletedAt) continue;
+        const { id, ...toInsert } = remote;
+        await db.bills.add({ ...toInsert, syncStatus: 'synced' } as Bill);
         updatedCount++;
       } else {
-        const remoteTime = remote.updatedAt ? new Date(remote.updatedAt).getTime() : 0;
-        const localTime = local.updatedAt ? new Date(local.updatedAt).getTime() : 0;
-        if (remoteTime > localTime) {
-          const { id, ...toUpdate } = remote;
-          await db.bills.update(local.id!, { ...toUpdate, syncStatus: 'synced' });
+        const local = matching[0];
+        if (matching.length > 1) {
+          const duplicateIds = matching.slice(1).map(m => m.id!).filter(Boolean);
+          if (duplicateIds.length > 0) {
+            await db.bills.bulkDelete(duplicateIds);
+          }
+        }
+
+        if (remote.deletedAt) {
+          await db.bills.delete(local.id!);
           updatedCount++;
+        } else {
+          const remoteTime = remote.updatedAt ? new Date(remote.updatedAt).getTime() : 0;
+          const localTime = local.updatedAt ? new Date(local.updatedAt).getTime() : 0;
+          if (remoteTime > localTime) {
+            const { id, ...toUpdate } = remote;
+            await db.bills.update(local.id!, { ...toUpdate, syncStatus: 'synced' });
+            updatedCount++;
+          }
         }
       }
     }
-  }
+  });
   return updatedCount;
 }
 
@@ -419,10 +465,18 @@ export async function pushPendingChanges(uid: string): Promise<number> {
 export async function pullCloudChanges(uid: string): Promise<{ pulledEntries: number; pulledJobs: number; pulledStock?: number; pulledBills?: number; settingsRestored: boolean }> {
   if (!dbFirestore) return { pulledEntries: 0, pulledJobs: 0, pulledStock: 0, pulledBills: 0, settingsRestored: false };
 
-  // 1. Pull entries
-  const entriesSnap = await getDocs(collection(dbFirestore, 'users', uid, 'entries'));
-  const remoteEntries = entriesSnap.docs.map(d => d.data() as Entry);
-  const pulledEntries = await reconcileRemoteEntries(remoteEntries);
+  // If a pull is already in-flight for this user, return the existing active promise
+  const existingPull = activePullPromises.get(uid);
+  if (existingPull) {
+    return existingPull;
+  }
+
+  const pullExecution = (async () => {
+    try {
+      // 1. Pull entries
+      const entriesSnap = await getDocs(collection(dbFirestore, 'users', uid, 'entries'));
+      const remoteEntries = entriesSnap.docs.map(d => d.data() as Entry);
+      const pulledEntries = await reconcileRemoteEntries(remoteEntries);
 
   // 2. Pull jobs
   const jobsSnap = await getDocs(collection(dbFirestore, 'users', uid, 'jobs'));
@@ -506,7 +560,17 @@ export async function pullCloudChanges(uid: string): Promise<{ pulledEntries: nu
     settingsRestored = true;
   }
 
-  return { pulledEntries, pulledJobs, pulledStock, pulledBills, settingsRestored };
+      // Safeguard: perform a deduplication pass to ensure IndexedDB has exactly one record per cloudId
+      await deduplicateLocalDatabase();
+
+      return { pulledEntries, pulledJobs, pulledStock, pulledBills, settingsRestored };
+    } finally {
+      activePullPromises.delete(uid);
+    }
+  })();
+
+  activePullPromises.set(uid, pullExecution);
+  return pullExecution;
 }
 
 export async function syncNow(userId?: string): Promise<{

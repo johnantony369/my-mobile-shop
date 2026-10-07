@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Store,
   ArrowRight,
   CheckCircle2,
   Zap,
@@ -10,11 +9,13 @@ import {
   ShieldCheck,
   TrendingUp,
   Wrench,
-  Receipt,
+  Smartphone,
   Sparkles,
   Mail,
   Menu,
-  X
+  X,
+  Clock,
+  ChevronRight
 } from 'lucide-react';
 import { LegalModal } from '../components/LegalModal';
 
@@ -27,6 +28,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isAuthenticated = fals
   const [isLegalOpen, setIsLegalOpen] = useState(false);
   const [legalTab, setLegalTab] = useState<'privacy' | 'terms'>('privacy');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [activeSegment, setActiveSegment] = useState<'daybook' | 'repair' | 'stock'>('daybook');
 
   const handleOpenLegal = (tab: 'privacy' | 'terms') => {
     setLegalTab(tab);
@@ -51,497 +53,660 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isAuthenticated = fals
   };
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] text-slate-900 font-sans selection:bg-blue-500/20 pb-20 sm:pb-0 overflow-x-hidden">
-      {/* 1. Header / Navbar */}
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 safe-top">
-        <div className="max-w-6xl mx-auto px-3.5 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
-          {/* Brand */}
+    <div className="min-h-screen bg-[#F2F2F7] text-[#000000] font-sans selection:bg-[#007AFF]/20 pb-28 sm:pb-0 overflow-x-hidden antialiased">
+      {/* 1. iOS Translucent Blur Navigation Bar */}
+      <header className="sticky top-0 z-40 bg-[#F2F2F7]/80 backdrop-blur-2xl hairline-b safe-top transition-colors">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
+          {/* Brand & App Icon Squircle */}
           <div
-            className="flex items-center gap-2 cursor-pointer touch-manipulation active:opacity-80 transition-opacity"
+            className="flex items-center gap-2.5 cursor-pointer select-none ios-press"
             onClick={() => navigate('/')}
           >
             <img
               src="/icon-192.png"
               alt="My Mobile Shop"
-              className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl shadow-xs border border-black/5 object-cover"
+              className="size-8 sm:size-9 rounded-[10px] sm:rounded-ios shadow-xs border border-black/5 object-cover"
             />
-            <span className="text-base sm:text-lg font-black tracking-tight text-slate-900">
-              My Mobile Shop
-            </span>
+            <div className="flex flex-col">
+              <span className="text-sm sm:text-base font-semibold tracking-tight text-slate-900 leading-tight">
+                My Mobile Shop
+              </span>
+              <span className="text-[10px] text-[#8E8E93] font-medium leading-none hidden sm:inline">
+                iOS Counter Edition
+              </span>
+            </div>
           </div>
 
-          {/* Desktop Nav links */}
-          <nav className="hidden md:flex items-center gap-7 text-xs font-semibold text-slate-600">
-            <a href="#benefits" className="hover:text-blue-600 transition-colors">Why It Works</a>
-            <a href="#workflow" className="hover:text-blue-600 transition-colors">Daily Routine</a>
-            <a href="#pricing" className="hover:text-blue-600 transition-colors">Pricing</a>
+          {/* Desktop Capsule Links */}
+          <nav className="hidden md:flex items-center gap-6 text-xs font-semibold text-[#8E8E93]">
+            <a href="#features" className="hover:text-[#007AFF] transition-colors">Features</a>
+            <a href="#workflow" className="hover:text-[#007AFF] transition-colors">Routine</a>
+            <a href="#pricing" className="hover:text-[#007AFF] transition-colors">Pricing</a>
             <button
               type="button"
               onClick={() => handleOpenLegal('privacy')}
-              className="hover:text-blue-600 transition-colors"
+              className="hover:text-[#007AFF] transition-colors"
             >
               Privacy
             </button>
           </nav>
 
-          {/* Action CTAs */}
-          <div className="flex items-center gap-1.5 sm:gap-2.5">
+          {/* Header Action Buttons */}
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={handleSignIn}
-              className="px-2.5 sm:px-3.5 py-2 text-xs font-bold text-slate-700 hover:text-blue-600 active:bg-slate-100 rounded-lg transition-colors touch-manipulation"
+              className="px-3 py-1.5 text-xs font-semibold text-[#007AFF] active:bg-[#007AFF]/10 rounded-full transition-colors ios-press"
             >
               {isAuthenticated ? 'Open Shop' : 'Sign In'}
             </button>
             <button
               type="button"
               onClick={handleGetStarted}
-              className="hidden sm:inline-flex px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-sm hover:shadow-md transition-all items-center gap-1.5 active:scale-95"
+              className="hidden sm:inline-flex px-4 py-2 bg-[#007AFF] hover:bg-[#0062cc] text-white text-xs font-semibold rounded-full shadow-xs transition-all items-center gap-1.5 ios-press"
             >
               <span>{isAuthenticated ? 'Go to App' : 'Get Started'}</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <ArrowRight className="size-3.5" />
             </button>
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 text-slate-600 hover:text-slate-900 rounded-xl hover:bg-slate-100 active:bg-slate-200 transition-colors"
+              className="md:hidden p-2 text-[#8E8E93] hover:text-slate-900 rounded-full active:bg-black/5 transition-colors"
               aria-label="Toggle navigation menu"
             >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {mobileMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
             </button>
           </div>
         </div>
 
-        {/* Mobile Dropdown Menu */}
+        {/* Mobile Dropdown Panel */}
         {mobileMenuOpen && (
-          <div className="md:hidden bg-white border-b border-slate-200 px-4 py-3 space-y-2 shadow-lg animate-in slide-in-from-top-2">
+          <div className="md:hidden bg-white/95 backdrop-blur-2xl hairline-b px-4 py-3 space-y-2 shadow-lg animate-fade-slide-in">
             <a
-              href="#benefits"
+              href="#features"
               onClick={() => setMobileMenuOpen(false)}
-              className="block py-2 text-sm font-semibold text-slate-700 hover:text-blue-600 border-b border-slate-100"
+              className="flex items-center justify-between py-2.5 text-sm font-semibold text-slate-800 border-b border-black/5"
             >
-              Why It Works
+              <span>Core Features</span>
+              <ChevronRight className="size-4 text-[#8E8E93]" />
             </a>
             <a
               href="#workflow"
               onClick={() => setMobileMenuOpen(false)}
-              className="block py-2 text-sm font-semibold text-slate-700 hover:text-blue-600 border-b border-slate-100"
+              className="flex items-center justify-between py-2.5 text-sm font-semibold text-slate-800 border-b border-black/5"
             >
-              Daily Routine
+              <span>Daily Routine</span>
+              <ChevronRight className="size-4 text-[#8E8E93]" />
             </a>
             <a
               href="#pricing"
               onClick={() => setMobileMenuOpen(false)}
-              className="block py-2 text-sm font-semibold text-slate-700 hover:text-blue-600 border-b border-slate-100"
+              className="flex items-center justify-between py-2.5 text-sm font-semibold text-slate-800 border-b border-black/5"
             >
-              Pricing Plans
+              <span>Pricing (Launch Special)</span>
+              <ChevronRight className="size-4 text-[#8E8E93]" />
             </a>
             <button
               type="button"
               onClick={() => handleOpenLegal('privacy')}
-              className="w-full text-left py-2 text-sm font-semibold text-slate-700 hover:text-blue-600 border-b border-slate-100"
+              className="w-full flex items-center justify-between py-2.5 text-sm font-semibold text-slate-800 border-b border-black/5 text-left"
             >
-              Privacy Policy
+              <span>Privacy Policy</span>
+              <ChevronRight className="size-4 text-[#8E8E93]" />
             </button>
             <button
               type="button"
               onClick={() => handleOpenLegal('terms')}
-              className="w-full text-left py-2 text-sm font-semibold text-slate-700 hover:text-blue-600"
+              className="w-full flex items-center justify-between py-2.5 text-sm font-semibold text-slate-800 text-left"
             >
-              Terms of Service
+              <span>Terms of Service</span>
+              <ChevronRight className="size-4 text-[#8E8E93]" />
             </button>
           </div>
         )}
       </header>
 
-      {/* 2. Hero Section */}
-      <section className="relative overflow-hidden pt-6 pb-12 sm:pt-16 sm:pb-20 md:pt-20 md:pb-24 px-4 sm:px-6 max-w-5xl mx-auto text-center">
-        {/* Benefit Pill */}
-        <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1 sm:py-1.5 rounded-full bg-blue-50 border border-blue-200/60 text-blue-700 text-[11px] sm:text-xs font-bold mb-4 sm:mb-6 shadow-2xs">
-          <Sparkles className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-blue-600 shrink-0" />
-          <span>Built Exclusively for Mobile Retail & Repair Shops</span>
-        </div>
-
-        {/* Hero Title */}
-        <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-[1.2] max-w-3xl mx-auto px-1">
-          Run Your Mobile Shop Without the Daily Notebook Chaos
-        </h1>
-
-        {/* Hero Subtitle */}
-        <p className="mt-3.5 sm:mt-5 text-sm sm:text-base md:text-lg text-slate-600 max-w-2xl mx-auto font-medium leading-relaxed px-2">
-          Track daily cash & UPI in seconds, manage customer phone repairs without missed deadlines, and send professional WhatsApp repair receipts—all from your smartphone.
-        </p>
-
-        {/* Quick Proof Badges */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-6 mt-5 sm:mt-6 text-xs font-semibold text-slate-600 bg-slate-100/70 sm:bg-transparent py-2.5 px-4 rounded-2xl max-w-md sm:max-w-none mx-auto">
-          <div className="flex items-center gap-1.5">
-            <Zap className="w-4 h-4 text-amber-500 shrink-0" />
-            <span>5-second entry speed</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <MessageSquare className="w-4 h-4 text-emerald-500 shrink-0" />
-            <span>1-tap WhatsApp repair receipts</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <WifiOff className="w-4 h-4 text-blue-500 shrink-0" />
-            <span>Opens instantly without internet</span>
+      {/* 2. Hero Section: iOS Dynamic Island + Mobile-First Studio Presentation */}
+      <section className="pt-4 pb-10 sm:pt-14 sm:pb-16 px-4 sm:px-6 max-w-5xl mx-auto space-y-6 sm:space-y-8">
+        {/* iOS Dynamic Island Status Capsule */}
+        <div className="flex justify-center">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/90 text-white shadow-lg text-[11px] sm:text-xs font-semibold backdrop-blur-xl border border-white/10 animate-fade-slide-in">
+            <span className="size-2 rounded-full bg-[#34C759] animate-pulse" />
+            <span className="text-white/90">First 50 Early Access</span>
+            <span className="text-white/40">•</span>
+            <span className="text-[#34C759] font-bold">Save 64%</span>
           </div>
         </div>
 
-        {/* Hero Action Buttons */}
-        <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2.5 sm:gap-3 max-w-md mx-auto">
+        {/* Hero Headline & Subhead */}
+        <div className="text-center max-w-2xl mx-auto space-y-3">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900 leading-[1.12] text-balance">
+            The All-in-One Counter App for Your Mobile Shop.
+          </h1>
+          <p className="text-sm sm:text-base md:text-lg text-[#8E8E93] font-normal leading-relaxed text-pretty max-w-xl mx-auto">
+            Replace paper registers and WhatsApp chaos. Track daily cash & UPI, manage phone repairs, and run your inventory in seconds—even completely offline.
+          </p>
+        </div>
+
+        {/* Micro Badges (iOS Pill Group) */}
+        <div className="flex flex-wrap items-center justify-center gap-2 text-xs font-medium text-slate-700">
+          <span className="inline-flex items-center gap-1.5 bg-white/80 border border-black/5 px-3 py-1 rounded-full shadow-2xs">
+            <Zap className="size-3.5 text-amber-500" />
+            <span>5s Entry Speed</span>
+          </span>
+          <span className="inline-flex items-center gap-1.5 bg-white/80 border border-black/5 px-3 py-1 rounded-full shadow-2xs">
+            <WifiOff className="size-3.5 text-[#007AFF]" />
+            <span>100% Offline Ready</span>
+          </span>
+          <span className="inline-flex items-center gap-1.5 bg-white/80 border border-black/5 px-3 py-1 rounded-full shadow-2xs">
+            <MessageSquare className="size-3.5 text-[#34C759]" />
+            <span>1-Tap WhatsApp Receipts</span>
+          </span>
+        </div>
+
+        {/* Desktop CTA Row */}
+        <div className="hidden sm:flex items-center justify-center gap-3 pt-1">
           <button
             type="button"
             onClick={handleGetStarted}
-            className="w-full sm:w-auto px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-2xl shadow-lg shadow-blue-500/25 transition-all flex items-center justify-center gap-2 active:scale-98 touch-manipulation min-h-[48px]"
+            className="px-6 py-3 bg-[#007AFF] hover:bg-[#0062cc] text-white text-sm font-semibold rounded-full shadow-sm hover:shadow-md transition-all flex items-center gap-2 ios-press"
           >
-            <span>{isAuthenticated ? 'Open Your Day Book' : 'Start Your Shop Ledger'}</span>
-            <ArrowRight className="w-4 h-4" />
+            <span>{isAuthenticated ? 'Open Day Book' : 'Start Your Shop Ledger'}</span>
+            <ArrowRight className="size-4" />
           </button>
           <button
             type="button"
             onClick={handleSignIn}
-            className="w-full sm:w-auto px-5 py-3.5 bg-white hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-2xl border border-slate-200 transition-all active:scale-98 shadow-2xs touch-manipulation min-h-[48px]"
+            className="px-5 py-3 bg-white hover:bg-slate-50 text-slate-800 text-sm font-semibold rounded-full border border-black/5 transition-all shadow-2xs ios-press"
           >
             {isAuthenticated ? 'Dashboard' : 'Sign In to Existing Shop'}
           </button>
         </div>
 
-        {/* Interactive App Preview Mockup */}
-        <div className="mt-8 sm:mt-12 max-w-md sm:max-w-lg mx-auto bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xl sm:shadow-2xl border border-slate-200 text-left">
-          {/* Mock Header */}
-          <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-slate-100">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0">
-                <Store className="w-4 h-4" />
-              </div>
-              <div className="min-w-0">
-                <h4 className="text-xs font-bold text-slate-900 truncate">Kerala Mobile Care</h4>
-                <p className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  Today's Day Book Open
-                </p>
+        {/* 3. Hero Visual & Interactive iOS Counter Widget */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-stretch pt-2">
+          {/* Left: 3D Studio Mockup Card */}
+          <div className="md:col-span-7 bg-white rounded-[24px] sm:rounded-3xl p-3 sm:p-4 border border-black/5 shadow-sm overflow-hidden flex flex-col justify-between">
+            <div className="relative rounded-2xl overflow-hidden bg-slate-100 aspect-4/3 border border-black/5">
+              <img
+                src="/hero-preview.jpg"
+                alt="My Mobile Shop counter workspace"
+                className="w-full h-full object-cover"
+                loading="eager"
+              />
+              <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-md px-2.5 py-1 rounded-full shadow-xs text-[10px] font-bold text-slate-800 flex items-center gap-1.5 border border-black/5">
+                <span className="size-2 rounded-full bg-[#34C759]" />
+                <span>Live Shop Dashboard</span>
               </div>
             </div>
-            <span className="text-[11px] font-bold bg-blue-50 text-blue-700 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full whitespace-nowrap">
-              ₹Net: +₹18,300
-            </span>
-          </div>
 
-          {/* Mock Financial Summary Cards */}
-          <div className="grid grid-cols-2 gap-2.5 sm:gap-3 mt-3 sm:mt-4">
-            <div className="p-2.5 sm:p-3 bg-emerald-50/70 border border-emerald-100 rounded-xl sm:rounded-2xl">
-              <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-emerald-700">Cash IN</span>
-              <p className="text-base sm:text-lg font-black text-emerald-900 mt-0.5">₹24,500</p>
-              <span className="text-[9px] sm:text-[10px] text-emerald-600 font-medium">14 sales</span>
-            </div>
-            <div className="p-2.5 sm:p-3 bg-rose-50/70 border border-rose-100 rounded-xl sm:rounded-2xl">
-              <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-rose-700">Cash OUT</span>
-              <p className="text-base sm:text-lg font-black text-rose-900 mt-0.5">₹6,200</p>
-              <span className="text-[9px] sm:text-[10px] text-rose-600 font-medium">Spares & tea</span>
-            </div>
-          </div>
-
-          {/* Mock Repair Card with WhatsApp action */}
-          <div className="mt-3 sm:mt-4 p-2.5 sm:p-3 bg-slate-50 border border-slate-150 rounded-xl sm:rounded-2xl flex items-center justify-between gap-2">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-bold text-slate-900 truncate">iPhone 13 - Rahul</span>
-                <span className="text-[8px] sm:text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 uppercase shrink-0">
-                  Ready
-                </span>
+            <div className="pt-3 px-1 flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2">
+                <div className="size-7 rounded-lg bg-[#34C759]/10 text-[#34C759] flex items-center justify-center font-bold">
+                  <TrendingUp className="size-3.5" />
+                </div>
+                <div>
+                  <p className="text-[10px] text-[#8E8E93] uppercase font-bold tracking-wider">Today's Net Cash</p>
+                  <p className="text-sm font-black text-slate-900 tabular-nums">+₹18,300</p>
+                </div>
               </div>
-              <p className="text-[10px] sm:text-[11px] text-slate-500 truncate mt-0.5">Display Replacement • ₹3,800</p>
-            </div>
-            <div className="shrink-0">
-              <span className="px-2 sm:px-2.5 py-1 bg-emerald-600 text-white rounded-lg text-[10px] font-bold flex items-center gap-1 shadow-2xs">
-                <MessageSquare className="w-3 h-3" />
-                WhatsApp
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#007AFF]/10 text-[#007AFF]">
+                Day Book Balanced
               </span>
             </div>
           </div>
+
+          {/* Right: iOS Segmented Live Interactive Widget */}
+          <div className="md:col-span-5 bg-white rounded-[24px] sm:rounded-3xl p-4 sm:p-5 border border-black/5 shadow-sm flex flex-col justify-between space-y-4">
+            <div>
+              <div className="flex items-center justify-between pb-3 hairline-b">
+                <p className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                  Interactive Counter Preview
+                </p>
+                <span className="text-[10px] font-bold text-[#8E8E93]">Tap to test</span>
+              </div>
+
+              {/* iOS Segmented Control */}
+              <div className="mt-3.5 p-1 bg-[#767680]/12 rounded-xl flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setActiveSegment('daybook')}
+                  className={`flex-1 py-1.5 text-xs font-semibold rounded-[9px] transition-all ios-press ${
+                    activeSegment === 'daybook'
+                      ? 'bg-white text-slate-900 shadow-2xs font-bold'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Day Book
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveSegment('repair')}
+                  className={`flex-1 py-1.5 text-xs font-semibold rounded-[9px] transition-all ios-press ${
+                    activeSegment === 'repair'
+                      ? 'bg-white text-slate-900 shadow-2xs font-bold'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Repairs
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveSegment('stock')}
+                  className={`flex-1 py-1.5 text-xs font-semibold rounded-[9px] transition-all ios-press ${
+                    activeSegment === 'stock'
+                      ? 'bg-white text-slate-900 shadow-2xs font-bold'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Stock
+                </button>
+              </div>
+
+              {/* Segmented Content */}
+              <div className="mt-4 space-y-2.5">
+                {activeSegment === 'daybook' && (
+                  <div className="space-y-2 animate-fade-slide-in">
+                    <div className="p-3 rounded-xl bg-[#34C759]/8 border border-[#34C759]/20 flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-bold text-slate-900">Screen Replacement</p>
+                        <p className="text-[10px] text-[#34C759] font-medium">Customer UPI • Rahul S.</p>
+                      </div>
+                      <p className="text-sm font-black text-[#34C759] tabular-nums">+₹2,400</p>
+                    </div>
+                    <div className="p-3 rounded-xl bg-[#FF3B30]/8 border border-[#FF3B30]/20 flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-bold text-slate-900">Wholesale Spares</p>
+                        <p className="text-[10px] text-[#FF3B30] font-medium">Cash Out • Metro Spares</p>
+                      </div>
+                      <p className="text-sm font-black text-[#FF3B30] tabular-nums">-₹1,150</p>
+                    </div>
+                  </div>
+                )}
+
+                {activeSegment === 'repair' && (
+                  <div className="p-3 rounded-xl bg-slate-50 border border-black/5 space-y-2 animate-fade-slide-in">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-900">iPhone 13 - Display</span>
+                      <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-[#34C759]/15 text-[#34C759]">
+                        Ready
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-[#8E8E93]">Passcode: 1478 • Est: ₹3,800</p>
+                    <div className="pt-1 flex items-center justify-between">
+                      <span className="text-[10px] font-semibold text-slate-600">WhatsApp Alert Sent</span>
+                      <span className="size-4 rounded-full bg-[#34C759] text-white flex items-center justify-center text-[10px]">✓</span>
+                    </div>
+                  </div>
+                )}
+
+                {activeSegment === 'stock' && (
+                  <div className="space-y-2 animate-fade-slide-in">
+                    <div className="p-3 rounded-xl bg-slate-50 border border-black/5 flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-semibold text-slate-800">65W Type-C Chargers</p>
+                        <p className="text-[10px] text-[#8E8E93]">Fast Moving Accessory</p>
+                      </div>
+                      <span className="text-xs font-bold text-slate-900 tabular-nums">14 pcs</span>
+                    </div>
+                    <div className="p-3 rounded-xl bg-amber-50 border border-amber-200/60 flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-semibold text-amber-950">iPhone 11 Batteries</p>
+                        <p className="text-[10px] text-amber-700">Low Stock Re-order</p>
+                      </div>
+                      <span className="text-xs font-bold text-amber-700 tabular-nums">2 left</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="pt-2 text-[11px] text-[#8E8E93] text-center font-medium">
+              Runs in &lt;2s on low-end smartphones with zero lag.
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* 3. The "6 Daily Headaches Solved" Grid */}
-      <section id="benefits" className="py-12 sm:py-16 bg-white border-y border-slate-200/80 px-4 sm:px-6">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-12">
-            <h2 className="text-[11px] sm:text-xs font-bold uppercase tracking-widest text-blue-600 mb-1.5 sm:mb-2">
-              Practical Shop Benefits
-            </h2>
-            <h3 className="text-xl sm:text-3xl md:text-4xl font-black text-slate-900 tracking-tight">
-              Designed For The Way Mobile Shops Actually Work
-            </h3>
-            <p className="mt-2.5 text-xs sm:text-sm text-slate-600">
-              Say goodbye to messy registers, forgotten customer parts, and endless telephone follow-ups.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-5">
-            {/* Benefit 1 */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-slate-50/80 border border-slate-200 hover:border-blue-300 transition-colors">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center mb-2.5 sm:mb-3.5">
-                <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />
-              </div>
-              <h4 className="text-sm sm:text-base font-bold text-slate-900 mb-1">
-                Zero Closing Time Confusion
-              </h4>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Know your exact cash-in-hand, UPI collections, and net profit before you lock up your counter tonight. No manual calculator errors.
-              </p>
-            </div>
-
-            {/* Benefit 2 */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-slate-50/80 border border-slate-200 hover:border-blue-300 transition-colors">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center mb-2.5 sm:mb-3.5">
-                <Wrench className="w-4 h-4 sm:w-5 sm:h-5" />
-              </div>
-              <h4 className="text-sm sm:text-base font-bold text-slate-900 mb-1">
-                Never Miss a Repair Deadline
-              </h4>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                See all customer phones on your workbench at a glance. Filter by Received, Waiting for Parts, or Ready for pickup without digging through shelves.
-              </p>
-            </div>
-
-            {/* Benefit 3 */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-slate-50/80 border border-slate-200 hover:border-blue-300 transition-colors">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center mb-2.5 sm:mb-3.5">
-                <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5" />
-              </div>
-              <h4 className="text-sm sm:text-base font-bold text-slate-900 mb-1">
-                1-Tap WhatsApp Receipts
-              </h4>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Stop disputes before they happen. Send your customer an immediate digital job receipt on WhatsApp showing phone condition, complaint, and estimated charge.
-              </p>
-            </div>
-
-            {/* Benefit 4 */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-slate-50/80 border border-slate-200 hover:border-blue-300 transition-colors">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center mb-2.5 sm:mb-3.5">
-                <Zap className="w-4 h-4 sm:w-5 sm:h-5" />
-              </div>
-              <h4 className="text-sm sm:text-base font-bold text-slate-900 mb-1">
-                Never Freezes on Slow Wi-Fi
-              </h4>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Never make a customer wait at your counter. The app opens and records transactions in under 2 seconds, even when shop data or Wi-Fi drops completely.
-              </p>
-            </div>
-
-            {/* Benefit 5 */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-slate-50/80 border border-slate-200 hover:border-blue-300 transition-colors">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center mb-2.5 sm:mb-3.5">
-                <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5" />
-              </div>
-              <h4 className="text-sm sm:text-base font-bold text-slate-900 mb-1">
-                Safe From Lost or Broken Phones
-              </h4>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                If your phone gets dropped or you upgrade to a new model, sign in and your entire shop ledger and repair records restore instantly.
-              </p>
-            </div>
-
-            {/* Benefit 6 */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-slate-50/80 border border-slate-200 hover:border-blue-300 transition-colors">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center mb-2.5 sm:mb-3.5">
-                <Receipt className="w-4 h-4 sm:w-5 sm:h-5" />
-              </div>
-              <h4 className="text-sm sm:text-base font-bold text-slate-900 mb-1">
-                Month-End Reports in 1 Tap
-              </h4>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Download or export clean monthly income and expense sheets anytime for your business taxes or partner profit sharing.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 4. "A Day with My Mobile Shop" Workflow */}
-      <section id="workflow" className="py-12 sm:py-16 px-4 sm:px-6 max-w-4xl mx-auto">
-        <div className="text-center mb-8 sm:mb-12">
-          <h2 className="text-[11px] sm:text-xs font-bold uppercase tracking-widest text-blue-600 mb-1.5 sm:mb-2">
-            Daily Simplicity
+      {/* 4. Core Features Section: iOS Grouped Cards */}
+      <section id="features" className="py-12 sm:py-16 px-4 sm:px-6 max-w-5xl mx-auto space-y-8">
+        <div className="text-center max-w-xl mx-auto space-y-2">
+          <p className="text-xs font-bold uppercase tracking-wider text-[#007AFF]">
+            Core Capabilities
+          </p>
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight text-balance">
+            Built for Real Counter Workflows
           </h2>
-          <h3 className="text-xl sm:text-3xl font-black text-slate-900 tracking-tight">
-            How It Fits Into Your Daily Shop Routine
-          </h3>
+          <p className="text-xs sm:text-sm text-[#8E8E93] text-pretty">
+            Engineered so you never have to scramble through paper notebooks again.
+          </p>
         </div>
 
-        <div className="space-y-3 sm:space-y-4">
-          <div className="p-3.5 sm:p-5 bg-white rounded-2xl border border-slate-200 shadow-2xs flex items-start gap-3 sm:gap-4">
-            <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-blue-100 text-blue-700 text-xs font-black flex items-center justify-center shrink-0 mt-0.5">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {/* Card 1: Day Book */}
+          <div className="bg-white rounded-[24px] border border-black/5 overflow-hidden shadow-2xs flex flex-col justify-between hover:shadow-xs transition-shadow">
+            <div className="aspect-square w-full overflow-hidden bg-slate-100">
+              <img
+                src="/daily-ledger-preview.jpg"
+                alt="Daily cash ledger preview"
+                className="w-full h-full object-cover"
+                loading="lazy"
+              />
+            </div>
+            <div className="p-5 space-y-2">
+              <div className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#34C759] bg-[#34C759]/10 px-2.5 py-0.5 rounded-full">
+                <TrendingUp className="size-3" />
+                <span>Digital Day Book</span>
+              </div>
+              <h3 className="text-base font-bold text-slate-900">
+                Zero closing discrepancies.
+              </h3>
+              <p className="text-xs text-[#8E8E93] leading-relaxed text-pretty">
+                Record cash and UPI in 5 seconds. Reconcile physical drawer cash and net profit before pulling down the shutter.
+              </p>
+            </div>
+          </div>
+
+          {/* Card 2: Repairs & Receipts */}
+          <div className="bg-white rounded-[24px] border border-black/5 overflow-hidden shadow-2xs flex flex-col justify-between hover:shadow-xs transition-shadow">
+            <div className="aspect-square w-full overflow-hidden bg-slate-100">
+              <img
+                src="/repair-receipt-preview.jpg"
+                alt="Repair receipt and WhatsApp status"
+                className="w-full h-full object-cover"
+                loading="lazy"
+              />
+            </div>
+            <div className="p-5 space-y-2">
+              <div className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#007AFF] bg-[#007AFF]/10 px-2.5 py-0.5 rounded-full">
+                <Wrench className="size-3" />
+                <span>Repair Job Cards</span>
+              </div>
+              <h3 className="text-base font-bold text-slate-900">
+                No lost phones. No disputes.
+              </h3>
+              <p className="text-xs text-[#8E8E93] leading-relaxed text-pretty">
+                Log phone passcodes, faults, and quotes. Send instant digital WhatsApp job sheets and notify customers when ready.
+              </p>
+            </div>
+          </div>
+
+          {/* Card 3: Used Phones & Tools */}
+          <div className="bg-white rounded-[24px] border border-black/5 overflow-hidden shadow-2xs flex flex-col justify-between hover:shadow-xs transition-shadow">
+            <div className="aspect-square w-full overflow-hidden bg-slate-100">
+              <img
+                src="/used-phones-preview.jpg"
+                alt="Used phone KYC and IMEI verification"
+                className="w-full h-full object-cover"
+                loading="lazy"
+              />
+            </div>
+            <div className="p-5 space-y-2">
+              <div className="inline-flex items-center gap-1.5 text-[11px] font-bold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full">
+                <Smartphone className="size-3" />
+                <span>Used Phones Hub</span>
+              </div>
+              <h3 className="text-base font-bold text-slate-900">
+                Buy, test, and sell safely.
+              </h3>
+              <p className="text-xs text-[#8E8E93] leading-relaxed text-pretty">
+                Capture second-hand phone buybacks with customer KYC photos and IMEI records. Quick CEIR portal check prevents stolen stock.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Counter Performance Bar (iOS Inset Row) */}
+        <div className="bg-white rounded-[20px] p-4 sm:p-5 border border-black/5 shadow-2xs grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+          <div>
+            <p className="text-xl sm:text-2xl font-black text-slate-900 tabular-nums">&lt;2s</p>
+            <p className="text-[11px] text-[#8E8E93] font-medium mt-0.5">App Startup Speed</p>
+          </div>
+          <div>
+            <p className="text-xl sm:text-2xl font-black text-[#007AFF] tabular-nums">100%</p>
+            <p className="text-[11px] text-[#8E8E93] font-medium mt-0.5">Offline Reliability</p>
+          </div>
+          <div>
+            <p className="text-xl sm:text-2xl font-black text-[#34C759] tabular-nums">1-Tap</p>
+            <p className="text-[11px] text-[#8E8E93] font-medium mt-0.5">WhatsApp Slips</p>
+          </div>
+          <div>
+            <p className="text-xl sm:text-2xl font-black text-slate-900 tabular-nums">Zero</p>
+            <p className="text-[11px] text-[#8E8E93] font-medium mt-0.5">Calculator Errors</p>
+          </div>
+        </div>
+      </section>
+
+      {/* 5. Workflow Section: iOS Step List */}
+      <section id="workflow" className="py-12 sm:py-16 px-4 sm:px-6 max-w-4xl mx-auto space-y-6">
+        <div className="text-center space-y-2">
+          <p className="text-xs font-bold uppercase tracking-wider text-[#007AFF]">
+            Daily Simplicity
+          </p>
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight text-balance">
+            Fits Into Your Counter Routine
+          </h2>
+          <p className="text-xs sm:text-sm text-[#8E8E93] text-pretty">
+            Save 30-45 minutes of manual bookkeeping every single evening.
+          </p>
+        </div>
+
+        <div className="bg-white rounded-[24px] border border-black/5 divide-y divide-black/5 shadow-2xs overflow-hidden">
+          <div className="p-4 sm:p-5 flex items-start gap-4">
+            <span className="size-8 rounded-full bg-[#007AFF]/10 text-[#007AFF] text-xs font-black flex items-center justify-center shrink-0 mt-0.5">
               1
             </span>
-            <div>
-              <h4 className="text-xs sm:text-sm font-bold text-slate-900">Morning Shop Opening (9:00 AM)</h4>
-              <p className="text-xs text-slate-600 mt-0.5 sm:mt-1 leading-relaxed">
-                Open the app on your phone. Yesterday's closing cash balance is already waiting. You're ready for the first customer.
+            <div className="space-y-1">
+              <h4 className="text-sm font-bold text-slate-900">Morning Shop Opening (9:00 AM)</h4>
+              <p className="text-xs text-[#8E8E93] leading-relaxed text-pretty">
+                Open the app on your phone. Yesterday's closing cash balance is automatically waiting as today's opening cash. You're ready for customer #1.
               </p>
             </div>
           </div>
 
-          <div className="p-3.5 sm:p-5 bg-white rounded-2xl border border-slate-200 shadow-2xs flex items-start gap-3 sm:gap-4">
-            <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-blue-100 text-blue-700 text-xs font-black flex items-center justify-center shrink-0 mt-0.5">
+          <div className="p-4 sm:p-5 flex items-start gap-4">
+            <span className="size-8 rounded-full bg-[#007AFF]/10 text-[#007AFF] text-xs font-black flex items-center justify-center shrink-0 mt-0.5">
               2
             </span>
-            <div>
-              <h4 className="text-xs sm:text-sm font-bold text-slate-900">Busy Afternoon Sales & Repairs (2:00 PM)</h4>
-              <p className="text-xs text-slate-600 mt-0.5 sm:mt-1 leading-relaxed">
-                Take in a broken phone, log the model & passcode in 10 seconds, and tap WhatsApp to send the customer an immediate receipt.
+            <div className="space-y-1">
+              <h4 className="text-sm font-bold text-slate-900">Afternoon Rush & Repairs (2:00 PM)</h4>
+              <p className="text-xs text-[#8E8E93] leading-relaxed text-pretty">
+                Take in a repair phone, log model, passcode, and fault in 10 seconds. Tap WhatsApp to issue an instant receipt so customers never dispute pre-existing marks.
               </p>
             </div>
           </div>
 
-          <div className="p-3.5 sm:p-5 bg-white rounded-2xl border border-slate-200 shadow-2xs flex items-start gap-3 sm:gap-4">
-            <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-blue-100 text-blue-700 text-xs font-black flex items-center justify-center shrink-0 mt-0.5">
+          <div className="p-4 sm:p-5 flex items-start gap-4">
+            <span className="size-8 rounded-full bg-[#007AFF]/10 text-[#007AFF] text-xs font-black flex items-center justify-center shrink-0 mt-0.5">
               3
             </span>
-            <div>
-              <h4 className="text-xs sm:text-sm font-bold text-slate-900">Repair Delivery & Collection (6:30 PM)</h4>
-              <p className="text-xs text-slate-600 mt-0.5 sm:mt-1 leading-relaxed">
-                Screen replacement done? Mark "Ready" &rarr; customer gets notified on WhatsApp &rarr; comes back to pay and collect their device.
-              </p>
-            </div>
-          </div>
-
-          <div className="p-3.5 sm:p-5 bg-white rounded-2xl border border-slate-200 shadow-2xs flex items-start gap-3 sm:gap-4">
-            <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-blue-100 text-blue-700 text-xs font-black flex items-center justify-center shrink-0 mt-0.5">
-              4
-            </span>
-            <div>
-              <h4 className="text-xs sm:text-sm font-bold text-slate-900">Night Shutter Closing (9:30 PM)</h4>
-              <p className="text-xs text-slate-600 mt-0.5 sm:mt-1 leading-relaxed">
-                Count the physical cash in your drawer, match it with the app total, see today's net profit, and close up feeling relaxed and organized.
+            <div className="space-y-1">
+              <h4 className="text-sm font-bold text-slate-900">Night Shutter Closing (9:30 PM)</h4>
+              <p className="text-xs text-[#8E8E93] leading-relaxed text-pretty">
+                Count physical cash in your drawer, match it with the Day Book total, export a clean PDF or Excel report if needed, and close up feeling relaxed and organized.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 5. Transparent Pricing Section */}
-      <section id="pricing" className="py-12 sm:py-16 bg-white border-t border-slate-200/80 px-4 sm:px-6">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-[11px] sm:text-xs font-bold uppercase tracking-widest text-blue-600 mb-1.5 sm:mb-2">
-            Simple, Honest Pricing
+      {/* 6. Pricing Section: iOS In-App Purchase Card Styling */}
+      <section id="pricing" className="py-12 sm:py-16 px-4 sm:px-6 max-w-4xl mx-auto space-y-8">
+        <div className="text-center space-y-2">
+          {/* Limited Early Bird Pill */}
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#34C759]/15 text-[#34C759] text-xs font-bold">
+            <Sparkles className="size-3.5" />
+            <span>Launch Special • First 50 Users Only</span>
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight text-balance">
+            Honest Plans for Shop Owners
           </h2>
-          <h3 className="text-xl sm:text-3xl md:text-4xl font-black text-slate-900 tracking-tight">
-            Plans That Pay For Themselves On Day One
-          </h3>
-          <p className="mt-2 text-xs sm:text-sm text-slate-600 max-w-xl mx-auto">
-            No setup charges, no per-transaction cuts, and no lock-in contracts.
+          <p className="text-xs sm:text-sm text-[#8E8E93] text-pretty">
+            Zero setup fees. Zero commission on your sales.
           </p>
+        </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mt-8 sm:mt-10 max-w-2xl mx-auto text-left">
-            {/* Monthly Plan */}
-            <div className="p-5 sm:p-6 rounded-2xl sm:rounded-3xl bg-slate-50 border border-slate-200 flex flex-col justify-between">
-              <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Monthly</span>
-                <div className="mt-2 flex items-baseline gap-1">
-                  <span className="text-3xl sm:text-4xl font-black text-slate-900">₹99</span>
-                  <span className="text-xs sm:text-sm font-semibold text-slate-500">/ month</span>
-                </div>
-                <p className="text-xs text-slate-600 mt-1 sm:mt-2">Billed monthly • Cancel anytime</p>
-
-                <ul className="mt-5 space-y-2 text-xs text-slate-700 font-medium">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Unlimited daily cash & UPI entries</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Unlimited customer repair job cards</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Instant WhatsApp job updates</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Automatic cloud backup</span>
-                  </li>
-                </ul>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleGetStarted}
-                className="mt-6 sm:mt-8 w-full py-3 bg-white hover:bg-slate-100 text-slate-900 border border-slate-300 rounded-xl text-xs font-bold transition-colors shadow-2xs min-h-[44px] touch-manipulation"
-              >
-                Choose Monthly
-              </button>
-            </div>
-
-            {/* Yearly Plan (Best Value) */}
-            <div className="p-5 sm:p-6 rounded-2xl sm:rounded-3xl bg-blue-50/70 border-2 border-blue-500 flex flex-col justify-between relative shadow-md">
-              <div className="absolute -top-3 right-4 sm:right-6 bg-emerald-500 text-white text-[9px] sm:text-[10px] font-black uppercase px-2.5 sm:px-3 py-1 rounded-full shadow-xs">
-                Save 16% • Best Value
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 max-w-2xl mx-auto items-stretch">
+          {/* Monthly Plan */}
+          <div className="bg-white rounded-[24px] p-6 border border-black/5 shadow-2xs flex flex-col justify-between space-y-5">
+            <div className="space-y-3.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#8E8E93]">
+                  Monthly Plan
+                </span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
+                  50% OFF
+                </span>
               </div>
 
               <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-blue-700">Yearly</span>
-                <div className="mt-2 flex items-baseline gap-1">
-                  <span className="text-3xl sm:text-4xl font-black text-slate-900">₹999</span>
-                  <span className="text-xs sm:text-sm font-semibold text-slate-500">/ year</span>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-sm font-semibold text-slate-400 line-through tabular-nums">
+                    ₹499
+                  </span>
+                  <span className="text-3xl sm:text-4xl font-extrabold text-slate-900 tabular-nums">
+                    ₹249
+                  </span>
+                  <span className="text-xs font-semibold text-[#8E8E93]">/ month</span>
                 </div>
-                <p className="text-xs text-emerald-700 font-bold mt-1 sm:mt-2">Just ₹83/month • Peace of mind all year</p>
 
-                <ul className="mt-5 space-y-2 text-xs text-slate-700 font-medium">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
-                    <span>Everything in Monthly plan</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
-                    <span>Multi-device sign-in support</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
-                    <span>Priority WhatsApp support</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
-                    <span>1-tap Excel/CSV report exports</span>
-                  </li>
-                </ul>
+                {/* Highlight per day cost */}
+                <div className="mt-2 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#007AFF]/10 text-[#007AFF] text-xs font-bold">
+                  <Clock className="size-3.5 shrink-0" />
+                  <span>Just ~₹8.30 / day</span>
+                </div>
               </div>
 
-              <button
-                type="button"
-                onClick={handleGetStarted}
-                className="mt-6 sm:mt-8 w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/20 active:scale-95 min-h-[44px] touch-manipulation"
-              >
-                Choose Yearly (Save 16%)
-              </button>
+              <p className="text-xs text-[#8E8E93]">
+                Billed monthly • Cancel anytime
+              </p>
+
+              <ul className="space-y-2 text-xs text-slate-700 pt-2 hairline-t">
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="size-4 text-[#34C759] shrink-0" />
+                  <span>Unlimited Cash & UPI ledger entries</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="size-4 text-[#34C759] shrink-0" />
+                  <span>Unlimited repair job sheets & WhatsApp slips</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="size-4 text-[#34C759] shrink-0" />
+                  <span>Accessories stock alerts & reports</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="size-4 text-[#34C759] shrink-0" />
+                  <span>Automatic cloud backup & offline mode</span>
+                </li>
+              </ul>
             </div>
+
+            <button
+              type="button"
+              onClick={handleGetStarted}
+              className="w-full py-3 bg-[#F2F2F7] hover:bg-slate-200 text-slate-900 rounded-xl text-xs font-bold transition-all ios-press min-h-[44px]"
+            >
+              Choose Monthly (₹249/mo)
+            </button>
           </div>
 
-          <div className="mt-5 sm:mt-6 text-[11px] sm:text-xs text-slate-500 font-medium flex items-center justify-center gap-1.5 px-2">
-            <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-            <span>100% Privacy Protected: We never sell your shop data or show annoying advertisements.</span>
+          {/* Yearly Plan (Best Value - 64% OFF) */}
+          <div className="bg-white rounded-[24px] p-6 border-2 border-[#007AFF] shadow-md flex flex-col justify-between space-y-5 relative">
+            <div className="absolute -top-3 right-5 bg-[#007AFF] text-white text-[10px] font-black uppercase tracking-wider px-3 py-0.5 rounded-full shadow-xs">
+              Save 64% • Best Value
+            </div>
+
+            <div className="space-y-3.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#007AFF]">
+                  Annual Plan
+                </span>
+                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-[#34C759]/15 text-[#34C759]">
+                  Early 50 Shops Special
+                </span>
+              </div>
+
+              <div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-sm font-semibold text-slate-400 line-through tabular-nums">
+                    ₹4,999
+                  </span>
+                  <span className="text-3xl sm:text-4xl font-extrabold text-slate-900 tabular-nums">
+                    ₹1,799
+                  </span>
+                  <span className="text-xs font-semibold text-[#8E8E93]">/ year</span>
+                </div>
+
+                {/* Highlight per day cost */}
+                <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#34C759]/15 text-[#34C759] text-xs font-bold">
+                  <Sparkles className="size-3.5 shrink-0" />
+                  <span>Just ~₹4.90 / day (₹150/month)</span>
+                </div>
+              </div>
+
+              <p className="text-xs text-[#34C759] font-semibold">
+                Less than half a cup of chai a day for a full year of peace of mind
+              </p>
+
+              <ul className="space-y-2 text-xs text-slate-700 pt-2 hairline-t">
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="size-4 text-[#007AFF] shrink-0" />
+                  <span className="font-bold text-slate-900">Everything in Monthly plan</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="size-4 text-[#007AFF] shrink-0" />
+                  <span>Multi-device sync across counter phones</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="size-4 text-[#007AFF] shrink-0" />
+                  <span>1-tap Excel/CSV exports for accounting</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="size-4 text-[#007AFF] shrink-0" />
+                  <span>Used Phone Hub & CEIR check tools</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="size-4 text-[#007AFF] shrink-0" />
+                  <span>Priority WhatsApp customer support</span>
+                </li>
+              </ul>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleGetStarted}
+              className="w-full py-3 bg-[#007AFF] hover:bg-[#0062cc] text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-[#007AFF]/25 ios-press min-h-[44px]"
+            >
+              Claim Yearly Offer (₹1,799/yr)
+            </button>
           </div>
+        </div>
+
+        <div className="text-center text-xs text-[#8E8E93] font-medium flex items-center justify-center gap-1.5">
+          <ShieldCheck className="size-4 text-[#34C759] shrink-0" />
+          <span>100% Privacy: Customer mobile numbers & financial ledgers stay strictly confidential.</span>
         </div>
       </section>
 
-      {/* 6. Footer & Trust */}
-      <footer className="bg-slate-900 text-slate-400 py-8 sm:py-12 px-4 sm:px-6 text-xs border-t border-slate-800">
-        <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-5 sm:gap-6">
-          <div className="flex items-center gap-3 text-center sm:text-left">
+      {/* 7. Footer & Trust */}
+      <footer className="bg-slate-900 text-slate-400 py-10 px-4 sm:px-6 text-xs border-t border-slate-800">
+        <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-3">
             <img
               src="/icon-192.png"
               alt="My Mobile Shop"
-              className="w-8 h-8 rounded-xl object-cover border border-white/10"
+              className="size-8 rounded-[10px] object-cover border border-white/10"
             />
             <div>
               <p className="font-bold text-white text-sm">My Mobile Shop</p>
-              <p className="text-[11px] text-slate-500">Digital Day Book & Repair Tracker</p>
+              <p className="text-[11px] text-slate-400">Digital Day Book & Repair Counter Manager</p>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs font-medium">
+          <div className="flex flex-wrap items-center justify-center gap-5 text-xs font-medium">
+            <a href="#features" className="hover:text-white transition-colors">Features</a>
+            <a href="#workflow" className="hover:text-white transition-colors">Routine</a>
+            <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
             <button
               type="button"
               onClick={() => handleOpenLegal('privacy')}
@@ -558,9 +723,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isAuthenticated = fals
             </button>
             <a
               href="mailto:support@mymobileshop.online"
-              className="hover:text-white transition-colors flex items-center gap-1"
+              className="hover:text-white transition-colors flex items-center gap-1 text-slate-300"
             >
-              <Mail className="w-3.5 h-3.5" />
+              <Mail className="size-3.5" />
               <span>support@mymobileshop.online</span>
             </a>
           </div>
@@ -571,22 +736,22 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isAuthenticated = fals
         </div>
       </footer>
 
-      {/* 7. Mobile Sticky Bottom Action Bar (visible on mobile only) */}
-      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200/90 p-2.5 px-3 flex items-center gap-2 shadow-2xl safe-bottom">
+      {/* 8. iOS Mobile Floating Bottom Action Capsule (Thumb zone friendly) */}
+      <div className="sm:hidden fixed bottom-3 left-3 right-3 z-40 bg-white/90 backdrop-blur-2xl p-2 rounded-2xl shadow-xl border border-black/5 flex items-center gap-2 safe-bottom">
         <button
           type="button"
           onClick={handleSignIn}
-          className="flex-1 py-2.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl border border-slate-200/80 active:scale-98 transition-all touch-manipulation text-center"
+          className="flex-1 py-2.5 px-3 bg-[#F2F2F7] hover:bg-slate-200 text-slate-900 font-bold text-xs rounded-xl ios-press touch-manipulation text-center"
         >
           {isAuthenticated ? 'Open Shop' : 'Sign In'}
         </button>
         <button
           type="button"
           onClick={handleGetStarted}
-          className="flex-[1.5] py-2.5 px-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-md shadow-blue-500/25 active:scale-98 transition-all flex items-center justify-center gap-1.5 touch-manipulation text-center"
+          className="flex-[1.5] py-2.5 px-3 bg-[#007AFF] hover:bg-[#0062cc] text-white font-bold text-xs rounded-xl shadow-md shadow-[#007AFF]/25 ios-press touch-manipulation flex items-center justify-center gap-1.5 text-center"
         >
           <span>{isAuthenticated ? 'Go to App' : 'Get Started'}</span>
-          <ArrowRight className="w-3.5 h-3.5" />
+          <ArrowRight className="size-3.5" />
         </button>
       </div>
 

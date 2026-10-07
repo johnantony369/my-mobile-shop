@@ -653,3 +653,103 @@ export async function softDeleteUsedDevice(id: number): Promise<void> {
   });
 }
 
+/**
+ * Prunes any duplicated local records sharing the same cloudId, keeping the newest / highest id.
+ */
+export async function deduplicateLocalDatabase(): Promise<{
+  entriesRemoved: number;
+  jobsRemoved: number;
+  stockRemoved: number;
+  billsRemoved: number;
+}> {
+  let entriesRemoved = 0;
+  let jobsRemoved = 0;
+  let stockRemoved = 0;
+  let billsRemoved = 0;
+
+  try {
+    // 1. Entries
+    const allEntries = await db.entries.toArray();
+    const seenEntryCloudIds = new Map<string, number>(); // cloudId -> id
+    const entryIdsToDelete: number[] = [];
+
+    // Sort by id descending so we keep the newest record
+    allEntries.sort((a, b) => (b.id || 0) - (a.id || 0));
+    for (const entry of allEntries) {
+      if (!entry.cloudId || !entry.id) continue;
+      if (seenEntryCloudIds.has(entry.cloudId)) {
+        entryIdsToDelete.push(entry.id);
+      } else {
+        seenEntryCloudIds.set(entry.cloudId, entry.id);
+      }
+    }
+    if (entryIdsToDelete.length > 0) {
+      await db.entries.bulkDelete(entryIdsToDelete);
+      entriesRemoved = entryIdsToDelete.length;
+    }
+
+    // 2. Jobs
+    const allJobs = await db.jobs.toArray();
+    const seenJobCloudIds = new Map<string, number>();
+    const jobIdsToDelete: number[] = [];
+    allJobs.sort((a, b) => (b.id || 0) - (a.id || 0));
+    for (const job of allJobs) {
+      if (!job.cloudId || !job.id) continue;
+      if (seenJobCloudIds.has(job.cloudId)) {
+        jobIdsToDelete.push(job.id);
+      } else {
+        seenJobCloudIds.set(job.cloudId, job.id);
+      }
+    }
+    if (jobIdsToDelete.length > 0) {
+      await db.jobs.bulkDelete(jobIdsToDelete);
+      jobsRemoved = jobIdsToDelete.length;
+    }
+
+    // 3. Stock
+    if (db.stock) {
+      const allStock = await db.stock.toArray();
+      const seenStockCloudIds = new Map<string, number>();
+      const stockIdsToDelete: number[] = [];
+      allStock.sort((a, b) => (b.id || 0) - (a.id || 0));
+      for (const item of allStock) {
+        if (!item.cloudId || !item.id) continue;
+        if (seenStockCloudIds.has(item.cloudId)) {
+          stockIdsToDelete.push(item.id);
+        } else {
+          seenStockCloudIds.set(item.cloudId, item.id);
+        }
+      }
+      if (stockIdsToDelete.length > 0) {
+        await db.stock.bulkDelete(stockIdsToDelete);
+        stockRemoved = stockIdsToDelete.length;
+      }
+    }
+
+    // 4. Bills
+    if (db.bills) {
+      const allBills = await db.bills.toArray();
+      const seenBillCloudIds = new Map<string, number>();
+      const billIdsToDelete: number[] = [];
+      allBills.sort((a, b) => (b.id || 0) - (a.id || 0));
+      for (const bill of allBills) {
+        if (!bill.cloudId || !bill.id) continue;
+        if (seenBillCloudIds.has(bill.cloudId)) {
+          billIdsToDelete.push(bill.id);
+        } else {
+          seenBillCloudIds.set(bill.cloudId, bill.id);
+        }
+      }
+      if (billIdsToDelete.length > 0) {
+        await db.bills.bulkDelete(billIdsToDelete);
+        billsRemoved = billIdsToDelete.length;
+      }
+    }
+  } catch (err) {
+    console.warn('deduplicateLocalDatabase error:', err);
+  }
+
+  return { entriesRemoved, jobsRemoved, stockRemoved, billsRemoved };
+}
+
+

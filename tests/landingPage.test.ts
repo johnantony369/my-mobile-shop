@@ -9,10 +9,10 @@ describe('LandingPage Component', () => {
     const content = fs.readFileSync(filePath, 'utf-8');
 
     // Benefit checks
-    expect(content).toContain('Run Your Mobile Shop Without the Daily Notebook Chaos');
+    expect(content).toContain('The All-in-One Counter App for Your Mobile Shop');
     expect(content).toContain('WhatsApp');
-    expect(content).toContain('₹99');
-    expect(content).toContain('₹999');
+    expect(content).toContain('₹249');
+    expect(content).toContain('₹1,799');
 
     // No free trial check
     expect(content.toLowerCase()).not.toContain('free trial');

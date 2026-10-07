@@ -16,6 +16,7 @@ import { useAuth } from './firebase/useAuth';
 import { LoginModal } from './components/LoginModal';
 import { InstallBanner } from './components/InstallBanner';
 import { PaywallModal } from './components/PaywallModal';
+import { LoadingScreen } from './components/LoadingScreen';
 import { Language } from './types';
 import { pullCloudChanges } from './firebase/sync';
 import { scheduleDailyNotification } from './utils/notifications';
@@ -183,32 +184,22 @@ export default function App() {
   // Loading state with timeout fallback
   if (settingsList === undefined) {
     return (
-      <div className="min-h-screen bg-iosBg flex flex-col items-center justify-center p-6 text-center select-none">
-        <div className="w-9 h-9 border-3 border-iosBlue border-t-transparent rounded-full animate-spin mb-4" />
-        {loadingTimeout && (
-          <div className="mt-4 space-y-3 animate-fade-in">
-            <p className="text-xs text-[#8E8E93]">
-              Taking longer than usual to load...
-            </p>
-            <button
-              type="button"
-              onClick={() => window.location.reload()}
-              className="px-4 py-2 bg-iosBlue text-white text-xs font-semibold rounded-full shadow-sm"
-            >
-              Reload App
-            </button>
-          </div>
-        )}
-      </div>
+      <LoadingScreen
+        message="Loading Day Book..."
+        submessage="Preparing your offline registers"
+        timeout={loadingTimeout}
+        onReload={() => window.location.reload()}
+      />
     );
   }
 
   // Show loading spinner while determining auth state, handling account switch, or pulling cloud data
   if (authLoading || isMismatched || (user && settingsList?.length === 0 && (checkingCloud || checkedCloudUid !== user.uid))) {
     return (
-      <div className="min-h-screen bg-iosBg flex flex-col items-center justify-center p-6 text-center select-none">
-        <div className="w-9 h-9 border-3 border-iosBlue border-t-transparent rounded-full animate-spin mb-4" />
-      </div>
+      <LoadingScreen
+        message="Connecting to cloud..."
+        submessage="Syncing latest shop transactions"
+      />
     );
   }
 

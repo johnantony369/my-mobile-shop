@@ -57,6 +57,7 @@ export function LoginModal({
 
   // Status
   const [loading, setLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('Signing in...');
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
@@ -103,6 +104,7 @@ export function LoginModal({
 
     try {
       setLoading(true);
+      setLoadingMessage(mode === 'register' ? 'Creating your shop account...' : 'Signing in to your shop...');
       let userObj;
       if (mode === 'register') {
         userObj = await registerWithPassword(cleanId, password);
@@ -117,11 +119,13 @@ export function LoginModal({
       localStorage.setItem('mms_authenticated', 'true');
       localStorage.setItem('mms_user_id', userObj.uid);
       setSuccessMsg(mode === 'register' ? 'Account created successfully!' : 'Logged in successfully!');
+      setLoadingMessage('Syncing your shop ledger...');
       try {
         await pullCloudChanges(userObj.uid);
       } catch (syncErr) {
         console.warn('Initial cloud pull failed or partial:', syncErr);
       }
+      setLoadingMessage('Opening your Day Book...');
       onSuccess();
       onClose();
     } catch (err: unknown) {
@@ -146,7 +150,9 @@ export function LoginModal({
     setSuccessMsg(null);
     try {
       setLoading(true);
+      setLoadingMessage('Signing in with Google...');
       const u = await loginWithGoogle();
+      setLoadingMessage('Syncing your shop ledger...');
       const previousUid = localStorage.getItem('mms_user_id');
       const localSettings = await getAppSettings();
       if ((previousUid && previousUid !== u.uid) || (localSettings?.ownerUid && localSettings.ownerUid !== u.uid)) {
@@ -160,6 +166,7 @@ export function LoginModal({
       } catch (syncErr) {
         console.warn('Initial cloud pull failed or partial:', syncErr);
       }
+      setLoadingMessage('Opening your Day Book...');
       onSuccess();
       onClose();
     } catch (err: unknown) {
@@ -301,8 +308,18 @@ export function LoginModal({
           </div>
         )}
 
-        {/* VIEW 1: Login ID & Password Form */}
-        {view === 'password' && (
+        {loading ? (
+          <div className="py-8 flex flex-col items-center text-center space-y-4 animate-fade-slide-in">
+            <div className="size-8 border-3 border-[#007AFF] border-t-transparent rounded-full animate-spin" />
+            <div className="space-y-1">
+              <p className="text-sm font-bold text-slate-900">{loadingMessage}</p>
+              <p className="text-xs text-[#8E8E93]">Securing your cloud and offline ledger</p>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* VIEW 1: Login ID & Password Form */}
+            {view === 'password' && (
           <div>
             <form onSubmit={handlePasswordSubmit} className="space-y-3.5">
               <div>
@@ -512,6 +529,8 @@ export function LoginModal({
             </div>
           </form>
         )}
+      </>
+    )}
 
         {/* Legal & Trust Footer */}
         <div className="mt-5 pt-3.5 border-t border-slate-100 text-center">

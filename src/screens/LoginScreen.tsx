@@ -23,6 +23,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { LegalModal } from '../components/LegalModal';
+import { LoadingScreen } from '../components/LoadingScreen';
 
 interface LoginScreenProps {
   onSuccess: () => void;
@@ -54,6 +55,7 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
 
   // Status
   const [loading, setLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('Signing in...');
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
@@ -74,6 +76,7 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
 
     try {
       setLoading(true);
+      setLoadingMessage(mode === 'register' ? 'Creating your shop account...' : 'Signing in to your shop...');
       let userObj;
       if (mode === 'register') {
         userObj = await registerWithPassword(cleanId, password);
@@ -88,11 +91,13 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
       localStorage.setItem('mms_authenticated', 'true');
       localStorage.setItem('mms_user_id', userObj.uid);
       setSuccessMsg(mode === 'register' ? 'Account created successfully!' : 'Logged in successfully!');
+      setLoadingMessage('Syncing your shop ledger...');
       try {
         await pullCloudChanges(userObj.uid);
       } catch (syncErr) {
         console.warn('Initial cloud pull failed or partial:', syncErr);
       }
+      setLoadingMessage('Opening your Day Book...');
       onSuccess();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -115,7 +120,9 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
     setSuccessMsg(null);
     try {
       setLoading(true);
+      setLoadingMessage('Signing in with Google...');
       const u = await loginWithGoogle();
+      setLoadingMessage('Syncing your shop ledger...');
       const previousUid = localStorage.getItem('mms_user_id');
       const localSettings = await getAppSettings();
       if ((previousUid && previousUid !== u.uid) || (localSettings?.ownerUid && localSettings.ownerUid !== u.uid)) {
@@ -129,6 +136,7 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
       } catch (syncErr) {
         console.warn('Initial cloud pull failed or partial:', syncErr);
       }
+      setLoadingMessage('Opening your Day Book...');
       onSuccess();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -211,6 +219,15 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
       setLoading(false);
     }
   };
+
+  if (loading) {
+    return (
+      <LoadingScreen
+        message={loadingMessage}
+        submessage="Connecting your offline ledger and cloud account"
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white sm:bg-iosBg flex flex-col justify-center items-center p-4 sm:p-6 selection:bg-iosBlue/20">
