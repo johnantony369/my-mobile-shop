@@ -537,7 +537,11 @@ export const TrackRepairScreen: React.FC = () => {
           (err) => {
             console.warn('Firestore live track error:', err);
             if (!localJob) {
-              setError('Unable to load live status. Please check your internet connection.');
+              if (err.code === 'permission-denied') {
+                setError('Access denied: Cloud security rules for public repairs are not active.');
+              } else {
+                setError('Unable to load live status. Please check your internet connection.');
+              }
             }
             setLoading(false);
             setIsRefreshing(false);
