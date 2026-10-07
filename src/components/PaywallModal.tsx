@@ -14,7 +14,7 @@ import {
   X,
 } from 'lucide-react';
 
-const RAZORPAY_MONTHLY_URL = 'https://rzp.io/rzp/LHFKoCZ';
+const RAZORPAY_MONTHLY_URL = 'https://rzp.io/rzp/AIScmrWq';
 const RAZORPAY_YEARLY_URL = 'https://rzp.io/rzp/2ZGyPsBK';
 
 interface PaywallModalProps {
