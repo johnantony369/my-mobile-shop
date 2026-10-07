@@ -20,6 +20,7 @@ import { LoadingScreen } from './components/LoadingScreen';
 import { Language } from './types';
 import { pullCloudChanges } from './firebase/sync';
 import { scheduleDailyNotification } from './utils/notifications';
+import { initHardwareBackButton } from './utils/hardwareBackButton';
 
 export default function App() {
   const [currentTab, setCurrentTab] = useState<TabType>('book');
@@ -30,6 +31,9 @@ export default function App() {
   const { user, loading: authLoading } = useAuth();
 
   useEffect(() => {
+    // Initialize Android hardware back button handler
+    initHardwareBackButton();
+
     // Request OS to keep storage persistent
     requestPersistentStorage();
 
