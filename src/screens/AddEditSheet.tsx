@@ -9,6 +9,7 @@ import { getLocalDateString } from '../utils/date';
 import { buildBillText, buildWhatsAppUrl } from '../utils/billing';
 import { shareSummary } from '../utils/share';
 import { StockPickerSheet } from '../components/StockPickerSheet';
+import { SparesAutoSuggest } from '../components/wholesale/SparesAutoSuggest';
 import { Package, X, Check, Trash2, Receipt, Share2, Download } from 'lucide-react';
 import { downloadBillPDF } from '../utils/pdf';
 
@@ -493,33 +494,52 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
             </div>
           )}
 
-          <div className="relative">
-            <input
-              type="text"
+          {settings?.wholesaleMode ? (
+            <SparesAutoSuggest
               value={item}
-              onChange={(e) => {
-                setItem(e.target.value);
-                if (selectedStockItem && selectedStockItem.name !== e.target.value) {
+              onChange={(val) => {
+                setItem(val);
+                if (selectedStockItem && selectedStockItem.name !== val) {
                   setSelectedStockItem(null);
                 }
               }}
-              placeholder={t('item_placeholder', language)}
+              onSelectPart={(part) => {
+                if (part.wholesalePrice && !amountStr) {
+                  setAmountStr(part.wholesalePrice.toString());
+                }
+              }}
+              placeholder="Enter item or select spare part..."
               disabled={isReadOnly}
-              className="w-full bg-[#F2F2F7] rounded-[10px] px-3.5 py-2.5 text-[15px] text-black focus:outline-none focus:ring-2 focus:ring-iosBlue/40 border border-black/[0.04]"
             />
-            {item && (
-              <button
-                type="button"
-                onClick={() => {
-                  setItem('');
-                  setSelectedStockItem(null);
+          ) : (
+            <div className="relative">
+              <input
+                type="text"
+                value={item}
+                onChange={(e) => {
+                  setItem(e.target.value);
+                  if (selectedStockItem && selectedStockItem.name !== e.target.value) {
+                    setSelectedStockItem(null);
+                  }
                 }}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 rounded-full"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
+                placeholder={t('item_placeholder', language)}
+                disabled={isReadOnly}
+                className="w-full bg-[#F2F2F7] rounded-[10px] px-3.5 py-2.5 text-[15px] text-black focus:outline-none focus:ring-2 focus:ring-iosBlue/40 border border-black/[0.04]"
+              />
+              {item && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setItem('');
+                    setSelectedStockItem(null);
+                  }}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 rounded-full"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Selected Stock Item details & Stock deduction toggle */}
           {selectedStockItem && (
