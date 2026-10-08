@@ -79,8 +79,15 @@ async function fetchRealmeModels() {
     };
 
     const addModelIfValid = (name, codes) => {
-      if (!name || /pad/i.test(name)) return;
-      const year = guessYear(name);
+      if (!name) return;
+      const isPad = /pad/i.test(name);
+      let year = guessYear(name);
+      if (isPad) {
+        if (/mini|x\b/i.test(name)) year = 2022;
+        else if (/pad 2 lite/i.test(name)) year = 2024;
+        else if (/pad 2/i.test(name)) year = 2023;
+        else year = 2021;
+      }
       if (year >= 2015) {
         let display = name.replace(/^realme\s+/i, '');
         display = `Realme ${display}`;
@@ -264,6 +271,79 @@ function getTecnoModels() {
   }));
 }
 
+function getLenovoTablets() {
+  const list = [
+    { model: 'Lenovo Tab 4 8', year: 2017, codes: ['TB-8504F', 'TB-8504X'] },
+    { model: 'Lenovo Tab 4 8 Plus', year: 2017, codes: ['TB-8704F', 'TB-8704X'] },
+    { model: 'Lenovo Tab 4 10', year: 2017, codes: ['TB-X304F', 'TB-X304L'] },
+    { model: 'Lenovo Tab 4 10 Plus', year: 2017, codes: ['TB-X704F', 'TB-X704L'] },
+    { model: 'Lenovo Tab 7 Essential', year: 2017, codes: ['TB-7304F', 'TB-7304I'] },
+    { model: 'Lenovo Tab E7', year: 2018, codes: ['TB-7104F', 'TB-7104I'] },
+    { model: 'Lenovo Tab E8', year: 2018, codes: ['TB-8304F'] },
+    { model: 'Lenovo Tab E10', year: 2018, codes: ['TB-X104F'] },
+    { model: 'Lenovo Tab M7', year: 2019, codes: ['TB-7305F', 'TB-7305X'] },
+    { model: 'Lenovo Tab M7 Gen 3', year: 2021, codes: ['TB-7306F', 'TB-7306X'] },
+    { model: 'Lenovo Tab M8 HD', year: 2019, codes: ['TB-8505F', 'TB-8505X'] },
+    { model: 'Lenovo Tab M8 FHD', year: 2019, codes: ['TB-8705F'] },
+    { model: 'Lenovo Tab M8 Gen 3', year: 2021, codes: ['TB-8506F', 'TB-8506X'] },
+    { model: 'Lenovo Tab M8 Gen 4', year: 2023, codes: ['TB-300FU', 'TB-300XU'] },
+    { model: 'Lenovo Tab M9', year: 2023, codes: ['TB-310FU', 'TB-310XU'] },
+    { model: 'Lenovo Tab M10', year: 2018, codes: ['TB-X605F', 'TB-X605L'] },
+    { model: 'Lenovo Tab M10 HD', year: 2019, codes: ['TB-X505F', 'TB-X505L'] },
+    { model: 'Lenovo Tab M10 HD Gen 2', year: 2020, codes: ['TB-X306F', 'TB-X306X'] },
+    { model: 'Lenovo Tab M10 FHD Plus', year: 2020, codes: ['TB-X606F', 'TB-X606X'] },
+    { model: 'Lenovo Tab M10 Plus Gen 3', year: 2022, codes: ['TB-125FU', 'TB-128FU', 'TB-128XU'] },
+    { model: 'Lenovo Tab M10 5G', year: 2023, codes: ['TB-360ZU'] },
+    { model: 'Lenovo Tab M11', year: 2024, codes: ['TB-330FU', 'TB-330XU'] },
+    { model: 'Lenovo Tab P10', year: 2018, codes: ['TB-X705F', 'TB-X705L'] },
+    { model: 'Lenovo Tab P11', year: 2021, codes: ['TB-J606F', 'TB-J606L'] },
+    { model: 'Lenovo Tab P11 Pro', year: 2020, codes: ['TB-J706F', 'TB-J706L'] },
+    { model: 'Lenovo Tab P11 Plus', year: 2021, codes: ['TB-J616F', 'TB-J616X'] },
+    { model: 'Lenovo Tab P11 Gen 2', year: 2022, codes: ['TB-350FU', 'TB-350XU'] },
+    { model: 'Lenovo Tab P11 Pro Gen 2', year: 2022, codes: ['TB-132FU', 'TB-138FC'] },
+    { model: 'Lenovo Tab P12', year: 2023, codes: ['TB-370FU'] },
+    { model: 'Lenovo Tab P12 Pro', year: 2021, codes: ['TB-Q706F', 'TB-Q706Z'] },
+    { model: 'Lenovo Tab K10', year: 2021, codes: ['TB-X6C6F', 'TB-X6C6L'] },
+    { model: 'Lenovo Yoga Tab 11', year: 2021, codes: ['YT-J706F', 'YT-J706X'] },
+    { model: 'Lenovo Yoga Tab 13', year: 2021, codes: ['YT-K606F'] },
+    { model: 'Lenovo Legion Tab Y700', year: 2022, codes: ['TB-9707F'] },
+    { model: 'Lenovo Legion Tab Y700 2023', year: 2023, codes: ['TB-320FC'] },
+    { model: 'Lenovo Legion Tab 2024', year: 2024, codes: ['TB-321FU'] },
+    { model: 'Lenovo IdeaPad Duet Chromebook', year: 2020, codes: ['CT-X636F'] }
+  ];
+  return list.map(item => ({
+    id: `lenovo_${item.model.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`,
+    brand: 'Lenovo',
+    model: item.model,
+    releaseYear: item.year,
+    modelCodes: item.codes
+  }));
+}
+
+function getHonorHuaweiTablets() {
+  const list = [
+    { model: 'Honor Pad 5 8', year: 2019, codes: ['JDN2-W09HN', 'JDN2-AL00HN'] },
+    { model: 'Honor Pad 5 10.1', year: 2019, codes: ['AGS2-W09HN', 'AGS2-AL00HN'] },
+    { model: 'Honor Pad 6', year: 2020, codes: ['AGR-W09HN', 'AGR-AL09HN'] },
+    { model: 'Honor Pad X6', year: 2020, codes: ['Neo-W09HN', 'Neo-AL00HN'] },
+    { model: 'Honor Pad 8', year: 2022, codes: ['HEY-W09'] },
+    { model: 'Honor Pad X8', year: 2022, codes: ['AGM3-W09HN'] },
+    { model: 'Honor Pad X8a', year: 2024, codes: ['ROD-W09'] },
+    { model: 'Honor Pad X9', year: 2023, codes: ['ELN-W09'] },
+    { model: 'Honor Pad 9', year: 2023, codes: ['HEY2-W09'] },
+    { model: 'Honor Pad 9 Pro', year: 2024, codes: ['HEY2-W19'] },
+    { model: 'Honor MagicPad 13', year: 2023, codes: ['GDI-W09'] },
+    { model: 'Honor MagicPad 2', year: 2024, codes: ['ROD2-W09'] }
+  ];
+  return list.map(item => ({
+    id: `honor_${item.model.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`,
+    brand: 'Honor',
+    model: item.model,
+    releaseYear: item.year,
+    modelCodes: item.codes
+  }));
+}
+
 async function main() {
   const rootExtracted = await ensureSource();
   console.log('Finding all details.json files...');
@@ -283,8 +363,8 @@ async function main() {
       const rawModelName = data.model;
       if (!rawModelName) continue;
 
-      // Filter watches, tablets, bands if unnecessary (keep phones)
-      if (/watch|band|pad\b|tablet|gear\s\b/i.test(rawModelName) && !/pad\sphone/i.test(rawModelName)) {
+      // Filter smartwatches, fitness bands, trackers, gear watches (keep phones AND tablets/iPads)
+      if (/\b(watch|band|gear\s*s|gear\s*fit|fit\b|ring|glass\b)\b/i.test(rawModelName) && !/pad|tab|phone/i.test(rawModelName)) {
         continue;
       }
 
@@ -386,6 +466,20 @@ async function main() {
   nothing.forEach(m => {
     modelsList.push(m);
     brandCounts['Nothing'] = (brandCounts['Nothing'] || 0) + 1;
+  });
+
+  // Add Lenovo Tablets (2017-2026)
+  const lenovo = getLenovoTablets();
+  lenovo.forEach(m => {
+    modelsList.push(m);
+    brandCounts['Lenovo'] = (brandCounts['Lenovo'] || 0) + 1;
+  });
+
+  // Add Honor Tablets (2019-2026)
+  const honor = getHonorHuaweiTablets();
+  honor.forEach(m => {
+    modelsList.push(m);
+    brandCounts['Honor'] = (brandCounts['Honor'] || 0) + 1;
   });
 
   // Sort by brand then model name

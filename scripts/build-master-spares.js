@@ -221,6 +221,68 @@ const BATTERY_CODE_MAP = [
   { brandGroup: 'apple', code: 'A2296-BAT', models: ['iPhone SE (2020)'] },
   { brandGroup: 'apple', code: 'A2819-BAT', models: ['iPhone SE (2022)'] },
 
+  // Apple iPad (2017 - 2026)
+  { brandGroup: 'apple', code: 'A1484-BAT', models: ['iPad 9.7 (2017)', 'iPad 9.7 (2018)', 'iPad (5th gen)', 'iPad (6th gen)'] },
+  { brandGroup: 'apple', code: 'A2169-BAT', models: ['iPad 10.2 (2019)', 'iPad 10.2 (2020)', 'iPad 10.2 (2021)', 'iPad 7th Gen', 'iPad 8th Gen', 'iPad 9th Gen'] },
+  { brandGroup: 'apple', code: 'A2776-BAT', models: ['iPad (2022)', 'iPad 10th Gen', 'iPad (2025)'] },
+  { brandGroup: 'apple', code: 'A2132-BAT', models: ['iPad mini (2019)', 'iPad mini 5'] },
+  { brandGroup: 'apple', code: 'A2522-BAT', models: ['iPad mini (2021)', 'iPad mini (2024)', 'iPad mini 6', 'iPad mini 7'] },
+  { brandGroup: 'apple', code: 'A2134-BAT', models: ['iPad Air (2019)', 'iPad Air 3'] },
+  { brandGroup: 'apple', code: 'A2251-BAT', models: ['iPad Air (2020)', 'iPad Air (2022)', 'iPad Air 4', 'iPad Air 5'] },
+  { brandGroup: 'apple', code: 'A3038-BAT', models: ['iPad Air 11 (2024)', 'iPad Air 13 (2024)', 'iPad Air 11 (2025)', 'iPad Air 13 (2025)', 'iPad Air 11 (2026)', 'iPad Air 13 (2026)'] },
+  { brandGroup: 'apple', code: 'A1798-BAT', models: ['iPad Pro 10.5 (2017)'] },
+  { brandGroup: 'apple', code: 'A1982-BAT', models: ['iPad Pro 11 (2018)', 'iPad Pro 11 1st Gen'] },
+  { brandGroup: 'apple', code: 'A2224-BAT', models: ['iPad Pro 11 (2020)', 'iPad Pro 11 2nd Gen'] },
+  { brandGroup: 'apple', code: 'A2369-BAT', models: ['iPad Pro 11 (2021)', 'iPad Pro 11 3rd Gen'] },
+  { brandGroup: 'apple', code: 'A2769-BAT', models: ['iPad Pro 11 (2022)', 'iPad Pro 11 4th Gen'] },
+  { brandGroup: 'apple', code: 'A2934-BAT', models: ['iPad Pro 11 (2024)', 'iPad Pro 11 (2025)'] },
+  { brandGroup: 'apple', code: 'A1754-BAT', models: ['iPad Pro 12.9 (2017)', 'iPad Pro 12.9 2nd Gen'] },
+  { brandGroup: 'apple', code: 'A2043-BAT', models: ['iPad Pro 12.9 (2018)', 'iPad Pro 12.9 3rd Gen'] },
+  { brandGroup: 'apple', code: 'A2064-BAT', models: ['iPad Pro 12.9 (2020)', 'iPad Pro 12.9 4th Gen'] },
+  { brandGroup: 'apple', code: 'A2389-BAT', models: ['iPad Pro 12.9 (2021)', 'iPad Pro 12.9 5th Gen'] },
+  { brandGroup: 'apple', code: 'A2768-BAT', models: ['iPad Pro 12.9 (2022)', 'iPad Pro 12.9 6th Gen'] },
+  { brandGroup: 'apple', code: 'A3008-BAT', models: ['iPad Pro 13 (2024)', 'iPad Pro 13 (2025)'] },
+
+  // Samsung Galaxy Tab Batteries
+  { brandGroup: 'samsung', code: 'EB-BT295ABU', models: ['Galaxy Tab A 8.0 (2019)', 'Galaxy Tab A 8.0 (2018)', 'Galaxy Tab A 8.0 (2017)'] },
+  { brandGroup: 'samsung', code: 'EB-BT515ABU', models: ['Galaxy Tab A 10.1 (2019)'] },
+  { brandGroup: 'samsung', code: 'EB-BT505ABY', models: ['Galaxy Tab A7 10.4 (2020)', 'Galaxy Tab A7 10.4 (2022)'] },
+  { brandGroup: 'samsung', code: 'EB-BT225ABU', models: ['Galaxy Tab A7 Lite'] },
+  { brandGroup: 'samsung', code: 'EB-BX200ABY', models: ['Galaxy Tab A8 10.5 (2021)'] },
+  { brandGroup: 'samsung', code: 'EB-BX110ABY', models: ['Galaxy Tab A9'] },
+  { brandGroup: 'samsung', code: 'EB-BX210ABY', models: ['Galaxy Tab A9+'] },
+  { brandGroup: 'samsung', code: 'EB-BT615ABU', models: ['Galaxy Tab S6 Lite (2020)', 'Galaxy Tab S6 Lite (2022)', 'Galaxy Tab S6 Lite (2024)', 'Galaxy Tab S6'] },
+  { brandGroup: 'samsung', code: 'EB-BT875ABY', models: ['Galaxy Tab S7', 'Galaxy Tab S8'] },
+  { brandGroup: 'samsung', code: 'EB-BT975ABY', models: ['Galaxy Tab S7+', 'Galaxy Tab S7 FE', 'Galaxy Tab S8+'] },
+  { brandGroup: 'samsung', code: 'EB-BX900ABY', models: ['Galaxy Tab S8 Ultra', 'Galaxy Tab S9 Ultra'] },
+  { brandGroup: 'samsung', code: 'EB-BX710ABY', models: ['Galaxy Tab S9'] },
+  { brandGroup: 'samsung', code: 'EB-BX810ABY', models: ['Galaxy Tab S9+'] },
+  { brandGroup: 'samsung', code: 'EB-BX510ABY', models: ['Galaxy Tab S9 FE'] },
+  { brandGroup: 'samsung', code: 'EB-BX610ABY', models: ['Galaxy Tab S9 FE+'] },
+
+  // Xiaomi & Redmi & Poco Pad Batteries
+  { brandGroup: 'xiaomi', code: 'BN80', models: ['Xiaomi Pad 5', 'Xiaomi Pad 5 Pro', 'Pad 5', 'Pad 5 Pro'] },
+  { brandGroup: 'xiaomi', code: 'BN82', models: ['Xiaomi Pad 6', 'Xiaomi Pad 6 Pro', 'Pad 6', 'Pad 6 Pro'] },
+  { brandGroup: 'xiaomi', code: 'BN84', models: ['Redmi Pad'] },
+  { brandGroup: 'xiaomi', code: 'BN85', models: ['Redmi Pad SE', 'Redmi Pad SE 8.7'] },
+  { brandGroup: 'xiaomi', code: 'BN86', models: ['Redmi Pad Pro', 'Redmi Pad Pro 5G', 'Poco Pad'] },
+
+  // OnePlus & Realme Pad Batteries
+  { brandGroup: 'oppo_realme', code: 'BLP877', models: ['Realme Pad'] },
+  { brandGroup: 'oppo_realme', code: 'BLP917-PAD', models: ['Realme Pad Mini'] },
+  { brandGroup: 'oppo_realme', code: 'BLP997', models: ['Realme Pad 2', 'Realme Pad 2 Lite'] },
+  { brandGroup: 'oppo_realme', code: 'BLP989', models: ['OnePlus Pad', 'Oppo Pad 2'] },
+  { brandGroup: 'oppo_realme', code: 'BLP991', models: ['OnePlus Pad Go'] },
+  { brandGroup: 'oppo_realme', code: 'BLP993', models: ['OnePlus Pad 2', 'Oppo Pad 3'] },
+
+  // Lenovo Tablet Batteries
+  { brandGroup: 'lenovo', code: 'L16D1P34', models: ['Lenovo Tab 4 8', 'Lenovo Tab 4 10', 'Lenovo Tab E10', 'Lenovo Tab M10', 'Lenovo Tab M10 HD'] },
+  { brandGroup: 'lenovo', code: 'L19D1P31', models: ['Lenovo Tab M7', 'Lenovo Tab M8 HD', 'Lenovo Tab M8 Gen 3', 'Lenovo Tab M8 Gen 4'] },
+  { brandGroup: 'lenovo', code: 'L19D2P32', models: ['Lenovo Tab M10 FHD Plus', 'Lenovo Tab M10 HD Gen 2', 'Lenovo Tab K10'] },
+  { brandGroup: 'lenovo', code: 'L21D2P32', models: ['Lenovo Tab M10 Plus Gen 3', 'Lenovo Tab M11'] },
+  { brandGroup: 'lenovo', code: 'L20D2P32', models: ['Lenovo Tab P11', 'Lenovo Tab P11 Plus', 'Lenovo Tab P11 Gen 2', 'Lenovo Yoga Tab 11'] },
+  { brandGroup: 'lenovo', code: 'L20D2P31', models: ['Lenovo Tab P11 Pro', 'Lenovo Tab P12 Pro'] },
+
   // Infinix & Tecno
   { brandGroup: 'transsion', code: 'BL-49FX', models: ['Infinix Hot 8', 'Infinix Hot 9', 'Infinix Hot 10 Play'] },
   { brandGroup: 'transsion', code: 'BL-58BX', models: ['Infinix Note 7', 'Infinix Note 8'] },
@@ -238,6 +300,8 @@ function getBrandGroup(brand) {
   if (b === 'samsung') return 'samsung';
   if (b === 'apple') return 'apple';
   if (['infinix', 'tecno'].includes(b)) return 'transsion';
+  if (b === 'lenovo') return 'lenovo';
+  if (b === 'honor') return 'honor';
   return 'other';
 }
 
@@ -280,9 +344,36 @@ function findBatteryInfo(deviceModel, brand) {
   };
 }
 
-function getAveragePricing(category, brand, releaseYear) {
+function getAveragePricing(category, brand, releaseYear, isTablet) {
   const isApple = brand === 'Apple';
   const isOlder = releaseYear && releaseYear < 2019;
+
+  if (isTablet) {
+    switch (category) {
+      case 'display':
+        return isApple
+          ? (isOlder ? { wholesale: 3800, cost: 2900 } : { wholesale: 6500, cost: 5200 })
+          : (isOlder ? { wholesale: 1900, cost: 1450 } : { wholesale: 3200, cost: 2400 });
+      case 'battery':
+        return isApple
+          ? (isOlder ? { wholesale: 1100, cost: 850 } : { wholesale: 1650, cost: 1250 })
+          : (isOlder ? { wholesale: 650, cost: 480 } : { wholesale: 950, cost: 720 });
+      case 'charging_board':
+        return isApple ? { wholesale: 480, cost: 320 } : { wholesale: 280, cost: 180 };
+      case 'back_panel':
+        return isApple ? { wholesale: 1200, cost: 850 } : { wholesale: 550, cost: 380 };
+      case 'camera_glass':
+        return { wholesale: 90, cost: 40 };
+      case 'flex':
+        return { wholesale: 180, cost: 95 };
+      case 'speaker':
+        return { wholesale: 160, cost: 85 };
+      case 'glass_oca':
+        return isApple ? { wholesale: 350, cost: 180 } : { wholesale: 220, cost: 110 };
+      default:
+        return { wholesale: 280, cost: 140 };
+    }
+  }
 
   switch (category) {
     case 'display':
@@ -324,20 +415,21 @@ async function main() {
 
   for (const device of models) {
     const { id: deviceId, brand, model, photoUrl, releaseYear } = device;
+    const isTablet = /ipad|tab\b|pad\b|tablet/i.test(model);
     const batInfo = findBatteryInfo(model, brand);
     if (batInfo.partCode && !batInfo.partCode.endsWith('-OEM')) {
       mappedBatteryCount++;
     }
 
-    // 1. Display Combo
-    const dispPrices = getAveragePricing('display', brand, releaseYear);
+    // 1. Display
+    const dispPrices = getAveragePricing('display', brand, releaseYear, isTablet);
     masterSpares.push({
       id: `${deviceId}_display`,
       deviceId,
       brand,
       model,
       category: 'display',
-      partName: `${model} Display Combo (Folder)`,
+      partName: isTablet ? `${model} LCD Display & Touch Digitizer Assembly` : `${model} Display Combo (Folder)`,
       wholesalePrice: dispPrices.wholesale,
       costPrice: dispPrices.cost,
       photoUrl,
@@ -345,7 +437,7 @@ async function main() {
     });
 
     // 2. Battery
-    const batPrices = getAveragePricing('battery', brand, releaseYear);
+    const batPrices = getAveragePricing('battery', brand, releaseYear, isTablet);
     masterSpares.push({
       id: `${deviceId}_battery`,
       deviceId,
@@ -359,36 +451,36 @@ async function main() {
       compatibleModels: batInfo.compatibleModels
     });
 
-    // 3. Charging Board (CC Board)
-    const ccPrices = getAveragePricing('charging_board', brand, releaseYear);
+    // 3. Charging Port
+    const ccPrices = getAveragePricing('charging_board', brand, releaseYear, isTablet);
     masterSpares.push({
       id: `${deviceId}_charging_board`,
       deviceId,
       brand,
       model,
       category: 'charging_board',
-      partName: `${model} Charging Sub-Board (CC Board with Mic)`,
+      partName: isTablet ? `${model} Charging Port Flex Cable / Board` : `${model} Charging Sub-Board (CC Board with Mic)`,
       wholesalePrice: ccPrices.wholesale,
       costPrice: ccPrices.cost,
       compatibleModels: [model]
     });
 
     // 4. Back Panel Door Cover
-    const backPrices = getAveragePricing('back_panel', brand, releaseYear);
+    const backPrices = getAveragePricing('back_panel', brand, releaseYear, isTablet);
     masterSpares.push({
       id: `${deviceId}_back_panel`,
       deviceId,
       brand,
       model,
       category: 'back_panel',
-      partName: `${model} Back Panel Battery Cover`,
+      partName: isTablet ? `${model} Housing / Back Cover` : `${model} Back Panel Battery Cover`,
       wholesalePrice: backPrices.wholesale,
       costPrice: backPrices.cost,
       compatibleModels: [model]
     });
 
     // 5. Camera Glass Lens
-    const camPrices = getAveragePricing('camera_glass', brand, releaseYear);
+    const camPrices = getAveragePricing('camera_glass', brand, releaseYear, isTablet);
     masterSpares.push({
       id: `${deviceId}_camera_glass`,
       deviceId,
@@ -402,42 +494,42 @@ async function main() {
     });
 
     // 6. Main Sub Connecting Flex
-    const flexPrices = getAveragePricing('flex', brand, releaseYear);
+    const flexPrices = getAveragePricing('flex', brand, releaseYear, isTablet);
     masterSpares.push({
       id: `${deviceId}_flex`,
       deviceId,
       brand,
       model,
       category: 'flex',
-      partName: `${model} Main Sub Connecting Motherboard Flex`,
+      partName: isTablet ? `${model} Power & Volume Button Flex Cable` : `${model} Main Sub Connecting Motherboard Flex`,
       wholesalePrice: flexPrices.wholesale,
       costPrice: flexPrices.cost,
       compatibleModels: [model]
     });
 
     // 7. Ringer Loudspeaker Buzzer
-    const speakerPrices = getAveragePricing('speaker', brand, releaseYear);
+    const speakerPrices = getAveragePricing('speaker', brand, releaseYear, isTablet);
     masterSpares.push({
       id: `${deviceId}_speaker`,
       deviceId,
       brand,
       model,
       category: 'speaker',
-      partName: `${model} Ringer Loudspeaker Buzzer Box`,
+      partName: isTablet ? `${model} Internal Loudspeaker Module` : `${model} Ringer Loudspeaker Buzzer Box`,
       wholesalePrice: speakerPrices.wholesale,
       costPrice: speakerPrices.cost,
       compatibleModels: [model]
     });
 
     // 8. Front OCA Glass
-    const ocaPrices = getAveragePricing('glass_oca', brand, releaseYear);
+    const ocaPrices = getAveragePricing('glass_oca', brand, releaseYear, isTablet);
     masterSpares.push({
       id: `${deviceId}_glass_oca`,
       deviceId,
       brand,
       model,
       category: 'glass_oca',
-      partName: `${model} Front Outer Touch Glass (OCA)`,
+      partName: isTablet ? `${model} Front Touch Glass Digitizer OCA Replacement` : `${model} Front Outer Touch Glass (OCA)`,
       wholesalePrice: ocaPrices.wholesale,
       costPrice: ocaPrices.cost,
       compatibleModels: [model]

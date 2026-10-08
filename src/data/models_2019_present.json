@@ -1,5 +1,478 @@
 [
   {
+    "id": "apple_ipad_2022",
+    "brand": "Apple",
+    "model": "iPad (2022)",
+    "releaseYear": 2022,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/apple/apple-ipad-10-2022-0.jpg",
+    "modelCodes": [
+      "A3162",
+      "A2757",
+      "A2777",
+      "A2696",
+      "iPad13"
+    ]
+  },
+  {
+    "id": "apple_ipad_2025",
+    "brand": "Apple",
+    "model": "iPad (2025)",
+    "releaseYear": 2025,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/apple/apple-ipad-10-2022-0.jpg",
+    "modelCodes": [
+      "A3355",
+      "A3356",
+      "A3354",
+      "ipad15"
+    ]
+  },
+  {
+    "id": "apple_ipad_10_2_2019",
+    "brand": "Apple",
+    "model": "iPad 10.2 (2019)",
+    "releaseYear": 2019,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/apple/apple-ipad7-1.jpg",
+    "modelCodes": [
+      "A2197",
+      "A2200",
+      "A2198",
+      "iPad7"
+    ]
+  },
+  {
+    "id": "apple_ipad_10_2_2020",
+    "brand": "Apple",
+    "model": "iPad 10.2 (2020)",
+    "releaseYear": 2020,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/apple/apple-ipad8-102-inches-2020-01.jpg",
+    "modelCodes": [
+      "A2428",
+      "A2429",
+      "A2270",
+      "A2430",
+      "iPad11"
+    ]
+  },
+  {
+    "id": "apple_ipad_10_2_2021",
+    "brand": "Apple",
+    "model": "iPad 10.2 (2021)",
+    "releaseYear": 2021,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/apple/apple-ipad-102-2021-1.jpg",
+    "modelCodes": [
+      "A2603",
+      "A2604",
+      "iPad12"
+    ]
+  },
+  {
+    "id": "apple_ipad_9_7_2017",
+    "brand": "Apple",
+    "model": "iPad 9.7 (2017)",
+    "releaseYear": 2017,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/apple/apple-ipad-97-2017-1.jpg",
+    "modelCodes": [
+      "A1822",
+      "A1823",
+      "iPad6"
+    ]
+  },
+  {
+    "id": "apple_ipad_9_7_2018",
+    "brand": "Apple",
+    "model": "iPad 9.7 (2018)",
+    "releaseYear": 2018,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/apple/apple-ipad-97-2018-1.jpg",
+    "modelCodes": [
+      "A1893",
+      "A1954",
+      "iPad7"
+    ]
+  },
+  {
+    "id": "apple_ipad_air_2019",
+    "brand": "Apple",
+    "model": "iPad Air (2019)",
+    "releaseYear": 2019,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/apple/apple-ipad-air3-2019-1.jpg",
+    "modelCodes": [
+      "A2153",
+      "A2123",
+      "A2154",
+      "A2152",
+      "iPad11"
+    ]
+  },
+  {
+    "id": "apple_ipad_air_2020",
+    "brand": "Apple",
+    "model": "iPad Air (2020)",
+    "releaseYear": 2020,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/apple/apple-ipad-air4-2020-01.jpg",
+    "modelCodes": [
+      "A2324",
+      "A2072",
+      "A2325",
+      "A2316",
+      "iPad13"
+    ]
+  },
+  {
+    "id": "apple_ipad_air_2022",
+    "brand": "Apple",
+    "model": "iPad Air (2022)",
+    "releaseYear": 2022,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/apple/apple-ipad-air-2022-1.jpg",
+    "modelCodes": [
+      "A2588",
+      "A2589",
+      "A2591",
+      "iPad13"
+    ]
+  },
+  {
+    "id": "apple_ipad_air_11_2024",
+    "brand": "Apple",
+    "model": "iPad Air 11 (2024)",
+    "releaseYear": 2024,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/apple/apple-ipad-air-11-2024-2.jpg",
+    "modelCodes": [
+      "A2902",
+      "A2903",
+      "A2904",
+      "iPad14"
+    ]
+  },
+  {
+    "id": "apple_ipad_air_11_2025",
+    "brand": "Apple",
+    "model": "iPad Air 11 (2025)",
+    "releaseYear": 2025,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/apple/apple-ipad-air-11-2024-2.jpg",
+    "modelCodes": [
+      "A3267",
+      "A3270",
+      "A3266",
+      "iPad17"
+    ]
+  },
+  {
+    "id": "apple_ipad_air_11_2026",
+    "brand": "Apple",
+    "model": "iPad Air 11 (2026)",
+    "releaseYear": 2026,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/apple/apple-ipad-air-11-2024-2.jpg",
+    "modelCodes": [
+      "A3460",
+      "A3463",
+      "A3459",
+      "iPad16"
+    ]
+  },
+  {
+    "id": "apple_ipad_air_13_2024",
+    "brand": "Apple",
+    "model": "iPad Air 13 (2024)",
+    "releaseYear": 2024,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/apple/apple-ipad-air-13-2024-2.jpg",
+    "modelCodes": [
+      "A2898",
+      "A2899",
+      "A2900",
+      "iPad14"
+    ]
+  },
+  {
+    "id": "apple_ipad_air_13_2025",
+    "brand": "Apple",
+    "model": "iPad Air 13 (2025)",
+    "releaseYear": 2025,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/apple/apple-ipad-air-13-2024-2.jpg",
+    "modelCodes": [
+      "A3269",
+      "A3271",
+      "A3268",
+      "ipad15"
+    ]
+  },
+  {
+    "id": "apple_ipad_air_13_2026",
+    "brand": "Apple",
+    "model": "iPad Air 13 (2026)",
+    "releaseYear": 2026,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/apple/apple-ipad-air-13-2024-2.jpg",
+    "modelCodes": [
+      "A3462",
+      "A3464",
+      "A3461",
+      "iPad16"
+    ]
+  },
+  {
+    "id": "apple_ipad_mini_2019",
+    "brand": "Apple",
+    "model": "iPad mini (2019)",
+    "releaseYear": 2019,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/apple/apple-ipad-mini-2019-1.jpg",
+    "modelCodes": [
+      "A2126",
+      "A2124",
+      "A2133",
+      "A2125",
+      "iPad11"
+    ]
+  },
+  {
+    "id": "apple_ipad_mini_2021",
+    "brand": "Apple",
+    "model": "iPad mini (2021)",
+    "releaseYear": 2021,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/apple/apple-ipad-mini-2021-2.jpg",
+    "modelCodes": [
+      "A2568",
+      "iPad14"
+    ]
+  },
+  {
+    "id": "apple_ipad_mini_2024",
+    "brand": "Apple",
+    "model": "iPad mini (2024)",
+    "releaseYear": 2024,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/apple/apple-ipad-mini-2024-1.jpg",
+    "modelCodes": [
+      "A2993",
+      "A2995",
+      "A2996",
+      "iPad16"
+    ]
+  },
+  {
+    "id": "apple_ipad_mini_4_2015",
+    "brand": "Apple",
+    "model": "iPad mini 4 (2015)",
+    "releaseYear": 2015,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/apple/apple-ipad-mini-4-1.jpg",
+    "modelCodes": [
+      "A1538",
+      "A1550",
+      "iPad5"
+    ]
+  },
+  {
+    "id": "apple_ipad_pro_10_5_2017",
+    "brand": "Apple",
+    "model": "iPad Pro 10.5 (2017)",
+    "releaseYear": 2017,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/apple/apple-ipad-pro-105-2017-1.jpg",
+    "modelCodes": [
+      "A1701",
+      "A1709",
+      "A1852",
+      "iPad7"
+    ]
+  },
+  {
+    "id": "apple_ipad_pro_11_2018",
+    "brand": "Apple",
+    "model": "iPad Pro 11 (2018)",
+    "releaseYear": 2018,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/apple/apple-ipad-pro-11-2018-1.jpg",
+    "modelCodes": [
+      "A2013",
+      "A1934",
+      "A1980",
+      "A1979",
+      "iPad8"
+    ]
+  },
+  {
+    "id": "apple_ipad_pro_11_2020",
+    "brand": "Apple",
+    "model": "iPad Pro 11 (2020)",
+    "releaseYear": 2020,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/apple/apple-ipad-pro-11-2020-1.jpg",
+    "modelCodes": [
+      "A2068",
+      "A2230",
+      "A2228",
+      "A2231",
+      "iPad8"
+    ]
+  },
+  {
+    "id": "apple_ipad_pro_11_2021",
+    "brand": "Apple",
+    "model": "iPad Pro 11 (2021)",
+    "releaseYear": 2021,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/apple/apple-ipad-pro-11-2021-1.jpg",
+    "modelCodes": [
+      "A2301",
+      "A2459",
+      "A2460",
+      "iPad13"
+    ]
+  },
+  {
+    "id": "apple_ipad_pro_11_2022",
+    "brand": "Apple",
+    "model": "iPad Pro 11 (2022)",
+    "releaseYear": 2022,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/apple/apple-ipad-pro-11-2022-1.jpg",
+    "modelCodes": [
+      "A2435",
+      "A2761",
+      "A2762",
+      "A2759",
+      "iPad8",
+      "iPad14"
+    ]
+  },
+  {
+    "id": "apple_ipad_pro_11_2024",
+    "brand": "Apple",
+    "model": "iPad Pro 11 (2024)",
+    "releaseYear": 2024,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/apple/apple-ipad-pro-11-2024-2.jpg",
+    "modelCodes": [
+      "A2836",
+      "A2837",
+      "A3006",
+      "iPad16"
+    ]
+  },
+  {
+    "id": "apple_ipad_pro_11_2025",
+    "brand": "Apple",
+    "model": "iPad Pro 11 (2025)",
+    "releaseYear": 2025,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/apple/apple-ipad-pro-11-2024-2.jpg",
+    "modelCodes": [
+      "A3357",
+      "A3358",
+      "A3359",
+      "iPad17"
+    ]
+  },
+  {
+    "id": "apple_ipad_pro_12_9_2015",
+    "brand": "Apple",
+    "model": "iPad Pro 12.9 (2015)",
+    "releaseYear": 2015,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/apple/apple-ipad-pro-2.jpg",
+    "modelCodes": [
+      "A1584",
+      "A1652",
+      "iPad6"
+    ]
+  },
+  {
+    "id": "apple_ipad_pro_12_9_2017",
+    "brand": "Apple",
+    "model": "iPad Pro 12.9 (2017)",
+    "releaseYear": 2017,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/apple/apple-ipad-pro-129-2017-1.jpg",
+    "modelCodes": [
+      "A1670",
+      "A1671",
+      "A1821",
+      "iPad7"
+    ]
+  },
+  {
+    "id": "apple_ipad_pro_12_9_2018",
+    "brand": "Apple",
+    "model": "iPad Pro 12.9 (2018)",
+    "releaseYear": 2018,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/apple/apple-ipad-pro-129-2018-1.jpg",
+    "modelCodes": [
+      "A2014",
+      "A1895",
+      "A1876",
+      "A1983",
+      "iPad8"
+    ]
+  },
+  {
+    "id": "apple_ipad_pro_12_9_2020",
+    "brand": "Apple",
+    "model": "iPad Pro 12.9 (2020)",
+    "releaseYear": 2020,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/apple/apple-ipad-pro-12-2020-1.jpg",
+    "modelCodes": [
+      "A2069",
+      "A2232",
+      "A2233",
+      "A2229",
+      "iPad8"
+    ]
+  },
+  {
+    "id": "apple_ipad_pro_12_9_2021",
+    "brand": "Apple",
+    "model": "iPad Pro 12.9 (2021)",
+    "releaseYear": 2021,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/apple/apple-ipad-pro-129-2021-1.jpg",
+    "modelCodes": [
+      "A2379",
+      "A2461",
+      "A2462",
+      "iPad13"
+    ]
+  },
+  {
+    "id": "apple_ipad_pro_12_9_2022",
+    "brand": "Apple",
+    "model": "iPad Pro 12.9 (2022)",
+    "releaseYear": 2022,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/apple/apple-ipad-pro-129-2022-1.jpg",
+    "modelCodes": [
+      "A2764",
+      "A2437",
+      "A2766",
+      "A2436",
+      "iPad14"
+    ]
+  },
+  {
+    "id": "apple_ipad_pro_13_2024",
+    "brand": "Apple",
+    "model": "iPad Pro 13 (2024)",
+    "releaseYear": 2024,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/apple/apple-ipad-pro-13-2024-2.jpg",
+    "modelCodes": [
+      "A2925",
+      "A2926",
+      "A3007",
+      "iPad16"
+    ]
+  },
+  {
+    "id": "apple_ipad_pro_13_2025",
+    "brand": "Apple",
+    "model": "iPad Pro 13 (2025)",
+    "releaseYear": 2025,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/apple/apple-ipad-pro-13-2024-2.jpg",
+    "modelCodes": [
+      "A3360",
+      "A3361",
+      "A3362",
+      "iPad17"
+    ]
+  },
+  {
+    "id": "apple_ipad_pro_9_7_2016",
+    "brand": "Apple",
+    "model": "iPad Pro 9.7 (2016)",
+    "releaseYear": 2016,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/apple/apple-ipad-pro-97-0.jpg",
+    "modelCodes": [
+      "A1673",
+      "A1674",
+      "A1675",
+      "iPad6"
+    ]
+  },
+  {
     "id": "apple_iphone_11",
     "brand": "Apple",
     "model": "iPhone 11",
@@ -995,11 +1468,135 @@
     ]
   },
   {
+    "id": "google_pixel_tablet",
+    "brand": "Google",
+    "model": "Pixel Tablet",
+    "releaseYear": 2023,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/google/google-pixel-tablet-10.jpg",
+    "modelCodes": [
+      "GA06156-EU",
+      "GA06157-EU",
+      "GA06158-EU"
+    ]
+  },
+  {
     "id": "google_pixel_xl",
     "brand": "Google",
     "model": "Pixel XL",
     "releaseYear": 2016,
     "photoUrl": "https://fdn2.gsmarena.com/vv/pics/google/google-pixel-xl-1.jpg"
+  },
+  {
+    "id": "honor_honor_magicpad_13",
+    "brand": "Honor",
+    "model": "Honor MagicPad 13",
+    "releaseYear": 2023,
+    "modelCodes": [
+      "GDI-W09"
+    ]
+  },
+  {
+    "id": "honor_honor_magicpad_2",
+    "brand": "Honor",
+    "model": "Honor MagicPad 2",
+    "releaseYear": 2024,
+    "modelCodes": [
+      "ROD2-W09"
+    ]
+  },
+  {
+    "id": "honor_honor_pad_5_10_1",
+    "brand": "Honor",
+    "model": "Honor Pad 5 10.1",
+    "releaseYear": 2019,
+    "modelCodes": [
+      "AGS2-W09HN",
+      "AGS2-AL00HN"
+    ]
+  },
+  {
+    "id": "honor_honor_pad_5_8",
+    "brand": "Honor",
+    "model": "Honor Pad 5 8",
+    "releaseYear": 2019,
+    "modelCodes": [
+      "JDN2-W09HN",
+      "JDN2-AL00HN"
+    ]
+  },
+  {
+    "id": "honor_honor_pad_6",
+    "brand": "Honor",
+    "model": "Honor Pad 6",
+    "releaseYear": 2020,
+    "modelCodes": [
+      "AGR-W09HN",
+      "AGR-AL09HN"
+    ]
+  },
+  {
+    "id": "honor_honor_pad_8",
+    "brand": "Honor",
+    "model": "Honor Pad 8",
+    "releaseYear": 2022,
+    "modelCodes": [
+      "HEY-W09"
+    ]
+  },
+  {
+    "id": "honor_honor_pad_9",
+    "brand": "Honor",
+    "model": "Honor Pad 9",
+    "releaseYear": 2023,
+    "modelCodes": [
+      "HEY2-W09"
+    ]
+  },
+  {
+    "id": "honor_honor_pad_9_pro",
+    "brand": "Honor",
+    "model": "Honor Pad 9 Pro",
+    "releaseYear": 2024,
+    "modelCodes": [
+      "HEY2-W19"
+    ]
+  },
+  {
+    "id": "honor_honor_pad_x6",
+    "brand": "Honor",
+    "model": "Honor Pad X6",
+    "releaseYear": 2020,
+    "modelCodes": [
+      "Neo-W09HN",
+      "Neo-AL00HN"
+    ]
+  },
+  {
+    "id": "honor_honor_pad_x8",
+    "brand": "Honor",
+    "model": "Honor Pad X8",
+    "releaseYear": 2022,
+    "modelCodes": [
+      "AGM3-W09HN"
+    ]
+  },
+  {
+    "id": "honor_honor_pad_x8a",
+    "brand": "Honor",
+    "model": "Honor Pad X8a",
+    "releaseYear": 2024,
+    "modelCodes": [
+      "ROD-W09"
+    ]
+  },
+  {
+    "id": "honor_honor_pad_x9",
+    "brand": "Honor",
+    "model": "Honor Pad X9",
+    "releaseYear": 2023,
+    "modelCodes": [
+      "ELN-W09"
+    ]
   },
   {
     "id": "infinix_infinix_gt_10_pro",
@@ -2063,6 +2660,14 @@
     ]
   },
   {
+    "id": "iqoo_iqoo_pad",
+    "brand": "iQOO",
+    "parentBrand": "Vivo",
+    "model": "iQOO Pad",
+    "releaseYear": 2023,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/bigpic/vivo-iqoo-pad.jpg"
+  },
+  {
     "id": "iqoo_iqoo_pad2",
     "brand": "iQOO",
     "parentBrand": "Vivo",
@@ -2618,6 +3223,367 @@
     "modelCodes": [
       "V2353A",
       "I2219"
+    ]
+  },
+  {
+    "id": "lenovo_lenovo_ideapad_duet_chromebook",
+    "brand": "Lenovo",
+    "model": "Lenovo IdeaPad Duet Chromebook",
+    "releaseYear": 2020,
+    "modelCodes": [
+      "CT-X636F"
+    ]
+  },
+  {
+    "id": "lenovo_lenovo_legion_tab_2024",
+    "brand": "Lenovo",
+    "model": "Lenovo Legion Tab 2024",
+    "releaseYear": 2024,
+    "modelCodes": [
+      "TB-321FU"
+    ]
+  },
+  {
+    "id": "lenovo_lenovo_legion_tab_y700",
+    "brand": "Lenovo",
+    "model": "Lenovo Legion Tab Y700",
+    "releaseYear": 2022,
+    "modelCodes": [
+      "TB-9707F"
+    ]
+  },
+  {
+    "id": "lenovo_lenovo_legion_tab_y700_2023",
+    "brand": "Lenovo",
+    "model": "Lenovo Legion Tab Y700 2023",
+    "releaseYear": 2023,
+    "modelCodes": [
+      "TB-320FC"
+    ]
+  },
+  {
+    "id": "lenovo_lenovo_tab_4_10",
+    "brand": "Lenovo",
+    "model": "Lenovo Tab 4 10",
+    "releaseYear": 2017,
+    "modelCodes": [
+      "TB-X304F",
+      "TB-X304L"
+    ]
+  },
+  {
+    "id": "lenovo_lenovo_tab_4_10_plus",
+    "brand": "Lenovo",
+    "model": "Lenovo Tab 4 10 Plus",
+    "releaseYear": 2017,
+    "modelCodes": [
+      "TB-X704F",
+      "TB-X704L"
+    ]
+  },
+  {
+    "id": "lenovo_lenovo_tab_4_8",
+    "brand": "Lenovo",
+    "model": "Lenovo Tab 4 8",
+    "releaseYear": 2017,
+    "modelCodes": [
+      "TB-8504F",
+      "TB-8504X"
+    ]
+  },
+  {
+    "id": "lenovo_lenovo_tab_4_8_plus",
+    "brand": "Lenovo",
+    "model": "Lenovo Tab 4 8 Plus",
+    "releaseYear": 2017,
+    "modelCodes": [
+      "TB-8704F",
+      "TB-8704X"
+    ]
+  },
+  {
+    "id": "lenovo_lenovo_tab_7_essential",
+    "brand": "Lenovo",
+    "model": "Lenovo Tab 7 Essential",
+    "releaseYear": 2017,
+    "modelCodes": [
+      "TB-7304F",
+      "TB-7304I"
+    ]
+  },
+  {
+    "id": "lenovo_lenovo_tab_e10",
+    "brand": "Lenovo",
+    "model": "Lenovo Tab E10",
+    "releaseYear": 2018,
+    "modelCodes": [
+      "TB-X104F"
+    ]
+  },
+  {
+    "id": "lenovo_lenovo_tab_e7",
+    "brand": "Lenovo",
+    "model": "Lenovo Tab E7",
+    "releaseYear": 2018,
+    "modelCodes": [
+      "TB-7104F",
+      "TB-7104I"
+    ]
+  },
+  {
+    "id": "lenovo_lenovo_tab_e8",
+    "brand": "Lenovo",
+    "model": "Lenovo Tab E8",
+    "releaseYear": 2018,
+    "modelCodes": [
+      "TB-8304F"
+    ]
+  },
+  {
+    "id": "lenovo_lenovo_tab_k10",
+    "brand": "Lenovo",
+    "model": "Lenovo Tab K10",
+    "releaseYear": 2021,
+    "modelCodes": [
+      "TB-X6C6F",
+      "TB-X6C6L"
+    ]
+  },
+  {
+    "id": "lenovo_lenovo_tab_m10",
+    "brand": "Lenovo",
+    "model": "Lenovo Tab M10",
+    "releaseYear": 2018,
+    "modelCodes": [
+      "TB-X605F",
+      "TB-X605L"
+    ]
+  },
+  {
+    "id": "lenovo_lenovo_tab_m10_5g",
+    "brand": "Lenovo",
+    "model": "Lenovo Tab M10 5G",
+    "releaseYear": 2023,
+    "modelCodes": [
+      "TB-360ZU"
+    ]
+  },
+  {
+    "id": "lenovo_lenovo_tab_m10_fhd_plus",
+    "brand": "Lenovo",
+    "model": "Lenovo Tab M10 FHD Plus",
+    "releaseYear": 2020,
+    "modelCodes": [
+      "TB-X606F",
+      "TB-X606X"
+    ]
+  },
+  {
+    "id": "lenovo_lenovo_tab_m10_hd",
+    "brand": "Lenovo",
+    "model": "Lenovo Tab M10 HD",
+    "releaseYear": 2019,
+    "modelCodes": [
+      "TB-X505F",
+      "TB-X505L"
+    ]
+  },
+  {
+    "id": "lenovo_lenovo_tab_m10_hd_gen_2",
+    "brand": "Lenovo",
+    "model": "Lenovo Tab M10 HD Gen 2",
+    "releaseYear": 2020,
+    "modelCodes": [
+      "TB-X306F",
+      "TB-X306X"
+    ]
+  },
+  {
+    "id": "lenovo_lenovo_tab_m10_plus_gen_3",
+    "brand": "Lenovo",
+    "model": "Lenovo Tab M10 Plus Gen 3",
+    "releaseYear": 2022,
+    "modelCodes": [
+      "TB-125FU",
+      "TB-128FU",
+      "TB-128XU"
+    ]
+  },
+  {
+    "id": "lenovo_lenovo_tab_m11",
+    "brand": "Lenovo",
+    "model": "Lenovo Tab M11",
+    "releaseYear": 2024,
+    "modelCodes": [
+      "TB-330FU",
+      "TB-330XU"
+    ]
+  },
+  {
+    "id": "lenovo_lenovo_tab_m7",
+    "brand": "Lenovo",
+    "model": "Lenovo Tab M7",
+    "releaseYear": 2019,
+    "modelCodes": [
+      "TB-7305F",
+      "TB-7305X"
+    ]
+  },
+  {
+    "id": "lenovo_lenovo_tab_m7_gen_3",
+    "brand": "Lenovo",
+    "model": "Lenovo Tab M7 Gen 3",
+    "releaseYear": 2021,
+    "modelCodes": [
+      "TB-7306F",
+      "TB-7306X"
+    ]
+  },
+  {
+    "id": "lenovo_lenovo_tab_m8_fhd",
+    "brand": "Lenovo",
+    "model": "Lenovo Tab M8 FHD",
+    "releaseYear": 2019,
+    "modelCodes": [
+      "TB-8705F"
+    ]
+  },
+  {
+    "id": "lenovo_lenovo_tab_m8_gen_3",
+    "brand": "Lenovo",
+    "model": "Lenovo Tab M8 Gen 3",
+    "releaseYear": 2021,
+    "modelCodes": [
+      "TB-8506F",
+      "TB-8506X"
+    ]
+  },
+  {
+    "id": "lenovo_lenovo_tab_m8_gen_4",
+    "brand": "Lenovo",
+    "model": "Lenovo Tab M8 Gen 4",
+    "releaseYear": 2023,
+    "modelCodes": [
+      "TB-300FU",
+      "TB-300XU"
+    ]
+  },
+  {
+    "id": "lenovo_lenovo_tab_m8_hd",
+    "brand": "Lenovo",
+    "model": "Lenovo Tab M8 HD",
+    "releaseYear": 2019,
+    "modelCodes": [
+      "TB-8505F",
+      "TB-8505X"
+    ]
+  },
+  {
+    "id": "lenovo_lenovo_tab_m9",
+    "brand": "Lenovo",
+    "model": "Lenovo Tab M9",
+    "releaseYear": 2023,
+    "modelCodes": [
+      "TB-310FU",
+      "TB-310XU"
+    ]
+  },
+  {
+    "id": "lenovo_lenovo_tab_p10",
+    "brand": "Lenovo",
+    "model": "Lenovo Tab P10",
+    "releaseYear": 2018,
+    "modelCodes": [
+      "TB-X705F",
+      "TB-X705L"
+    ]
+  },
+  {
+    "id": "lenovo_lenovo_tab_p11",
+    "brand": "Lenovo",
+    "model": "Lenovo Tab P11",
+    "releaseYear": 2021,
+    "modelCodes": [
+      "TB-J606F",
+      "TB-J606L"
+    ]
+  },
+  {
+    "id": "lenovo_lenovo_tab_p11_gen_2",
+    "brand": "Lenovo",
+    "model": "Lenovo Tab P11 Gen 2",
+    "releaseYear": 2022,
+    "modelCodes": [
+      "TB-350FU",
+      "TB-350XU"
+    ]
+  },
+  {
+    "id": "lenovo_lenovo_tab_p11_plus",
+    "brand": "Lenovo",
+    "model": "Lenovo Tab P11 Plus",
+    "releaseYear": 2021,
+    "modelCodes": [
+      "TB-J616F",
+      "TB-J616X"
+    ]
+  },
+  {
+    "id": "lenovo_lenovo_tab_p11_pro",
+    "brand": "Lenovo",
+    "model": "Lenovo Tab P11 Pro",
+    "releaseYear": 2020,
+    "modelCodes": [
+      "TB-J706F",
+      "TB-J706L"
+    ]
+  },
+  {
+    "id": "lenovo_lenovo_tab_p11_pro_gen_2",
+    "brand": "Lenovo",
+    "model": "Lenovo Tab P11 Pro Gen 2",
+    "releaseYear": 2022,
+    "modelCodes": [
+      "TB-132FU",
+      "TB-138FC"
+    ]
+  },
+  {
+    "id": "lenovo_lenovo_tab_p12",
+    "brand": "Lenovo",
+    "model": "Lenovo Tab P12",
+    "releaseYear": 2023,
+    "modelCodes": [
+      "TB-370FU"
+    ]
+  },
+  {
+    "id": "lenovo_lenovo_tab_p12_pro",
+    "brand": "Lenovo",
+    "model": "Lenovo Tab P12 Pro",
+    "releaseYear": 2021,
+    "modelCodes": [
+      "TB-Q706F",
+      "TB-Q706Z"
+    ]
+  },
+  {
+    "id": "lenovo_lenovo_yoga_tab_11",
+    "brand": "Lenovo",
+    "model": "Lenovo Yoga Tab 11",
+    "releaseYear": 2021,
+    "modelCodes": [
+      "YT-J706F",
+      "YT-J706X"
+    ]
+  },
+  {
+    "id": "lenovo_lenovo_yoga_tab_13",
+    "brand": "Lenovo",
+    "model": "Lenovo Yoga Tab 13",
+    "releaseYear": 2021,
+    "modelCodes": [
+      "YT-K606F"
     ]
   },
   {
@@ -4691,6 +5657,44 @@
       "XT1663",
       "XT1662"
     ]
+  },
+  {
+    "id": "motorola_moto_pad_2026",
+    "brand": "Motorola",
+    "model": "Moto Pad (2026)",
+    "releaseYear": 2026,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/motorola/motorola-moto-pad-2026-1.jpg"
+  },
+  {
+    "id": "motorola_moto_pad_60_lite",
+    "brand": "Motorola",
+    "model": "Moto Pad 60 Lite",
+    "releaseYear": 2025,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/motorola/_motorola-moto-pad-60-lite-1.jpg",
+    "modelCodes": [
+      "XT2573-1"
+    ]
+  },
+  {
+    "id": "motorola_moto_pad_60_neo",
+    "brand": "Motorola",
+    "model": "Moto Pad 60 Neo",
+    "releaseYear": 2025,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/motorola/motorola-moto-pad-60-neo-2.jpg"
+  },
+  {
+    "id": "motorola_moto_pad_60_pro",
+    "brand": "Motorola",
+    "model": "Moto Pad 60 Pro",
+    "releaseYear": 2025,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/motorola/motorola-moto-pad-60-pro-1.jpg"
+  },
+  {
+    "id": "motorola_moto_pad_70_pro",
+    "brand": "Motorola",
+    "model": "Moto Pad 70 Pro",
+    "releaseYear": 2026,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/motorola/motorola-moto-pad-70-pro-wi-fi-2.jpg"
   },
   {
     "id": "motorola_moto_s30_pro",
@@ -7757,6 +8761,105 @@
     ]
   },
   {
+    "id": "oneplus_pad",
+    "brand": "OnePlus",
+    "model": "Pad",
+    "releaseYear": 2023,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/oneplus/oneplus-pad-1.jpg"
+  },
+  {
+    "id": "oneplus_pad_2",
+    "brand": "OnePlus",
+    "model": "Pad 2",
+    "releaseYear": 2024,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/oneplus/oneplus-pad2-1.jpg"
+  },
+  {
+    "id": "oneplus_pad_2_pro",
+    "brand": "OnePlus",
+    "model": "Pad 2 Pro",
+    "releaseYear": 2025,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/oneplus/oneplus-pad-2-pro-1.jpg",
+    "modelCodes": [
+      "OPD2413"
+    ]
+  },
+  {
+    "id": "oneplus_pad_3",
+    "brand": "OnePlus",
+    "model": "Pad 3",
+    "releaseYear": 2025,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/oneplus/oneplus-pad-2-pro-1.jpg",
+    "modelCodes": [
+      "OPD2415"
+    ]
+  },
+  {
+    "id": "oneplus_pad_3_china",
+    "brand": "OnePlus",
+    "model": "Pad 3 (China)",
+    "releaseYear": 2024,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/oneplus/oneplus-pad3-0.jpg",
+    "modelCodes": [
+      "OPD2407"
+    ]
+  },
+  {
+    "id": "oneplus_pad_3_pro",
+    "brand": "OnePlus",
+    "model": "Pad 3 Pro",
+    "releaseYear": 2026,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/oneplus/oneplus-pad-4-new-1.jpg",
+    "modelCodes": [
+      "OPD2513"
+    ]
+  },
+  {
+    "id": "oneplus_pad_4",
+    "brand": "OnePlus",
+    "model": "Pad 4",
+    "releaseYear": 2026,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/oneplus/oneplus-pad-4-new-1.jpg"
+  },
+  {
+    "id": "oneplus_pad_go",
+    "brand": "OnePlus",
+    "model": "Pad Go",
+    "releaseYear": 2023,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/oneplus/oneplus-pad-go-1.jpg"
+  },
+  {
+    "id": "oneplus_pad_go_2",
+    "brand": "OnePlus",
+    "model": "Pad Go 2",
+    "releaseYear": 2025,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/oneplus/oneplus-pad-go2-1.jpg",
+    "modelCodes": [
+      "OPD2504",
+      "OPD2505"
+    ]
+  },
+  {
+    "id": "oneplus_pad_lite",
+    "brand": "OnePlus",
+    "model": "Pad Lite",
+    "releaseYear": 2025,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/oneplus/oneplus-pad-lite-1.jpg",
+    "modelCodes": [
+      "OPD2480"
+    ]
+  },
+  {
+    "id": "oneplus_pad_pro",
+    "brand": "OnePlus",
+    "model": "Pad Pro",
+    "releaseYear": 2024,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/oneplus/oneplus-pad-pro-1.jpg",
+    "modelCodes": [
+      "OPD2404"
+    ]
+  },
+  {
     "id": "oneplus_turbo_6",
     "brand": "OnePlus",
     "model": "Turbo 6",
@@ -10277,6 +11380,147 @@
     ]
   },
   {
+    "id": "oppo_oppo_pad",
+    "brand": "Oppo",
+    "model": "Oppo Pad",
+    "releaseYear": 2022,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/oppo/oppo-pad-1.jpg",
+    "modelCodes": [
+      "OPD2101"
+    ]
+  },
+  {
+    "id": "oppo_oppo_pad_2",
+    "brand": "Oppo",
+    "model": "Oppo Pad 2",
+    "releaseYear": 2023,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/oppo/oppo-pad2-1.jpg",
+    "modelCodes": [
+      "OPD2201",
+      "X22N2"
+    ]
+  },
+  {
+    "id": "oppo_oppo_pad_3",
+    "brand": "Oppo",
+    "model": "Oppo Pad 3",
+    "releaseYear": 2024,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/oppo/oppo-pad3-1.jpg",
+    "modelCodes": [
+      "OPD2405"
+    ]
+  },
+  {
+    "id": "oppo_oppo_pad_3_pro",
+    "brand": "Oppo",
+    "model": "Oppo Pad 3 Pro",
+    "releaseYear": 2024,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/oppo/oppo-pad-3-pro-1.jpg",
+    "modelCodes": [
+      "OPD2401"
+    ]
+  },
+  {
+    "id": "oppo_oppo_pad_4_pro",
+    "brand": "Oppo",
+    "model": "Oppo Pad 4 Pro",
+    "releaseYear": 2025,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/oppo/oppo-pad4-pro-1.jpg",
+    "modelCodes": [
+      "OPD2409"
+    ]
+  },
+  {
+    "id": "oppo_oppo_pad_5_china",
+    "brand": "Oppo",
+    "model": "Oppo Pad 5 (China)",
+    "releaseYear": 2025,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/oppo/oppo-pad5-1.jpg",
+    "modelCodes": [
+      "OPD2506"
+    ]
+  },
+  {
+    "id": "oppo_oppo_pad_5_matte_display",
+    "brand": "Oppo",
+    "model": "Oppo Pad 5 Matte Display",
+    "releaseYear": 2025,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/oppo/oppo-pad-air5-1.jpg",
+    "modelCodes": [
+      "OPD2501",
+      "OPD2502"
+    ]
+  },
+  {
+    "id": "oppo_oppo_pad_5_pro",
+    "brand": "Oppo",
+    "model": "Oppo Pad 5 Pro",
+    "releaseYear": 2026,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/oppo/oppo-pad5-pro-1.jpg",
+    "modelCodes": [
+      "OPD2511"
+    ]
+  },
+  {
+    "id": "oppo_oppo_pad_6",
+    "brand": "Oppo",
+    "model": "Oppo Pad 6",
+    "releaseYear": 2026,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/oppo/oppo-pad6-1.jpg",
+    "modelCodes": [
+      "OPD2601"
+    ]
+  },
+  {
+    "id": "oppo_oppo_pad_air",
+    "brand": "Oppo",
+    "model": "Oppo Pad Air",
+    "releaseYear": 2022,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/oppo/oppo-pad-air-01.jpg",
+    "modelCodes": [
+      "OPD2102",
+      "X21N2"
+    ]
+  },
+  {
+    "id": "oppo_oppo_pad_air2",
+    "brand": "Oppo",
+    "model": "Oppo Pad Air2",
+    "releaseYear": 2023,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/oppo/oppo-pad-air2-1.jpg"
+  },
+  {
+    "id": "oppo_oppo_pad_mini",
+    "brand": "Oppo",
+    "model": "Oppo Pad Mini",
+    "releaseYear": 2026,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/oppo/oppo-pad-mini-1.jpg",
+    "modelCodes": [
+      "OPD2515"
+    ]
+  },
+  {
+    "id": "oppo_oppo_pad_neo",
+    "brand": "Oppo",
+    "model": "Oppo Pad Neo",
+    "releaseYear": 2024,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/oppo/oppo-pad-air2-1.jpg",
+    "modelCodes": [
+      "OPD2302",
+      "OPD2303"
+    ]
+  },
+  {
+    "id": "oppo_oppo_pad_se",
+    "brand": "Oppo",
+    "model": "Oppo Pad SE",
+    "releaseYear": 2025,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/oppo/oppo-pad-se-1.jpg",
+    "modelCodes": [
+      "OPD2417"
+    ]
+  },
+  {
     "id": "oppo_oppo_r11",
     "brand": "Oppo",
     "model": "Oppo R11",
@@ -12055,6 +13299,55 @@
     "model": "Poco M8s",
     "releaseYear": 2026,
     "photoUrl": "https://fdn2.gsmarena.com/vv/pics/xiaomi/xiaomi-poco-m8s-1.jpg"
+  },
+  {
+    "id": "poco_poco_pad",
+    "brand": "Poco",
+    "parentBrand": "Xiaomi",
+    "model": "Poco Pad",
+    "releaseYear": 2024,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/xiaomi/xiaomi-poco-pad-2.jpg",
+    "modelCodes": [
+      "2405CPCFBG"
+    ]
+  },
+  {
+    "id": "poco_poco_pad_5g",
+    "brand": "Poco",
+    "parentBrand": "Xiaomi",
+    "model": "Poco Pad 5G",
+    "releaseYear": 2024,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/xiaomi/xiaomi-poco-pad-5g-01.jpg"
+  },
+  {
+    "id": "poco_poco_pad_c1",
+    "brand": "Poco",
+    "parentBrand": "Xiaomi",
+    "model": "Poco Pad C1",
+    "releaseYear": 2026,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/xiaomi/xiaomi-poco-pad-c1-1.jpg"
+  },
+  {
+    "id": "poco_poco_pad_m1",
+    "brand": "Poco",
+    "parentBrand": "Xiaomi",
+    "model": "Poco Pad M1",
+    "releaseYear": 2025,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/xiaomi/xiaomi-poco-pad-m1-1.jpg",
+    "modelCodes": [
+      "2509ARPBDG"
+    ]
+  },
+  {
+    "id": "poco_poco_pad_x1",
+    "brand": "Poco",
+    "parentBrand": "Xiaomi",
+    "model": "Poco Pad X1",
+    "releaseYear": 2025,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/xiaomi/xiaomi-poco-pad-x1-1.jpg",
+    "modelCodes": [
+      "25099RP08G"
+    ]
   },
   {
     "id": "poco_poco_x2",
@@ -13983,6 +15276,65 @@
     ]
   },
   {
+    "id": "realme_realme_pad",
+    "brand": "Realme",
+    "model": "Realme Pad",
+    "releaseYear": 2021,
+    "modelCodes": [
+      "RMP2102",
+      "RMP2103"
+    ]
+  },
+  {
+    "id": "realme_realme_pad_2",
+    "brand": "Realme",
+    "model": "Realme Pad 2",
+    "releaseYear": 2023,
+    "modelCodes": [
+      "RMP2204",
+      "RMP2205"
+    ]
+  },
+  {
+    "id": "realme_realme_pad_2_lite",
+    "brand": "Realme",
+    "model": "Realme Pad 2 Lite",
+    "releaseYear": 2024,
+    "modelCodes": [
+      "RMP2402"
+    ]
+  },
+  {
+    "id": "realme_realme_pad_3",
+    "brand": "Realme",
+    "model": "Realme Pad 3",
+    "releaseYear": 2021,
+    "modelCodes": [
+      "RMP2501",
+      "RMP2502"
+    ]
+  },
+  {
+    "id": "realme_realme_pad_mini",
+    "brand": "Realme",
+    "model": "Realme Pad mini",
+    "releaseYear": 2022,
+    "modelCodes": [
+      "RMP2105",
+      "RMP2106"
+    ]
+  },
+  {
+    "id": "realme_realme_pad_x",
+    "brand": "Realme",
+    "model": "Realme Pad X",
+    "releaseYear": 2022,
+    "modelCodes": [
+      "RMP2107",
+      "RMP2108"
+    ]
+  },
+  {
     "id": "realme_realme_u1",
     "brand": "Realme",
     "model": "Realme U1",
@@ -15018,6 +16370,22 @@
       "M1903C3GH",
       "M1903C3GI"
     ]
+  },
+  {
+    "id": "redmi_redmi_k_pad",
+    "brand": "Redmi",
+    "parentBrand": "Xiaomi",
+    "model": "Redmi K Pad",
+    "releaseYear": 2025,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/xiaomi/xiaomi-redmi-k-pad-1.jpg"
+  },
+  {
+    "id": "redmi_redmi_k_pad_2",
+    "brand": "Redmi",
+    "parentBrand": "Xiaomi",
+    "model": "Redmi K Pad 2",
+    "releaseYear": 2026,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/xiaomi/xiaomi-redmi-k-pad2-1.jpg"
   },
   {
     "id": "redmi_redmi_k20",
@@ -16356,6 +17724,92 @@
     "model": "Redmi Note Prime",
     "releaseYear": 2015,
     "photoUrl": "https://fdn2.gsmarena.com/vv/pics/xiaomi/xiaomi-redmi-note-prime-1.jpg"
+  },
+  {
+    "id": "redmi_redmi_pad",
+    "brand": "Redmi",
+    "parentBrand": "Xiaomi",
+    "model": "Redmi Pad",
+    "releaseYear": 2022,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/xiaomi/xiaomi-redmi-pad-01.jpg",
+    "modelCodes": [
+      "22081283G"
+    ]
+  },
+  {
+    "id": "redmi_redmi_pad_2",
+    "brand": "Redmi",
+    "parentBrand": "Xiaomi",
+    "model": "Redmi Pad 2",
+    "releaseYear": 2025,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/xiaomi/xiaomi-redmi-pad2-1.jpg",
+    "modelCodes": [
+      "25040RP0AG",
+      "25040RP0AI"
+    ]
+  },
+  {
+    "id": "redmi_redmi_pad_2_9_7",
+    "brand": "Redmi",
+    "parentBrand": "Xiaomi",
+    "model": "Redmi Pad 2 9.7",
+    "releaseYear": 2026,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/xiaomi/xiaomi-redmi-pad-2-97-2.jpg"
+  },
+  {
+    "id": "redmi_redmi_pad_2_pro",
+    "brand": "Redmi",
+    "parentBrand": "Xiaomi",
+    "model": "Redmi Pad 2 Pro",
+    "releaseYear": 2025,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/xiaomi/xiaomi-redmi-pad2-pro-2.jpg",
+    "modelCodes": [
+      "25099RP13G",
+      "2509BRP2DG"
+    ]
+  },
+  {
+    "id": "redmi_redmi_pad_pro",
+    "brand": "Redmi",
+    "parentBrand": "Xiaomi",
+    "model": "Redmi Pad Pro",
+    "releaseYear": 2024,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/xiaomi/xiaomi-redmi-pad-pro-1.jpg"
+  },
+  {
+    "id": "redmi_redmi_pad_pro_5g",
+    "brand": "Redmi",
+    "parentBrand": "Xiaomi",
+    "model": "Redmi Pad Pro 5G",
+    "releaseYear": 2024,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/xiaomi/xiaomi-redmi-pad-pro-5g-1.jpg",
+    "modelCodes": [
+      "24074RPD2G",
+      "24074RPD2I",
+      "24074RPD2C"
+    ]
+  },
+  {
+    "id": "redmi_redmi_pad_se",
+    "brand": "Redmi",
+    "parentBrand": "Xiaomi",
+    "model": "Redmi Pad SE",
+    "releaseYear": 2023,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/xiaomi/xiaomi-pad-se-10.jpg",
+    "modelCodes": [
+      "23073RPBFG"
+    ]
+  },
+  {
+    "id": "redmi_redmi_pad_se_8_7",
+    "brand": "Redmi",
+    "parentBrand": "Xiaomi",
+    "model": "Redmi Pad SE 8.7",
+    "releaseYear": 2024,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/xiaomi/xiaomi-redmi-pad-se-4g-1.jpg",
+    "modelCodes": [
+      "220233L2G"
+    ]
   },
   {
     "id": "redmi_redmi_pro",
@@ -21443,6 +22897,115 @@
     ]
   },
   {
+    "id": "samsung_galaxy_watch3",
+    "brand": "Samsung",
+    "model": "Galaxy Watch3",
+    "releaseYear": 2020,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/samsung/samsung-galaxy-watch3-1.jpg",
+    "modelCodes": [
+      "SM-R850",
+      "SM-R840",
+      "SM-R855F",
+      "SM-R845F",
+      "SM-R855U",
+      "SM-R845U"
+    ]
+  },
+  {
+    "id": "samsung_galaxy_watch4",
+    "brand": "Samsung",
+    "model": "Galaxy Watch4",
+    "releaseYear": 2021,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/samsung/galaxy-watch4-1.jpg",
+    "modelCodes": [
+      "SM-R860",
+      "SM-R870"
+    ]
+  },
+  {
+    "id": "samsung_galaxy_watch4_classic",
+    "brand": "Samsung",
+    "model": "Galaxy Watch4 Classic",
+    "releaseYear": 2021,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/samsung/galaxy-watch4-classic-1.jpg",
+    "modelCodes": [
+      "SM-R880",
+      "SM-R890"
+    ]
+  },
+  {
+    "id": "samsung_galaxy_watch5",
+    "brand": "Samsung",
+    "model": "Galaxy Watch5",
+    "releaseYear": 2022,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/samsung/samsung-galaxy-watch5-1.jpg",
+    "modelCodes": [
+      "SM-R915F",
+      "SM-R905F"
+    ]
+  },
+  {
+    "id": "samsung_galaxy_watch5_pro",
+    "brand": "Samsung",
+    "model": "Galaxy Watch5 Pro",
+    "releaseYear": 2022,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/samsung/samsung-galaxy-watch5pro-1.jpg",
+    "modelCodes": [
+      "SM-R925F"
+    ]
+  },
+  {
+    "id": "samsung_galaxy_watch6",
+    "brand": "Samsung",
+    "model": "Galaxy Watch6",
+    "releaseYear": 2023,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/samsung/galaxy-watch6-02.jpg"
+  },
+  {
+    "id": "samsung_galaxy_watch6_classic",
+    "brand": "Samsung",
+    "model": "Galaxy Watch6 Classic",
+    "releaseYear": 2023,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/samsung/galaxy-watch6-classic-1.jpg"
+  },
+  {
+    "id": "samsung_galaxy_watch7",
+    "brand": "Samsung",
+    "model": "Galaxy Watch7",
+    "releaseYear": 2024,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/samsung/samsung-galaxy-watch7-1.jpg",
+    "modelCodes": [
+      "SM-L310F",
+      "SM-L315F"
+    ]
+  },
+  {
+    "id": "samsung_galaxy_watch8",
+    "brand": "Samsung",
+    "model": "Galaxy Watch8",
+    "releaseYear": 2025,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/samsung/samsung-galaxy-watch8-0.jpg",
+    "modelCodes": [
+      "SM-L320",
+      "SM-L325",
+      "SM-L330",
+      "SM-L335",
+      "SM-L325U",
+      "SM-L335U"
+    ]
+  },
+  {
+    "id": "samsung_galaxy_watch8_classic",
+    "brand": "Samsung",
+    "model": "Galaxy Watch8 Classic",
+    "releaseYear": 2025,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/samsung/samsung-galaxy-watch8-classic-0.jpg",
+    "modelCodes": [
+      "SM-L500",
+      "SM-L505U"
+    ]
+  },
+  {
     "id": "samsung_galaxy_xcover_3",
     "brand": "Samsung",
     "model": "Galaxy XCover 3",
@@ -21799,6 +23362,87 @@
       "SM-D639U1",
       "SM-D639N",
       "SM-D6390"
+    ]
+  },
+  {
+    "id": "samsung_gear_s2",
+    "brand": "Samsung",
+    "model": "Gear S2",
+    "releaseYear": 2015,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/samsung/samsung-gear-s2-0.jpg",
+    "modelCodes": [
+      "SM-R720"
+    ]
+  },
+  {
+    "id": "samsung_gear_s2_3g",
+    "brand": "Samsung",
+    "model": "Gear S2 3G",
+    "releaseYear": 2015,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/samsung/samsung-gear-s2-0.jpg",
+    "modelCodes": [
+      "SM-R7200",
+      "SM-R7320",
+      "SM-R7300"
+    ]
+  },
+  {
+    "id": "samsung_gear_s2_classic",
+    "brand": "Samsung",
+    "model": "Gear S2 classic",
+    "releaseYear": 2015,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/samsung/samsung-gear-s2-classic-ceramic-bracelet.jpg",
+    "modelCodes": [
+      "SM-R720",
+      "SM-R732"
+    ]
+  },
+  {
+    "id": "samsung_gear_s2_classic_3g",
+    "brand": "Samsung",
+    "model": "Gear S2 classic 3G",
+    "releaseYear": 2016,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/samsung/samsung-gear-s2-classic-ceramic-bracelet.jpg"
+  },
+  {
+    "id": "samsung_gear_s3_classic",
+    "brand": "Samsung",
+    "model": "Gear S3 classic",
+    "releaseYear": 2016,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/samsung/samsung-gear-s3-classic1.jpg"
+  },
+  {
+    "id": "samsung_gear_s3_classic_lte",
+    "brand": "Samsung",
+    "model": "Gear S3 classic LTE",
+    "releaseYear": 2017,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/samsung/samsung-gear-s3-classic-lte-1.jpg",
+    "modelCodes": [
+      "SM-R775S"
+    ]
+  },
+  {
+    "id": "samsung_gear_s3_frontier",
+    "brand": "Samsung",
+    "model": "Gear S3 frontier",
+    "releaseYear": 2016,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/samsung/samsung-gear-s3-frontier-lte1.jpg"
+  },
+  {
+    "id": "samsung_gear_s3_frontier_lte",
+    "brand": "Samsung",
+    "model": "Gear S3 frontier LTE",
+    "releaseYear": 2016,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/samsung/samsung-gear-s3-frontier-lte1.jpg"
+  },
+  {
+    "id": "samsung_gear_sport",
+    "brand": "Samsung",
+    "model": "Gear Sport",
+    "releaseYear": 2017,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/samsung/samsung-gear-sport1.jpg",
+    "modelCodes": [
+      "SM-R600"
     ]
   },
   {
@@ -22729,6 +24373,27 @@
     ]
   },
   {
+    "id": "sony_sony_xperia_z4_tablet_lte",
+    "brand": "Sony",
+    "model": "Sony Xperia Z4 Tablet LTE",
+    "releaseYear": 2015,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/sony/-sony-xperia-z4-tablet-1.jpg",
+    "modelCodes": [
+      "SGP771"
+    ]
+  },
+  {
+    "id": "sony_sony_xperia_z4_tablet_wifi",
+    "brand": "Sony",
+    "model": "Sony Xperia Z4 Tablet WiFi",
+    "releaseYear": 2015,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/sony/-sony-xperia-z4-tablet-1.jpg",
+    "modelCodes": [
+      "SGP712",
+      "SO-05G"
+    ]
+  },
+  {
     "id": "sony_sony_xperia_z5",
     "brand": "Sony",
     "model": "Sony Xperia Z5",
@@ -23278,6 +24943,27 @@
       "1805",
       "NEX S"
     ]
+  },
+  {
+    "id": "vivo_pad",
+    "brand": "Vivo",
+    "model": "Pad",
+    "releaseYear": 2022,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/vivo/vivo-pad-1.jpg"
+  },
+  {
+    "id": "vivo_pad_air",
+    "brand": "Vivo",
+    "model": "Pad Air",
+    "releaseYear": 2023,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/vivo/vivo-pad-air-1.jpg"
+  },
+  {
+    "id": "vivo_pad_se",
+    "brand": "Vivo",
+    "model": "Pad SE",
+    "releaseYear": 2025,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/vivo/vivo-pad-se-1.jpg"
   },
   {
     "id": "vivo_pad2",
@@ -28089,6 +29775,13 @@
     "photoUrl": "https://fdn2.gsmarena.com/vv/pics/xiaomi/xiaomi-black-shark-5-rs-1.jpg"
   },
   {
+    "id": "xiaomi_black_shark_gaming_tablet",
+    "brand": "Xiaomi",
+    "model": "Black Shark Gaming Tablet",
+    "releaseYear": 2026,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/xiaomi/black-shark-gaming-tablet-1.jpg"
+  },
+  {
     "id": "xiaomi_black_shark_gs3",
     "brand": "Xiaomi",
     "model": "Black Shark GS3",
@@ -28111,6 +29804,34 @@
     "modelCodes": [
       "AWM-A0"
     ]
+  },
+  {
+    "id": "xiaomi_black_shark_pad_6",
+    "brand": "Xiaomi",
+    "model": "Black Shark Pad 6",
+    "releaseYear": 2024,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/xiaomi/xiaomi-black-shark-pad-6-1.jpg"
+  },
+  {
+    "id": "xiaomi_black_shark_pad_7",
+    "brand": "Xiaomi",
+    "model": "Black Shark Pad 7",
+    "releaseYear": 2025,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/xiaomi/xiaomi-black-shark-pad-7-1.jpg"
+  },
+  {
+    "id": "xiaomi_black_shark_pad_7_pro",
+    "brand": "Xiaomi",
+    "model": "Black Shark Pad 7 Pro",
+    "releaseYear": 2025,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/xiaomi/xiaomi-black-shark-pad-7-pro-1.jpg"
+  },
+  {
+    "id": "xiaomi_black_shark_pad_se",
+    "brand": "Xiaomi",
+    "model": "Black Shark Pad SE",
+    "releaseYear": 2026,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/xiaomi/xiaomi-black-shark-pad-se-1.jpg"
   },
   {
     "id": "xiaomi_civi",
@@ -28765,6 +30486,34 @@
     "photoUrl": "https://fdn2.gsmarena.com/vv/pics/xiaomi/xiaomi-note-pro-2.jpg"
   },
   {
+    "id": "xiaomi_mi_pad_2",
+    "brand": "Xiaomi",
+    "model": "Mi Pad 2",
+    "releaseYear": 2015,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/xiaomi/xiaomi-mi-pad-2-1.jpg"
+  },
+  {
+    "id": "xiaomi_mi_pad_3",
+    "brand": "Xiaomi",
+    "model": "Mi Pad 3",
+    "releaseYear": 2017,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/xiaomi/xiaomi-mi-pad-3-1.jpg"
+  },
+  {
+    "id": "xiaomi_mi_pad_4",
+    "brand": "Xiaomi",
+    "model": "Mi Pad 4",
+    "releaseYear": 2018,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/xiaomi/xiaomi-mi-pad-4-1.jpg"
+  },
+  {
+    "id": "xiaomi_mi_pad_4_plus",
+    "brand": "Xiaomi",
+    "model": "Mi Pad 4 Plus",
+    "releaseYear": 2018,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/xiaomi/xiaomi-mi-pad-4-plus-1.jpg"
+  },
+  {
     "id": "xiaomi_mi_play",
     "brand": "Xiaomi",
     "model": "Mi Play",
@@ -28831,6 +30580,138 @@
     "model": "Mix Fold 4",
     "releaseYear": 2024,
     "photoUrl": "https://fdn2.gsmarena.com/vv/pics/xiaomi/xiaomi-mix-fold4-1.jpg"
+  },
+  {
+    "id": "xiaomi_pad_5",
+    "brand": "Xiaomi",
+    "model": "Pad 5",
+    "releaseYear": 2021,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/xiaomi/pad-5-1.jpg",
+    "modelCodes": [
+      "21051182G",
+      "21051182C"
+    ]
+  },
+  {
+    "id": "xiaomi_pad_5_pro",
+    "brand": "Xiaomi",
+    "model": "Pad 5 Pro",
+    "releaseYear": 2021,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/xiaomi/pad-5-pro-1.jpg",
+    "modelCodes": [
+      "M2105K81AC",
+      "M2105K81C"
+    ]
+  },
+  {
+    "id": "xiaomi_pad_5_pro_12_4",
+    "brand": "Xiaomi",
+    "model": "Pad 5 Pro 12.4",
+    "releaseYear": 2022,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/xiaomi/xiaomi-mi-pad-5-pro-124-1.jpg"
+  },
+  {
+    "id": "xiaomi_pad_6",
+    "brand": "Xiaomi",
+    "model": "Pad 6",
+    "releaseYear": 2023,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/xiaomi/xiaomi-pad6-1.jpg",
+    "modelCodes": [
+      "23043RP34C",
+      "23043RP34G",
+      "23043RP34I"
+    ]
+  },
+  {
+    "id": "xiaomi_pad_6_max_14",
+    "brand": "Xiaomi",
+    "model": "Pad 6 Max 14",
+    "releaseYear": 2023,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/xiaomi/xiaomi-pad-6-max-14-1.jpg"
+  },
+  {
+    "id": "xiaomi_pad_6_pro",
+    "brand": "Xiaomi",
+    "model": "Pad 6 Pro",
+    "releaseYear": 2023,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/xiaomi/xiaomi-pad6-pro-1.jpg",
+    "modelCodes": [
+      "23046RP50C"
+    ]
+  },
+  {
+    "id": "xiaomi_pad_6s_pro_12_4",
+    "brand": "Xiaomi",
+    "model": "Pad 6S Pro 12.4",
+    "releaseYear": 2024,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/xiaomi/xiaomi-pad-6s-pro-124-1.jpg",
+    "modelCodes": [
+      "24018RPACG"
+    ]
+  },
+  {
+    "id": "xiaomi_pad_7",
+    "brand": "Xiaomi",
+    "model": "Pad 7",
+    "releaseYear": 2024,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/xiaomi/xiaomi-pad-7-pro-1.jpg",
+    "modelCodes": [
+      "2410CRP4CG"
+    ]
+  },
+  {
+    "id": "xiaomi_pad_7_pro",
+    "brand": "Xiaomi",
+    "model": "Pad 7 Pro",
+    "releaseYear": 2024,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/xiaomi/xiaomi-pad-7-pro-1.jpg",
+    "modelCodes": [
+      "24091RPADG"
+    ]
+  },
+  {
+    "id": "xiaomi_pad_7_ultra",
+    "brand": "Xiaomi",
+    "model": "Pad 7 Ultra",
+    "releaseYear": 2025,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/xiaomi/xiaomi-pad7-ultra-1.jpg"
+  },
+  {
+    "id": "xiaomi_pad_7s_pro_12_5",
+    "brand": "Xiaomi",
+    "model": "Pad 7S Pro 12.5",
+    "releaseYear": 2025,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/xiaomi/xiaomi-pad-7s-pro-125-1.jpg"
+  },
+  {
+    "id": "xiaomi_pad_8",
+    "brand": "Xiaomi",
+    "model": "Pad 8",
+    "releaseYear": 2025,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/xiaomi/xiaomi-pad-8-2.jpg",
+    "modelCodes": [
+      "25091RP04G"
+    ]
+  },
+  {
+    "id": "xiaomi_pad_8_pro",
+    "brand": "Xiaomi",
+    "model": "Pad 8 Pro",
+    "releaseYear": 2025,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/xiaomi/xiaomi-pad-8-pro-1.jpg",
+    "modelCodes": [
+      "25097RP43G"
+    ]
+  },
+  {
+    "id": "xiaomi_pad_mini",
+    "brand": "Xiaomi",
+    "model": "Pad Mini",
+    "releaseYear": 2025,
+    "photoUrl": "https://fdn2.gsmarena.com/vv/pics/xiaomi/xiaomi-pad-mini-1.jpg",
+    "modelCodes": [
+      "25079RPDCG"
+    ]
   },
   {
     "id": "xiaomi_pocophone_f1",

@@ -4,6 +4,7 @@ import {
   Plus,
   Cpu,
   Smartphone,
+  Tablet,
   Tag,
   ChevronDown,
   ChevronUp,
@@ -31,16 +32,18 @@ export interface SparesScreenProps {
 
 const BRANDS = [
   'All',
-  'Redmi',
-  'Poco',
-  'Xiaomi',
-  'Samsung',
-  'Vivo',
-  'Realme',
-  'Oppo',
-  'OnePlus',
+  'Tablets / iPads',
   'Apple',
+  'Samsung',
+  'Lenovo',
+  'Redmi',
+  'Xiaomi',
+  'Realme',
+  'OnePlus',
+  'Oppo',
+  'Vivo',
   'Motorola',
+  'Honor',
   'Infinix',
   'Tecno',
   'iQOO',
@@ -99,8 +102,16 @@ export const SparesScreen: React.FC<SparesScreenProps> = () => {
   // Filter devices based on brand & search
   const filteredDevices = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
+    const isTabletFilter = selectedBrand === 'Tablets / iPads';
+
     return devices.filter((d) => {
-      const brandMatch = selectedBrand === 'All' || d.brand.toLowerCase() === selectedBrand.toLowerCase();
+      const isTablet = /ipad|tab\b|pad\b|tablet/i.test(d.model);
+      const brandMatch =
+        selectedBrand === 'All'
+          ? true
+          : isTabletFilter
+          ? isTablet
+          : d.brand.toLowerCase() === selectedBrand.toLowerCase();
       if (!brandMatch) return false;
       if (!q) return true;
 
@@ -220,13 +231,14 @@ export const SparesScreen: React.FC<SparesScreenProps> = () => {
         <div className="py-12 text-center text-xs text-slate-400">Loading catalog...</div>
       ) : filteredDevices.length === 0 ? (
         <div className="py-12 text-center text-xs text-slate-400">
-          No matching phone models found.
+          No matching models, tablets, or parts found.
         </div>
       ) : (
         <div className="space-y-3">
           {visibleDevices.map((device) => {
             const isExpanded = expandedDeviceId === device.id;
             const deviceSpares = spares.filter((s) => s.deviceId === device.id);
+            const isTablet = /ipad|tab\b|pad\b|tablet/i.test(device.model);
 
             return (
               <div
@@ -251,6 +263,8 @@ export const SparesScreen: React.FC<SparesScreenProps> = () => {
                             (e.currentTarget as HTMLElement).style.display = 'none';
                           }}
                         />
+                      ) : isTablet ? (
+                        <Tablet className="w-5 h-5 text-iosBlue" />
                       ) : (
                         <Smartphone className="w-5 h-5 text-iosBlue" />
                       )}
