@@ -47,7 +47,7 @@ When `wholesaleMode` is active, the bottom bar dynamically adapts:
 Because the catalog spans thousands of phone models, tens of thousands of parts, and part photos, storing all reference data in local device storage would degrade app download size and device performance. 
 - **Central Master Database:** Hosted in Cloud Firestore (`master_devices` and `master_spares`) with compressed WebP photos served via Cloud Storage / CDN.
 - **On-Demand Search:** The client queries the cloud catalog with fast brand/model filtering and lazy-loaded photos.
-- **Local Isolation:** Only items the wholesaler chooses to stock are copied into their local shop inventory (`db.stock`), keeping local IndexedDB fast, lightweight (< 5MB), and offline-capable.
+- **Cloud-Backed Inventory:** Whenever a wholesaler adds a single part or batch-imports an entire model's parts into stock, the items are written to `db.stock` and immediately synced to **Cloud Firestore** (`users/{uid}/stock/{cloudId}`) via our real-time sync service. This ensures 100% cloud backup and seamless multi-device/multi-counter sync while maintaining offline capability.
 
 ### 3.2 Catalog Data Taxonomy
 - **Brands:** Xiaomi / Redmi, Samsung, Vivo / iQOO, Oppo, Realme, Apple, OnePlus, Poco, Motorola, Infinix, Tecno.
@@ -75,10 +75,21 @@ Because the catalog spans thousands of phone models, tens of thousands of parts,
      - Current shop stock badge (e.g. `In Stock (12 pcs)` with wholesale rate, or `Not in Stock`)
      - Quick action: **`+ Add to Stock`** button opening a modal for wholesale selling price, cost price, and stock count.
 3. **Batch "Stock Entire Model" Importer:**
-   - Wholesalers can tap **"Stock All Parts for [Model]"**, check off parts they carry, set default prices, and create items in local `db.stock` in a single tap.
+   - Wholesalers can tap **"Stock All Parts for [Model]"**, check off parts they carry, set default prices, and create items in local `db.stock` with immediate Cloud Firestore sync in a single tap.
 4. **User Cross-Model Compatibility:**
    - Pre-loaded cross-model hints (e.g. *"Battery BN53 fits Redmi Note 9 Pro / Poco M2 Pro"*).
    - **User Compatibility Editor:** Wholesalers can add or edit their own cross-model compatibility tags for any part, persisting across their shop account.
+
+### 3.4 Day Book Live Product Search & Fast Billing Integration
+Wholesalers perform dozens of quick counter sales an hour. Typing items and prices manually in Day Book slows down transactions.
+- **Real-Time Product Autocomplete in Day Book:**
+  - In `AddEditSheet.tsx` (Day Book New Entry), the `Item / Product` input features live auto-suggest.
+  - As soon as the wholesaler focuses the input or types (e.g., `Note 10`, `Y20`, `Display`, `Battery`), a fast dropdown displays matching in-stock products with:
+    - Product / Spare Name
+    - Current In-Stock Quantity (e.g. `12 in stock`)
+    - Wholesale Selling Price (e.g. `₹1,350`)
+  - **1-Tap Selection:** Tapping any product auto-fills the item description, automatically sets the entry `amount` to the wholesale price, links `stockId`, and prepares the entry for automatic stock decrement on save.
+  - **Prominent Catalog Search Shortcut:** A quick *"Browse Spares Catalog"* button allows wholesalers to look up and bill any spare part directly while creating a Day Book transaction.
 
 ---
 
