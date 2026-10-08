@@ -12,6 +12,7 @@ import { StockPickerSheet } from '../components/StockPickerSheet';
 import { SparesAutoSuggest } from '../components/wholesale/SparesAutoSuggest';
 import { Package, X, Check, Trash2, Receipt, Share2, Download } from 'lucide-react';
 import { downloadBillPDF } from '../utils/pdf';
+import { syncDayBookCreditEntry, formatCurrencyINR } from '../utils/wholesaleCredit';
 
 interface AddEditSheetProps {
   isOpen: boolean;
@@ -88,6 +89,21 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
     []
   ) ?? [];
 
+  // Wholesale clients state & query
+  const [selectedClientCloudId, setSelectedClientCloudId] = useState<string | undefined>(undefined);
+  const [showClientDropdown, setShowClientDropdown] = useState(false);
+  const registeredClients = useLiveQuery(
+    async () => {
+      try {
+        if (!db.clients) return [];
+        return await db.clients.toArray();
+      } catch {
+        return [];
+      }
+    },
+    []
+  ) ?? [];
+
   const amountInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -111,6 +127,21 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
         } else {
           setActiveBill(null);
         }
+
+        // Check if a client transaction is linked
+        if (entryToEdit.id) {
+          db.clientTransactions
+            .where('dayBookEntryId')
+            .equals(entryToEdit.id)
+            .first()
+            .then((tx) => {
+              if (tx) setSelectedClientCloudId(tx.clientCloudId);
+              else setSelectedClientCloudId(undefined);
+            })
+            .catch(() => setSelectedClientCloudId(undefined));
+        } else {
+          setSelectedClientCloudId(undefined);
+        }
       } else {
         // Reset defaults
         setType('in');
@@ -118,12 +149,14 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
         setPaymentMethod('cash');
         setItem('');
         setCustomerName('');
+        setSelectedClientCloudId(undefined);
         setNote('');
         setDate(defaultDate || getLocalDateString());
         setSelectedStockItem(null);
         setDeductStock(true);
         setActiveBill(null);
       }
+      setShowClientDropdown(false);
       setShowBillPreview(false);
       setIsGeneratingBill(false);
       setError(null);
@@ -242,6 +275,7 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
     }
 
     try {
+      let savedId = entryToEdit?.id;
       if (entryToEdit && entryToEdit.id) {
         await db.entries.update(entryToEdit.id, {
           type,
@@ -253,7 +287,7 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
           date,
         });
       } else {
-        await db.entries.add({
+        savedId = (await db.entries.add({
           type,
           amount: parsedAmount,
           item: item.trim() || undefined,
@@ -262,7 +296,7 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
           paymentMethod: type === 'in' ? paymentMethod : undefined,
           date,
           createdAt: Date.now(),
-        });
+        })) as number;
 
         // Deduct inventory quantity if product and option checked
         if (
@@ -274,6 +308,27 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
         ) {
           await adjustStockQuantity(selectedStockItem.id, -1);
         }
+      }
+
+      // Sync wholesale client credit ledger
+      if (
+        settings?.wholesaleMode ||
+        selectedClientCloudId ||
+        paymentMethod === 'credit' ||
+        entryToEdit?.paymentMethod === 'credit'
+      ) {
+        const savedEntry: Entry = {
+          id: savedId,
+          type,
+          amount: parsedAmount,
+          item: item.trim() || undefined,
+          customerName: customerName.trim() || undefined,
+          note: note.trim() || undefined,
+          paymentMethod: type === 'in' ? paymentMethod : undefined,
+          date,
+          createdAt: entryToEdit?.createdAt || Date.now(),
+        };
+        await syncDayBookCreditEntry(selectedClientCloudId, savedEntry, entryToEdit || undefined);
       }
 
       onSaved(date);
@@ -577,21 +632,88 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
         </div>
 
         {/* 5. Customer Name (Required if Credit, Optional otherwise) */}
-        <div className="space-y-1">
-          <label className="text-xs font-medium text-[#8E8E93] ml-1">
-            {t('customer_label', language)}
-            {type === 'in' && paymentMethod === 'credit' && (
-              <span className="text-amber-600 font-bold ml-1">* (Required for Credit)</span>
+        <div className="space-y-1 relative">
+          <label className="text-xs font-medium text-[#8E8E93] ml-1 flex items-center justify-between">
+            <span>
+              {settings?.wholesaleMode ? 'Client Shop / Technician Name' : t('customer_label', language)}
+              {type === 'in' && paymentMethod === 'credit' && (
+                <span className="text-amber-600 font-bold ml-1">* (Required for Credit)</span>
+              )}
+            </span>
+            {selectedClientCloudId && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedClientCloudId(undefined);
+                  setCustomerName('');
+                }}
+                className="text-[11px] text-iosBlue hover:underline font-semibold"
+              >
+                Clear Client
+              </button>
             )}
           </label>
           <input
             type="text"
             value={customerName}
-            onChange={(e) => setCustomerName(e.target.value)}
-            placeholder={t('customer_placeholder', language)}
+            onChange={(e) => {
+              setCustomerName(e.target.value);
+              setShowClientDropdown(true);
+            }}
+            onFocus={() => setShowClientDropdown(true)}
+            placeholder={
+              settings?.wholesaleMode
+                ? 'Enter client shop name or select client...'
+                : t('customer_placeholder', language)
+            }
             disabled={isReadOnly}
             className="w-full bg-[#F2F2F7] rounded-[10px] px-3.5 py-2.5 text-[15px] text-black focus:outline-none focus:ring-2 focus:ring-iosBlue/40 border border-black/[0.04]"
           />
+
+          {/* Autocomplete dropdown for registered wholesale clients */}
+          {showClientDropdown && registeredClients.length > 0 && customerName && (
+            <div className="absolute left-0 right-0 top-full mt-1 bg-white rounded-[12px] shadow-xl border border-black/[0.08] max-h-48 overflow-y-auto z-50 p-1 space-y-0.5">
+              {registeredClients
+                .filter(
+                  (c) =>
+                    c.shopName.toLowerCase().includes(customerName.toLowerCase().trim()) ||
+                    (c.contactPerson && c.contactPerson.toLowerCase().includes(customerName.toLowerCase().trim())) ||
+                    c.phone.includes(customerName.trim())
+                )
+                .slice(0, 5)
+                .map((c) => (
+                  <button
+                    key={c.cloudId}
+                    type="button"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      setCustomerName(c.shopName);
+                      setSelectedClientCloudId(c.cloudId);
+                      setShowClientDropdown(false);
+                    }}
+                    className="w-full text-left px-3 py-2 rounded-[8px] hover:bg-[#F2F2F7] flex items-center justify-between text-xs transition-colors"
+                  >
+                    <div>
+                      <span className="font-bold text-black block">{c.shopName}</span>
+                      {c.contactPerson && (
+                        <span className="text-[11px] text-[#8E8E93] block">
+                          {c.contactPerson} • {c.phone}
+                        </span>
+                      )}
+                    </div>
+                    <span
+                      className={`text-[11px] font-bold ${
+                        c.currentCreditBalance > 0 ? 'text-iosRed' : 'text-iosGreen'
+                      }`}
+                    >
+                      {c.currentCreditBalance > 0
+                        ? `${formatCurrencyINR(c.currentCreditBalance)} Due`
+                        : 'Settled'}
+                    </span>
+                  </button>
+                ))}
+            </div>
+          )}
         </div>
 
         {/* 6. Optional: Note & Date row */}
@@ -628,8 +750,9 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
           <div className="pt-2 border-t border-gray-100">
             <button
               type="button"
-              onClick={() => {
+              onClick={async () => {
                 const target = entryToEdit;
+                await removeDayBookCreditSync(target);
                 onClose();
                 onDelete(target);
               }}

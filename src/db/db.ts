@@ -119,7 +119,7 @@ export class ShopDatabase extends Dexie {
       jobPhotos: '++id, photoId, jobCloudId, uploadStatus, createdAt, syncStatus',
       usedDevices: '++id, cloudId, imei, serialNumber, deviceCategory, status, brand, model, purchaseDate, createdAt, updatedAt, syncStatus',
       clients: '++id, cloudId, shopName, phone, currentCreditBalance, createdAt, updatedAt, syncStatus',
-      clientTransactions: '++id, cloudId, clientCloudId, type, amount, date, createdAt, updatedAt, syncStatus',
+      clientTransactions: '++id, cloudId, clientCloudId, dayBookEntryId, type, amount, date, createdAt, updatedAt, syncStatus',
       customCompatibilities: '++id, cloudId, partKey, updatedAt, syncStatus',
     });
 
@@ -303,7 +303,8 @@ export async function initAppSettings(
   showRepairs: boolean = false,
   showStock: boolean = true,
   ownerUid?: string,
-  shopAddress?: string
+  shopAddress?: string,
+  wholesaleMode: boolean = false
 ): Promise<AppSettings> {
   const existing = await getAppSettings();
   if (existing) {
@@ -323,6 +324,7 @@ export async function initAppSettings(
     lastBackupAt: null,
     showRepairs,
     showStock,
+    wholesaleMode,
     ownerUid,
     cloudId: generateCloudId(),
     updatedAt: now,
@@ -360,6 +362,24 @@ export async function updateAppSettings(partial: Partial<AppSettings>): Promise<
 
 export async function softDeleteEntry(id: number): Promise<void> {
   const now = new Date().toISOString();
+  try {
+    if (db.clientTransactions) {
+      const existingTx = await db.clientTransactions.where('dayBookEntryId').equals(id).first();
+      if (existingTx) {
+        const client = await db.clients.where('cloudId').equals(existingTx.clientCloudId).first();
+        if (client) {
+          const updatedBalance = Math.max(0, client.currentCreditBalance - existingTx.amount);
+          await db.clients.where('cloudId').equals(client.cloudId).modify((c) => {
+            c.currentCreditBalance = updatedBalance;
+            c.updatedAt = new Date().toISOString();
+          });
+        }
+        await db.clientTransactions.where('cloudId').equals(existingTx.cloudId).delete();
+      }
+    }
+  } catch (err) {
+    console.warn('Error cleaning up linked client transaction on softDeleteEntry:', err);
+  }
   await db.entries.update(id, {
     syncStatus: 'deleted',
     deletedAt: now,
