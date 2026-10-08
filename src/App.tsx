@@ -7,6 +7,8 @@ import { StockScreen } from './screens/StockScreen';
 import { RepairsScreen } from './screens/RepairsScreen';
 import { ToolsScreen } from './screens/ToolsScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
+import { SparesScreen } from './screens/wholesale/SparesScreen';
+import { ClientsScreen } from './screens/wholesale/ClientsScreen';
 import { OnboardingScreen } from './screens/OnboardingScreen';
 import { getTrialDaysRemaining } from './utils/activation';
 import { isSuperAdmin, hasFullAccess } from './utils/admin';
@@ -148,18 +150,28 @@ export default function App() {
   }, [user, settingsList, checkedCloudUid, isMismatched]);
 
   const currentSettings = settingsList && settingsList[0];
+  const isWholesale = Boolean(currentSettings?.wholesaleMode);
   const showStock = currentSettings ? currentSettings.showStock !== false : true;
   const showRepairs = currentSettings ? !!currentSettings.showRepairs : false;
   const isAdmin = isSuperAdmin(user);
 
   useEffect(() => {
-    if (!showStock && currentTab === 'stock') {
-      setCurrentTab('book');
+    if (isWholesale) {
+      if (currentTab === 'repairs' || currentTab === 'tools') {
+        setCurrentTab('book');
+      }
+    } else {
+      if (currentTab === 'spares' || currentTab === 'clients') {
+        setCurrentTab('book');
+      }
+      if (!showStock && currentTab === 'stock') {
+        setCurrentTab('book');
+      }
+      if (!showRepairs && currentTab === 'repairs') {
+        setCurrentTab('book');
+      }
     }
-    if (!showRepairs && currentTab === 'repairs') {
-      setCurrentTab('book');
-    }
-  }, [showStock, showRepairs, currentTab]);
+  }, [isWholesale, showStock, showRepairs, currentTab]);
 
   // Auto-activate local settings unconditionally if superadmin is logged in
   useEffect(() => {
@@ -246,7 +258,24 @@ export default function App() {
             onOpenPaywall={() => setIsPaywallOpen(true)}
           />
         )}
-        {showRepairs && currentTab === 'repairs' && (
+        {isWholesale && currentTab === 'spares' && (
+          <SparesScreen
+            language={language}
+            shopName={settings.shopName}
+            isReadOnly={isReadOnly}
+            isActivated={isActivated}
+          />
+        )}
+        {isWholesale && currentTab === 'clients' && (
+          <ClientsScreen
+            language={language}
+            shopName={settings.shopName}
+            shopPhone={settings.shopPhone}
+            isReadOnly={isReadOnly}
+            isActivated={isActivated}
+          />
+        )}
+        {!isWholesale && showRepairs && currentTab === 'repairs' && (
           <RepairsScreen
             language={language}
             shopName={settings.shopName}
@@ -256,7 +285,7 @@ export default function App() {
             onOpenPaywall={() => setIsPaywallOpen(true)}
           />
         )}
-        {currentTab === 'tools' && (
+        {!isWholesale && currentTab === 'tools' && (
           <ToolsScreen
             language={language}
             shopName={settings.shopName}
@@ -288,6 +317,7 @@ export default function App() {
         language={language}
         showRepairs={showRepairs}
         showStock={showStock}
+        isWholesale={isWholesale}
         readyCount={readyJobsCount}
         lowStockCount={lowStockCount}
         usedStockCount={usedStockCount}

@@ -35,6 +35,7 @@ import {
   Bell,
   BarChart3,
   Camera,
+  Cpu,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ReportsScreen } from './ReportsScreen';
@@ -523,6 +524,11 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     onRefreshSettings();
   };
 
+  const handleToggleWholesale = async (val: 'off' | 'on') => {
+    await updateAppSettings({ wholesaleMode: val === 'on' });
+    onRefreshSettings();
+  };
+
   const handleSeedDev = async () => {
     const count = await seedDevEntries();
     setDevNotice(`${t('dev_seed_success', language)} (+${count})`);
@@ -869,6 +875,35 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               <SegmentedControl<'off' | 'on'>
                 value={settings.showRepairs ? 'on' : 'off'}
                 onChange={handleToggleRepairs}
+                size="sm"
+                options={[
+                  { value: 'off', label: 'Off' },
+                  { value: 'on', label: 'On' },
+                ]}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Section: Wholesale & Spares Mode Toggle */}
+        <div className="bg-white rounded-[14px] p-4 shadow-sm border border-black/[0.04]">
+          <div className="flex items-center space-x-2 text-xs font-semibold text-[#8E8E93] uppercase tracking-wider mb-2">
+            <Cpu className="w-4 h-4 text-iosBlue" />
+            <span>Wholesale Mode</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="pr-4">
+              <span className="text-[15px] font-semibold text-black block">
+                Wholesale &amp; Spares Mode
+              </span>
+              <span className="text-xs text-[#8E8E93] block mt-0.5">
+                Optimizes the app for wholesale spare parts distributors and accessory shops.
+              </span>
+            </div>
+            <div className="w-24 flex-shrink-0">
+              <SegmentedControl<'off' | 'on'>
+                value={settings.wholesaleMode ? 'on' : 'off'}
+                onChange={handleToggleWholesale}
                 size="sm"
                 options={[
                   { value: 'off', label: 'Off' },

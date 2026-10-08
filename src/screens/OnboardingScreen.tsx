@@ -17,6 +17,7 @@ interface OnboardingScreenProps {
 export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
   const language: Language = 'en';
   const [shopName, setShopName] = useState('');
+  const [businessType, setBusinessType] = useState<'retail' | 'wholesale'>('retail');
   const [repairsChoice, setRepairsChoice] = useState<'no' | 'yes'>('no');
   const [partnerCode, setPartnerCode] = useState<string>(getStoredReferralCode() || '');
   const [error, setError] = useState<string | null>(null);
@@ -51,7 +52,16 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
         }
       }
 
-      await initAppSettings(trimmed, language, repairsChoice === 'yes', true, uid);
+      const isWholesale = businessType === 'wholesale';
+      await initAppSettings(
+        trimmed,
+        language,
+        !isWholesale && repairsChoice === 'yes',
+        true,
+        uid,
+        undefined,
+        isWholesale
+      );
       onComplete();
     } catch (err) {
       console.error('Error saving initial settings:', err);
@@ -101,21 +111,39 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
           {error && <p className="text-xs text-iosRed font-medium mt-1.5">{error}</p>}
         </div>
 
-        {/* Repairs Question: Do you offer phone repairs? (Yes / No) */}
+        {/* Business Type: Retail Mobile Shop vs Spare Parts Wholesaler */}
         <div className="bg-white rounded-[14px] p-4 shadow-sm border border-black/[0.04]">
           <label className="text-xs font-semibold text-[#8E8E93] uppercase tracking-wider block mb-2">
-            {t('onboarding_repairs_question', language)}
+            Shop Type
           </label>
-          <SegmentedControl<'no' | 'yes'>
-            value={repairsChoice}
-            onChange={(val) => setRepairsChoice(val)}
+          <SegmentedControl<'retail' | 'wholesale'>
+            value={businessType}
+            onChange={(val) => setBusinessType(val)}
             size="md"
             options={[
-              { value: 'no', label: t('onboarding_repairs_no', language) },
-              { value: 'yes', label: t('onboarding_repairs_yes', language) },
+              { value: 'retail', label: 'Retail Shop' },
+              { value: 'wholesale', label: 'Spare Wholesaler' },
             ]}
           />
         </div>
+
+        {/* Repairs Question: Do you offer phone repairs? (Visible only for retail shops) */}
+        {businessType === 'retail' && (
+          <div className="bg-white rounded-[14px] p-4 shadow-sm border border-black/[0.04]">
+            <label className="text-xs font-semibold text-[#8E8E93] uppercase tracking-wider block mb-2">
+              {t('onboarding_repairs_question', language)}
+            </label>
+            <SegmentedControl<'no' | 'yes'>
+              value={repairsChoice}
+              onChange={(val) => setRepairsChoice(val)}
+              size="md"
+              options={[
+                { value: 'no', label: t('onboarding_repairs_no', language) },
+                { value: 'yes', label: t('onboarding_repairs_yes', language) },
+              ]}
+            />
+          </div>
+        )}
 
         {/* Partner Referral Code (Optional) */}
         <div className="bg-white rounded-[14px] p-4 shadow-sm border border-black/[0.04] space-y-2">

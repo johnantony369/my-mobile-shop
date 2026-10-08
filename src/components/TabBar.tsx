@@ -1,9 +1,9 @@
 import React from 'react';
-import { BookOpen, Package, Wrench, LayoutGrid, Settings } from 'lucide-react';
+import { BookOpen, Package, Wrench, LayoutGrid, Settings, Cpu, Users } from 'lucide-react';
 import { Language } from '../types';
 import { t } from '../i18n';
 
-export type TabType = 'book' | 'stock' | 'repairs' | 'tools' | 'settings';
+export type TabType = 'book' | 'stock' | 'repairs' | 'tools' | 'settings' | 'spares' | 'clients';
 
 interface TabBarProps {
   currentTab: TabType;
@@ -11,6 +11,7 @@ interface TabBarProps {
   language: Language;
   showRepairs?: boolean;
   showStock?: boolean;
+  isWholesale?: boolean;
   readyCount?: number;
   lowStockCount?: number;
   usedStockCount?: number;
@@ -22,55 +23,94 @@ export const TabBar: React.FC<TabBarProps> = ({
   language,
   showRepairs = false,
   showStock = true,
+  isWholesale = false,
   readyCount = 0,
   lowStockCount = 0,
   usedStockCount = 0,
 }) => {
-  const tabs = [
-    {
-      id: 'book' as TabType,
-      label: t('tab_book', language),
-      icon: BookOpen,
-      badge: 0,
-      badgeColor: 'bg-iosGreen',
-    },
-    ...(showStock
-      ? [
-          {
-            id: 'stock' as TabType,
-            label: t('tab_stock', language),
-            icon: Package,
-            badge: lowStockCount,
-            badgeColor: 'bg-amber-500',
-          },
-        ]
-      : []),
-    ...(showRepairs
-      ? [
-          {
-            id: 'repairs' as TabType,
-            label: t('tab_repairs', language),
-            icon: Wrench,
-            badge: readyCount,
-            badgeColor: 'bg-iosGreen',
-          },
-        ]
-      : []),
-    {
-      id: 'tools' as TabType,
-      label: 'Tools',
-      icon: LayoutGrid,
-      badge: usedStockCount,
-      badgeColor: 'bg-purple-600',
-    },
-    {
-      id: 'settings' as TabType,
-      label: t('tab_settings', language),
-      icon: Settings,
-      badge: 0,
-      badgeColor: 'bg-iosGreen',
-    },
-  ];
+  const tabs = isWholesale
+    ? [
+        {
+          id: 'book' as TabType,
+          label: t('tab_book', language),
+          icon: BookOpen,
+          badge: 0,
+          badgeColor: 'bg-iosGreen',
+        },
+        {
+          id: 'stock' as TabType,
+          label: t('tab_stock', language),
+          icon: Package,
+          badge: lowStockCount,
+          badgeColor: 'bg-amber-500',
+        },
+        {
+          id: 'spares' as TabType,
+          label: 'Spares',
+          icon: Cpu,
+          badge: 0,
+          badgeColor: 'bg-iosBlue',
+        },
+        {
+          id: 'clients' as TabType,
+          label: 'Clients',
+          icon: Users,
+          badge: 0,
+          badgeColor: 'bg-purple-600',
+        },
+        {
+          id: 'settings' as TabType,
+          label: t('tab_settings', language),
+          icon: Settings,
+          badge: 0,
+          badgeColor: 'bg-iosGreen',
+        },
+      ]
+    : [
+        {
+          id: 'book' as TabType,
+          label: t('tab_book', language),
+          icon: BookOpen,
+          badge: 0,
+          badgeColor: 'bg-iosGreen',
+        },
+        ...(showStock
+          ? [
+              {
+                id: 'stock' as TabType,
+                label: t('tab_stock', language),
+                icon: Package,
+                badge: lowStockCount,
+                badgeColor: 'bg-amber-500',
+              },
+            ]
+          : []),
+        ...(showRepairs
+          ? [
+              {
+                id: 'repairs' as TabType,
+                label: t('tab_repairs', language),
+                icon: Wrench,
+                badge: readyCount,
+                badgeColor: 'bg-iosGreen',
+              },
+            ]
+          : []),
+        {
+          id: 'tools' as TabType,
+          label: 'Tools',
+          icon: LayoutGrid,
+          badge: usedStockCount,
+          badgeColor: 'bg-purple-600',
+        },
+        {
+          id: 'settings' as TabType,
+          label: t('tab_settings', language),
+          icon: Settings,
+          badge: 0,
+          badgeColor: 'bg-iosGreen',
+        },
+      ];
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/90 backdrop-blur-xl border-t border-[#3C3C43]/15 pb-[env(safe-area-inset-bottom)]">
