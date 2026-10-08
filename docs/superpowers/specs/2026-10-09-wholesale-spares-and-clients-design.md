@@ -133,6 +133,18 @@ When Wholesaler Mode is active:
      Thank you for your business!
      ```
 
+### 4.3 Bi-Directional Day Book & Client Credit Synchronization
+When Wholesaler Mode is active:
+- **Credit Selection in Day Book:**
+  - When a wholesaler creates a new entry in `Day Book` (`BookScreen`) and selects `Payment Method: Credit` (or toggles Credit):
+  - The `Customer / Client Name` input field provides auto-suggestions from the registered `Clients` directory.
+  - If a new name is typed, it can automatically link or create a new client record.
+- **Automatic Ledger Reflection:**
+  - **Credit Sale (In / Sale on credit):** Saving the Day Book entry automatically increases the client's `currentCreditBalance` by the entry amount and creates a corresponding `credit_sale` transaction in the client's ledger.
+  - **Credit Payment Collection:** When recording money received from a client for outstanding credit, selecting the client and marking it as a credit settlement automatically decreases their `currentCreditBalance`.
+  - **Modification / Deletion Sync:** Updating the amount or deleting a credit entry in the Day Book automatically recalculates and synchronizes the client's credit balance.
+- **Result:** Wholesalers can operate entirely from the Day Book during rapid counter sales, knowing every credit transaction is automatically reflected in the `Clients` tab with zero double-entry work.
+
 ---
 
 ## 5. Data Models & Offline Storage
@@ -244,7 +256,8 @@ In `src/db/db.ts`:
    - Implement Add/Edit Client modal with neutral placeholders.
    - Implement Client Detail ledger view, Record Payment modal, and Add Credit Sale modal.
    - Implement 1-tap WhatsApp credit statement generation.
-   - Unit and integration tests for credit calculations and client management.
+   - Wire Day Book credit entries (`paymentMethod: 'credit'`) to automatically update client credit balances and log ledger transactions.
+   - Unit and integration tests for credit calculations, client management, and Day Book credit sync.
 
 5. **Stage 5: Full Build & Verification**
    - Run complete test suite (`npx vitest run`).
