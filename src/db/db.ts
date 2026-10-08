@@ -1,5 +1,6 @@
 import Dexie, { Table } from 'dexie';
 import { Entry, AppSettings, DaySummary, Job, Language, StockItem, Bill, BillItem, PaymentMethod, PurchaseItem, JobPhoto, UsedDevice } from '../types';
+import { WholesaleClient, ClientTransaction, CustomPartCompatibility } from '../types/wholesale';
 import { getLocalDateString } from '../utils/date';
 import { computeBillTotals, formatInvoiceNo, summarizeBillItems } from '../utils/billing';
 
@@ -19,6 +20,9 @@ export class ShopDatabase extends Dexie {
   purchases!: Table<PurchaseItem, number>;
   jobPhotos!: Table<JobPhoto, number>;
   usedDevices!: Table<UsedDevice, number>;
+  clients!: Table<WholesaleClient, number>;
+  clientTransactions!: Table<ClientTransaction, number>;
+  customCompatibilities!: Table<CustomPartCompatibility, number>;
 
   constructor() {
     super('MyMobileShopDB');
@@ -103,6 +107,58 @@ export class ShopDatabase extends Dexie {
       purchases: '++id, cloudId, name, isPurchased, createdAt, updatedAt, syncStatus',
       jobPhotos: '++id, photoId, jobCloudId, uploadStatus, createdAt, syncStatus',
       usedDevices: '++id, cloudId, imei, serialNumber, deviceCategory, status, brand, model, purchaseDate, createdAt, updatedAt, syncStatus',
+    });
+
+    this.version(9).stores({
+      entries: '++id, cloudId, type, amount, date, createdAt, updatedAt, syncStatus, paymentMethod, repairId',
+      settings: '++id, cloudId, updatedAt, syncStatus',
+      jobs: '++id, cloudId, status, phone, customerName, model, receivedAt, readyAt, deliveredAt, bookEntryId, updatedAt, syncStatus',
+      stock: '++id, cloudId, name, category, sellingPrice, quantity, sku, createdAt, updatedAt, syncStatus',
+      bills: '++id, cloudId, invoiceNo, date, createdAt, updatedAt, syncStatus',
+      purchases: '++id, cloudId, name, isPurchased, createdAt, updatedAt, syncStatus',
+      jobPhotos: '++id, photoId, jobCloudId, uploadStatus, createdAt, syncStatus',
+      usedDevices: '++id, cloudId, imei, serialNumber, deviceCategory, status, brand, model, purchaseDate, createdAt, updatedAt, syncStatus',
+      clients: '++id, cloudId, shopName, phone, currentCreditBalance, createdAt, updatedAt, syncStatus',
+      clientTransactions: '++id, cloudId, clientCloudId, type, amount, date, createdAt, updatedAt, syncStatus',
+      customCompatibilities: '++id, cloudId, partKey, updatedAt, syncStatus',
+    });
+
+    this.clients.hook('creating', (_primKey, obj) => {
+      if (!obj.cloudId) obj.cloudId = generateCloudId();
+      if (!obj.createdAt) obj.createdAt = Date.now();
+      if (!obj.updatedAt) obj.updatedAt = new Date().toISOString();
+      if (!obj.syncStatus) obj.syncStatus = 'pending';
+    });
+    this.clients.hook('updating', (modifications: Partial<WholesaleClient>) => {
+      if (!modifications.updatedAt) {
+        return { ...modifications, updatedAt: new Date().toISOString(), syncStatus: modifications.syncStatus || 'pending' };
+      }
+      return undefined;
+    });
+
+    this.clientTransactions.hook('creating', (_primKey, obj) => {
+      if (!obj.cloudId) obj.cloudId = generateCloudId();
+      if (!obj.createdAt) obj.createdAt = Date.now();
+      if (!obj.updatedAt) obj.updatedAt = new Date().toISOString();
+      if (!obj.syncStatus) obj.syncStatus = 'pending';
+    });
+    this.clientTransactions.hook('updating', (modifications: Partial<ClientTransaction>) => {
+      if (!modifications.updatedAt) {
+        return { ...modifications, updatedAt: new Date().toISOString(), syncStatus: modifications.syncStatus || 'pending' };
+      }
+      return undefined;
+    });
+
+    this.customCompatibilities.hook('creating', (_primKey, obj) => {
+      if (!obj.cloudId) obj.cloudId = generateCloudId();
+      if (!obj.updatedAt) obj.updatedAt = new Date().toISOString();
+      if (!obj.syncStatus) obj.syncStatus = 'pending';
+    });
+    this.customCompatibilities.hook('updating', (modifications: Partial<CustomPartCompatibility>) => {
+      if (!modifications.updatedAt) {
+        return { ...modifications, updatedAt: new Date().toISOString(), syncStatus: modifications.syncStatus || 'pending' };
+      }
+      return undefined;
     });
 
     this.usedDevices.hook('creating', (_primKey, obj) => {

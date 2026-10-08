@@ -89,6 +89,7 @@ export interface AppSettings extends SyncMetadata {
   showStock?: boolean; // toggle for stock/inventory module
   notificationsEnabled?: boolean; // toggle for daily closing summary notification
   summaryNotificationTime?: string; // custom notification time in 'HH:mm' format (e.g. '20:30')
+  wholesaleMode?: boolean; // toggle for wholesale & spares mode
   ownerUid?: string; // Firebase user UID owning these settings
 }
 
