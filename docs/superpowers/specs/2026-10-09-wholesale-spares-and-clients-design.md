@@ -41,13 +41,12 @@ When `wholesaleMode` is active, the bottom bar dynamically adapts:
 
 ---
 
-## 3. Cloud Master Spares Catalog (`SparesScreen`)
+## 3. Cloud Master Spares Catalog (`SparesScreen`) & Day Book Auto-Suggest
 
-### 3.1 Cloud-First Master Data Architecture
-Because the catalog spans thousands of phone models, tens of thousands of parts, and part photos, storing all reference data in local device storage would degrade app download size and device performance. 
-- **Central Master Database:** Hosted in Cloud Firestore (`master_devices` and `master_spares`) with compressed WebP photos served via Cloud Storage / CDN.
-- **On-Demand Search:** The client queries the cloud catalog with fast brand/model filtering and lazy-loaded photos.
-- **Cloud-Backed Inventory:** Whenever a wholesaler adds a single part or batch-imports an entire model's parts into stock, the items are written to `db.stock` and immediately synced to **Cloud Firestore** (`users/{uid}/stock/{cloudId}`) via our real-time sync service. This ensures 100% cloud backup and seamless multi-device/multi-counter sync while maintaining offline capability.
+### 3.1 Pre-Loaded Cloud Architecture
+- **Pre-Loaded by Default:** All smartphone models and spare parts are pre-loaded in the cloud database (`master_devices` and `master_spares`). Wholesalers do **not** have to manually import or tap "+ Add to Stock" model-by-model—the entire catalog is immediately active and available to browse, quote, and bill against from day one.
+- **Photos & Media:** Compressed WebP photos for parts and models are hosted in the cloud and lazy-loaded on demand to ensure zero bloat on local devices.
+- **Offline Cache:** Models and parts viewed or recently searched are cached locally so common lookups remain fast even with spotty connectivity.
 
 ### 3.2 Catalog Data Taxonomy
 - **Brands:** Xiaomi / Redmi, Samsung, Vivo / iQOO, Oppo, Realme, Apple, OnePlus, Poco, Motorola, Infinix, Tecno.
@@ -63,33 +62,32 @@ Because the catalog spans thousands of phone models, tens of thousands of parts,
   9. `sim_tray`: SIM card tray
   10. `other`: Screws, mesh, brackets, ICs
 
-### 3.3 Screen Layout & Interactions
-1. **Search & Brand Filters:**
-   - Search input: *"Search phone model (e.g. Note 10, Y20, M31)..."*
-   - Horizontal brand filter pills (`All`, `Xiaomi`, `Samsung`, `Vivo`, `Oppo`, `Realme`, `Apple`, `OnePlus`, etc.).
-2. **Model Card & Spares List:**
-   - Displays phone model thumbnail, release series, and full list of available replacement parts.
-   - Each part row shows:
-     - Part thumbnail & title
-     - OEM part code (e.g. Battery BN53)
-     - Current shop stock badge (e.g. `In Stock (12 pcs)` with wholesale rate, or `Not in Stock`)
-     - Quick action: **`+ Add to Stock`** button opening a modal for wholesale selling price, cost price, and stock count.
-3. **Batch "Stock Entire Model" Importer:**
-   - Wholesalers can tap **"Stock All Parts for [Model]"**, check off parts they carry, set default prices, and create items in local `db.stock` with immediate Cloud Firestore sync in a single tap.
-4. **User Cross-Model Compatibility:**
-   - Pre-loaded cross-model hints (e.g. *"Battery BN53 fits Redmi Note 9 Pro / Poco M2 Pro"*).
-   - **User Compatibility Editor:** Wholesalers can add or edit their own cross-model compatibility tags for any part, persisting across their shop account.
+### 3.3 Adding New Phone Models & Custom Spare Parts in `SparesScreen`
+In wholesale markets, new phone models and aftermarket accessories arrive constantly. Inside `SparesScreen`:
+- **`+ Add Phone Model`**: Modal to register a newly launched model:
+  - `Enter brand` (dropdown or custom)
+  - `Enter model name`
+  - `Enter release year / series (optional)`
+- **`+ Add Spare Part / Product`**: Modal to add a new spare part or accessory to any selected model:
+  - `Enter part name`
+  - `Select part category`
+  - `Enter part code / battery number (optional)`
+  - `Enter wholesale price (optional)`
+  - `Enter cost price (optional)`
+- Newly created models and parts are saved to the cloud, immediately reflected in their catalog.
 
-### 3.4 Day Book Live Product Search & Fast Billing Integration
-Wholesalers perform dozens of quick counter sales an hour. Typing items and prices manually in Day Book slows down transactions.
-- **Real-Time Product Autocomplete in Day Book:**
-  - In `AddEditSheet.tsx` (Day Book New Entry), the `Item / Product` input features live auto-suggest.
-  - As soon as the wholesaler focuses the input or types (e.g., `Note 10`, `Y20`, `Display`, `Battery`), a fast dropdown displays matching in-stock products with:
-    - Product / Spare Name
-    - Current In-Stock Quantity (e.g. `12 in stock`)
-    - Wholesale Selling Price (e.g. `₹1,350`)
-  - **1-Tap Selection:** Tapping any product auto-fills the item description, automatically sets the entry `amount` to the wholesale price, links `stockId`, and prepares the entry for automatic stock decrement on save.
-  - **Prominent Catalog Search Shortcut:** A quick *"Browse Spares Catalog"* button allows wholesalers to look up and bill any spare part directly while creating a Day Book transaction.
+### 3.4 Cross-Model Compatibility & User Customization
+- Built-in cross-model compatibility notes (e.g. *"Battery BN53 fits Redmi Note 9 Pro / Poco M2 Pro"*).
+- **User Compatibility Editor:** Wholesalers can add or edit their own cross-model compatibility tags for any part, allowing their bench knowledge to be saved and searchable across the catalog.
+
+### 3.5 Day Book Entry Auto-Suggestion (`BookScreen`)
+When Wholesaler Mode is active:
+- When a user opens the **Add Entry** or **Edit Entry** sheet in the `Day Book` (`BookScreen`), typing in the **Item / Description** field triggers a real-time auto-suggest dropdown querying the master spares catalog.
+- **Instant Search:** Typing `note 10` or `bn53` or `y20 dis` immediately displays matching parts:
+  - *Redmi Note 10 • Display Combo*
+  - *Redmi Note 10 • Battery (BN53)*
+  - *Vivo Y20 • Charging CC Board*
+- **1-Tap Selection:** Tapping a suggested part automatically populates the `Item` field and sets the default wholesale price if configured, making daily wholesale transaction logging fast and error-free.
 
 ---
 
@@ -235,10 +233,11 @@ In `src/db/db.ts`:
    - Component tests for tab bar switching.
 
 3. **Stage 3: Master Spares Catalog Service & UI (`SparesScreen`)**
-   - Implement cloud master catalog client (`src/firebase/masterSpares.ts`).
-   - Build `SparesScreen.tsx` with search, brand filtering, part listings, and cross-model compatibility editor.
-   - Implement single-part "+ Add to Stock" and batch "Stock Entire Model" modals saving directly into `db.stock`.
-   - Integration tests for catalog search and stock creation.
+   - Implement cloud master catalog service (`src/firebase/masterSpares.ts`) with pre-loaded models/spares and custom additions.
+   - Build `SparesScreen.tsx` with search, brand filtering, model/part cards, and cross-model compatibility editor.
+   - Implement "+ Add Phone Model" and "+ Add Spare Part" modals saving to cloud.
+   - Wire Day Book (`BookScreen.tsx`) `Item` input with auto-suggest dropdown querying master spares.
+   - Integration tests for catalog search, custom part additions, and auto-suggest.
 
 4. **Stage 4: B2B Clients & Credit Management (`ClientsScreen`)**
    - Build `ClientsScreen.tsx` with total credit due metrics, client search, and filter chips.
