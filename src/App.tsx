@@ -249,7 +249,7 @@ export default function App() {
             onOpenPaywall={() => setIsPaywallOpen(true)}
           />
         )}
-        {showStock && currentTab === 'stock' && (
+        {currentTab === 'stock' && (
           <StockScreen
             language={language}
             shopName={settings.shopName}

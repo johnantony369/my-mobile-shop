@@ -171,17 +171,6 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
       </div>
 
       <div className="max-w-lg mx-auto px-4 space-y-3.5">
-        {onBack && !isScrolled && (
-          <button
-            type="button"
-            onClick={onBack}
-            className="flex items-center text-iosBlue text-[15px] font-medium active:opacity-60 pt-1 -ml-1 transition-all"
-          >
-            <ChevronLeft className="w-5 h-5 -mr-0.5" />
-            <span>Settings</span>
-          </button>
-        )}
-
         {/* Large Header Title & Action */}
         <div className="pt-1 flex items-start justify-between">
           <div>

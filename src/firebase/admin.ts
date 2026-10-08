@@ -17,6 +17,7 @@ export interface ShopAccountSummary {
   activated: boolean;
   proPlan?: ProPlan | null;
   proExpiresAt?: string | null;
+  isWholesalerApproved?: boolean;
   entryCount: number;
   jobCount: number;
   estimatedBytes: number;
@@ -165,3 +166,42 @@ export async function setAccountPlan(
 
   return result;
 }
+
+/**
+ * Approves or revokes Wholesaler Mode access for a shop account (Superadmin only).
+ * Updates both the central accounts/{uid} record and the user's users/{uid}/settings/appSettings doc.
+ */
+export async function setAccountWholesalerStatus(
+  uid: string,
+  approved: boolean
+): Promise<{ isWholesalerApproved: boolean }> {
+  const result = { isWholesalerApproved: approved };
+  if (!dbFirestore || !uid) return result;
+  const now = new Date().toISOString();
+
+  // 1. Update accounts directory
+  try {
+    const accountRef = doc(dbFirestore, 'accounts', uid);
+    await updateDoc(accountRef, {
+      isWholesalerApproved: approved,
+      updatedAt: now,
+    });
+  } catch (err) {
+    console.warn('Failed to update accounts directory for wholesaler status:', err);
+  }
+
+  // 2. Update user's settings doc so client pulls it on next sync
+  try {
+    const userSettingsRef = doc(dbFirestore, 'users', uid, 'settings', 'appSettings');
+    await setDoc(userSettingsRef, {
+      isWholesalerApproved: approved,
+      updatedAt: now,
+      syncStatus: 'synced',
+    }, { merge: true });
+  } catch (err) {
+    console.warn('Failed to update remote user appSettings for wholesaler status:', err);
+  }
+
+  return result;
+}
+

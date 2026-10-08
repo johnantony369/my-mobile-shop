@@ -127,6 +127,7 @@ export const StockScreen: React.FC<StockScreenProps> = ({
   const displayedItems = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     return allStockItems.filter((item) => {
+      if (!item) return false;
       // Filter tab
       if (currentFilter === 'product' && item.category !== 'product') return false;
       if (currentFilter === 'service' && item.category !== 'service') return false;
@@ -139,7 +140,7 @@ export const StockScreen: React.FC<StockScreenProps> = ({
 
       // Search query
       if (!q) return true;
-      const matchName = item.name.toLowerCase().includes(q);
+      const matchName = item.name ? item.name.toLowerCase().includes(q) : false;
       const matchSku = item.sku ? item.sku.toLowerCase().includes(q) : false;
       const matchNotes = item.notes ? item.notes.toLowerCase().includes(q) : false;
       return matchName || matchSku || matchNotes;

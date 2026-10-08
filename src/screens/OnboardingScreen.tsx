@@ -9,6 +9,8 @@ import { LoginModal } from '../components/LoginModal';
 import { Smartphone, ArrowRight, Store, Sparkles, Tag } from 'lucide-react';
 import { getStoredReferralCode, clearStoredReferralCode } from '../utils/useReferralCapture';
 import { bindLeadToAccount } from '../firebase/partner';
+import { WholesaleActivationModal } from '../components/wholesale/WholesaleActivationModal';
+import { isSuperAdmin } from '../utils/admin';
 
 interface OnboardingScreenProps {
   onComplete: () => void;
@@ -22,6 +24,8 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
   const [partnerCode, setPartnerCode] = useState<string>(getStoredReferralCode() || '');
   const [error, setError] = useState<string | null>(null);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isWholesaleActivationModalOpen, setIsWholesaleActivationModalOpen] = useState(false);
+  const isAdmin = isSuperAdmin(auth?.currentUser);
 
   const handleLoginSuccess = async () => {
     const uid = auth?.currentUser?.uid;
@@ -118,7 +122,13 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
           </label>
           <SegmentedControl<'retail' | 'wholesale'>
             value={businessType}
-            onChange={(val) => setBusinessType(val)}
+            onChange={(val) => {
+              if (val === 'wholesale' && !isAdmin) {
+                setIsWholesaleActivationModalOpen(true);
+                return;
+              }
+              setBusinessType(val);
+            }}
             size="md"
             options={[
               { value: 'retail', label: 'Retail Shop' },
@@ -215,6 +225,13 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
         onClose={() => setIsLoginModalOpen(false)}
         onSuccess={handleLoginSuccess}
         language={language}
+      />
+
+      <WholesaleActivationModal
+        isOpen={isWholesaleActivationModalOpen}
+        onClose={() => setIsWholesaleActivationModalOpen(false)}
+        shopName={shopName.trim() || undefined}
+        userUid={auth?.currentUser?.uid}
       />
     </div>
   );

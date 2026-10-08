@@ -30,4 +30,18 @@ describe('ReportsScreen Credit Tracking', () => {
     expect(html).not.toContain('Total Entries');
     expect(html).not.toContain('Entries');
   });
+
+  it('renders exactly one Settings back button when onBack is provided', () => {
+    const html = renderToString(
+      React.createElement(ReportsScreen, {
+        language: 'en',
+        shopName: 'Test Shop',
+        onBack: () => {},
+      })
+    );
+
+    const matches = html.match(/<span>Settings<\/span>/g);
+    expect(matches).not.toBeNull();
+    expect(matches?.length).toBe(1);
+  });
 });

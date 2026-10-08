@@ -449,6 +449,7 @@ export async function pushPendingChanges(uid: string): Promise<number> {
       activated: isSuperAdmin(currentUser) || isProCurrentlyActive(localSettings),
       proPlan: localSettings?.proPlan ?? null,
       proExpiresAt: localSettings?.proExpiresAt ?? null,
+      isWholesalerApproved: localSettings?.isWholesalerApproved ?? undefined,
       entryCount: totalEntries.length,
       jobCount: totalJobs.length,
       estimatedBytes,

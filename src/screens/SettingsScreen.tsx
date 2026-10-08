@@ -36,10 +36,12 @@ import {
   BarChart3,
   Camera,
   Cpu,
+  Lock,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ReportsScreen } from './ReportsScreen';
 import { PaywallModal } from '../components/PaywallModal';
+import { WholesaleActivationModal } from '../components/wholesale/WholesaleActivationModal';
 import { isSuperAdmin, hasFullAccess } from '../utils/admin';
 import {
   isProCurrentlyActive,
@@ -379,7 +381,11 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const [isClearModalOpen, setIsClearModalOpen] = useState(false);
   const [devNotice, setDevNotice] = useState<string | null>(null);
 
+  // Wholesale activation state
+  const [isWholesaleActivationModalOpen, setIsWholesaleActivationModalOpen] = useState(false);
+
   const isAdmin = isSuperAdmin(user);
+  const canToggleWholesale = isAdmin || Boolean(settings.isWholesalerApproved);
   const isProActive = hasFullAccess(isProCurrentlyActive(settings) || activationSuccess, user);
   const isPlanLapsed = !activationSuccess && isProExpired(settings);
   const planDaysLeft = proDaysRemaining(settings);
@@ -525,6 +531,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   };
 
   const handleToggleWholesale = async (val: 'off' | 'on') => {
+    if (!canToggleWholesale && val === 'on') {
+      setIsWholesaleActivationModalOpen(true);
+      return;
+    }
     await updateAppSettings({ wholesaleMode: val === 'on' });
     onRefreshSettings();
   };
@@ -900,16 +910,30 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 Optimizes the app for wholesale spare parts distributors and accessory shops.
               </span>
             </div>
-            <div className="w-24 flex-shrink-0">
-              <SegmentedControl<'off' | 'on'>
-                value={settings.wholesaleMode ? 'on' : 'off'}
-                onChange={handleToggleWholesale}
-                size="sm"
-                options={[
-                  { value: 'off', label: 'Off' },
-                  { value: 'on', label: 'On' },
-                ]}
-              />
+            <div className="flex-shrink-0">
+              {canToggleWholesale ? (
+                <div className="w-24">
+                  <SegmentedControl<'off' | 'on'>
+                    value={settings.wholesaleMode ? 'on' : 'off'}
+                    onChange={handleToggleWholesale}
+                    size="sm"
+                    options={[
+                      { value: 'off', label: 'Off' },
+                      { value: 'on', label: 'On' },
+                    ]}
+                  />
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIsWholesaleActivationModalOpen(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[#F2F2F7] hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-full border border-black/[0.06] active:scale-95 transition-all shadow-2xs"
+                  aria-label="Request Access for Wholesaler Account"
+                >
+                  <Lock className="w-3.5 h-3.5 text-iosBlue" />
+                  <span>Request Access</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -1466,6 +1490,15 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       <LegalModal
         isOpen={isLegalModalOpen}
         onClose={() => setIsLegalModalOpen(false)}
+      />
+
+      {/* Wholesale Activation Request Modal */}
+      <WholesaleActivationModal
+        isOpen={isWholesaleActivationModalOpen}
+        onClose={() => setIsWholesaleActivationModalOpen(false)}
+        shopName={settings.shopName}
+        shopPhone={settings.shopPhone}
+        userUid={user?.uid}
       />
 
       {/* Link Phone Number Modal */}
