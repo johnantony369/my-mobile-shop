@@ -3,25 +3,21 @@ import {
   Users,
   Plus,
   Search,
-  Phone,
-  MessageCircle,
   TrendingUp,
   Building2,
   MapPin,
   ChevronRight,
   Edit2,
-  DollarSign,
-  AlertCircle
 } from 'lucide-react';
 import { Language } from '../../types';
 import { WholesaleClient } from '../../types/wholesale';
 import { db } from '../../db/db';
-import { formatCurrencyINR, normalizeClientPhone } from '../../utils/wholesaleCredit';
+import { formatCurrencyINR } from '../../utils/wholesaleCredit';
 import { AddEditClientModal } from '../../components/wholesale/AddEditClientModal';
 import { ClientLedgerDrawer } from '../../components/wholesale/ClientLedgerDrawer';
 
 export interface ClientsScreenProps {
-  language: Language;
+  language?: Language;
   shopName?: string;
   shopPhone?: string;
   isReadOnly?: boolean;
@@ -29,14 +25,14 @@ export interface ClientsScreenProps {
 }
 
 export const ClientsScreen: React.FC<ClientsScreenProps> = ({
-  language,
+  language: _language,
   shopName = 'Spares Hub',
-  shopPhone,
-  isReadOnly,
-  isActivated,
+  shopPhone: _shopPhone,
+  isReadOnly: _isReadOnly,
+  isActivated: _isActivated,
 }) => {
   const [clients, setClients] = useState<WholesaleClient[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [_loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<'all' | 'due' | 'settled'>('all');
 
@@ -99,13 +95,13 @@ export const ClientsScreen: React.FC<ClientsScreenProps> = ({
     creditLimit?: number;
   }) => {
     if (clientToEdit) {
-      await db.clients.where('cloudId').equals(clientToEdit.cloudId).modify({
-        shopName: data.shopName,
-        contactPerson: data.contactPerson,
-        phone: data.phone,
-        address: data.address,
-        creditLimit: data.creditLimit,
-        updatedAt: Date.now(),
+      await db.clients.where('cloudId').equals(clientToEdit.cloudId).modify((c: WholesaleClient) => {
+        c.shopName = data.shopName;
+        c.contactPerson = data.contactPerson;
+        c.phone = data.phone;
+        c.address = data.address;
+        c.creditLimit = data.creditLimit;
+        c.updatedAt = new Date().toISOString();
       });
     } else {
       const newClient: WholesaleClient = {
@@ -117,7 +113,7 @@ export const ClientsScreen: React.FC<ClientsScreenProps> = ({
         creditLimit: data.creditLimit,
         currentCreditBalance: 0,
         createdAt: Date.now(),
-        updatedAt: Date.now(),
+        updatedAt: new Date().toISOString(),
       };
       await db.clients.add(newClient);
     }

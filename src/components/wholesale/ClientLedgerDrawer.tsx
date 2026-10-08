@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Phone, MessageCircle, PlusCircle, CheckCircle2, TrendingUp, Clock, AlertTriangle } from 'lucide-react';
+import { X, MessageCircle, PlusCircle, CheckCircle2, TrendingUp, Clock, AlertTriangle } from 'lucide-react';
 import { WholesaleClient, ClientTransaction, WholesalePaymentMethod } from '../../types/wholesale';
 import { db } from '../../db/db';
 import { formatWhatsAppCreditStatement, formatCurrencyINR } from '../../utils/wholesaleCredit';
@@ -68,9 +68,9 @@ export const ClientLedgerDrawer: React.FC<ClientLedgerDrawerProps> = ({
     };
     await db.clientTransactions.add(newTx);
     const updatedBalance = Math.max(0, client.currentCreditBalance - amount);
-    await db.clients.where('cloudId').equals(client.cloudId).modify({
-      currentCreditBalance: updatedBalance,
-      updatedAt: Date.now(),
+    await db.clients.where('cloudId').equals(client.cloudId).modify((c: WholesaleClient) => {
+      c.currentCreditBalance = updatedBalance;
+      c.updatedAt = new Date().toISOString();
     });
     client.currentCreditBalance = updatedBalance;
     await loadTransactions();
@@ -89,9 +89,9 @@ export const ClientLedgerDrawer: React.FC<ClientLedgerDrawerProps> = ({
     };
     await db.clientTransactions.add(newTx);
     const updatedBalance = client.currentCreditBalance + amount;
-    await db.clients.where('cloudId').equals(client.cloudId).modify({
-      currentCreditBalance: updatedBalance,
-      updatedAt: Date.now(),
+    await db.clients.where('cloudId').equals(client.cloudId).modify((c: WholesaleClient) => {
+      c.currentCreditBalance = updatedBalance;
+      c.updatedAt = new Date().toISOString();
     });
     client.currentCreditBalance = updatedBalance;
     await loadTransactions();

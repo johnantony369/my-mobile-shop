@@ -7,12 +7,10 @@ import {
   Tag,
   ChevronDown,
   ChevronUp,
-  Battery,
-  Layers,
-  Sparkles,
   Zap,
 } from 'lucide-react';
-import { Language, MasterDevice, MasterSparePart } from '../../types/wholesale';
+import { Language } from '../../types';
+import { MasterDevice, MasterSparePart } from '../../types/wholesale';
 import {
   fetchMasterDevices,
   fetchMasterSpares,

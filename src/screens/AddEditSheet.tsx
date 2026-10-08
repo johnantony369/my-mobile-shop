@@ -12,7 +12,7 @@ import { StockPickerSheet } from '../components/StockPickerSheet';
 import { SparesAutoSuggest } from '../components/wholesale/SparesAutoSuggest';
 import { Package, X, Check, Trash2, Receipt, Share2, Download } from 'lucide-react';
 import { downloadBillPDF } from '../utils/pdf';
-import { syncDayBookCreditEntry, formatCurrencyINR } from '../utils/wholesaleCredit';
+import { syncDayBookCreditEntry, removeDayBookCreditSync, formatCurrencyINR } from '../utils/wholesaleCredit';
 
 interface AddEditSheetProps {
   isOpen: boolean;

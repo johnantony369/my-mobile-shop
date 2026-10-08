@@ -59,6 +59,7 @@ export interface ClientTransaction extends SyncMetadata {
   id?: number;
   cloudId: string;
   clientCloudId: string;
+  dayBookEntryId?: number;
   type: ClientTransactionType;
   amount: number;
   paymentMethod?: WholesalePaymentMethod;
