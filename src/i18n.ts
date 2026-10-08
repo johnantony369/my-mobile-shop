@@ -114,6 +114,9 @@ export const translations = {
   edit_action: {
     en: 'Edit',
   },
+  mark_paid_action: {
+    en: 'Paid',
+  },
 
   // Add / Edit Sheet
   new_entry_title: {

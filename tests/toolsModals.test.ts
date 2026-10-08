@@ -43,4 +43,44 @@ describe('Tools Interactive Modals Logic', () => {
     expect(catalog).toContain('₹48,000');
     expect(catalog).toContain('Main Street');
   });
+
+  it('renders modal buttons with safe area padding', async () => {
+    const React = await import('react');
+    const { renderToString } = await import('react-dom/server');
+    const { EMICalculatorModal } = await import('../src/components/tools/EMICalculatorModal');
+    const { CEIRCheckModal } = await import('../src/components/tools/CEIRCheckModal');
+    const { WhatsAppBroadcastModal } = await import('../src/components/tools/WhatsAppBroadcastModal');
+
+    const emiHtml = renderToString(
+      React.createElement(EMICalculatorModal, {
+        isOpen: true,
+        onClose: () => {},
+        shopName: 'Test Shop',
+      })
+    );
+    expect(emiHtml).toContain('Send on WhatsApp');
+    expect(emiHtml).toContain('Copy Quote');
+    expect(emiHtml).toContain('pb-[calc(env(safe-area-inset-bottom)+24px)]');
+
+    const ceirHtml = renderToString(
+      React.createElement(CEIRCheckModal, {
+        isOpen: true,
+        onClose: () => {},
+        initialImei: '351756051523993',
+      })
+    );
+    expect(ceirHtml).toContain('Open CEIR Portal');
+    expect(ceirHtml).toContain('pb-[calc(env(safe-area-inset-bottom)+24px)]');
+
+    const broadcastHtml = renderToString(
+      React.createElement(WhatsAppBroadcastModal, {
+        isOpen: true,
+        onClose: () => {},
+        devices: [],
+        shopName: 'Test Shop',
+      })
+    );
+    expect(broadcastHtml).toContain('Open in WhatsApp');
+    expect(broadcastHtml).toContain('pb-[calc(env(safe-area-inset-bottom)+24px)]');
+  });
 });

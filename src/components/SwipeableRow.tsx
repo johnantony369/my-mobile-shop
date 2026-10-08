@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Edit3, Trash2 } from 'lucide-react';
+import { Edit3, Trash2, CheckCircle } from 'lucide-react';
 
 interface SwipeableRowProps {
   children: React.ReactNode;
@@ -7,8 +7,10 @@ interface SwipeableRowProps {
   onDelete: () => void;
   onTap: () => void;
   onLongPress?: () => void;
+  onMarkPaid?: () => void;
   editLabel?: string;
   deleteLabel?: string;
+  markPaidLabel?: string;
 }
 
 export const SwipeableRow: React.FC<SwipeableRowProps> = ({
@@ -17,8 +19,10 @@ export const SwipeableRow: React.FC<SwipeableRowProps> = ({
   onDelete,
   onTap,
   onLongPress,
+  onMarkPaid,
   editLabel = 'Edit',
   deleteLabel = 'Delete',
+  markPaidLabel = 'Paid',
 }) => {
   const [offsetX, setOffsetX] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
@@ -30,7 +34,7 @@ export const SwipeableRow: React.FC<SwipeableRowProps> = ({
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
   const isLongPressTriggered = useRef(false);
 
-  const ACTIONS_WIDTH = 140; // width of both buttons combined
+  const ACTIONS_WIDTH = onMarkPaid ? 210 : 140; // width of action buttons combined
 
   const handleTouchStart = (e: React.TouchEvent | React.MouseEvent) => {
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
@@ -161,6 +165,22 @@ export const SwipeableRow: React.FC<SwipeableRowProps> = ({
     <div className="relative overflow-hidden w-full bg-white select-none touch-pan-y">
       {/* Background action buttons revealed upon swipe */}
       <div className="absolute inset-y-0 right-0 flex items-stretch z-0">
+        {onMarkPaid && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsOpen(false);
+              setOffsetX(0);
+              onMarkPaid();
+            }}
+            className="w-[70px] bg-iosGreen text-white flex flex-col items-center justify-center text-xs font-medium active:opacity-80 transition-opacity"
+            aria-label={markPaidLabel}
+          >
+            <CheckCircle className="w-5 h-5 mb-1" />
+            <span>{markPaidLabel}</span>
+          </button>
+        )}
         <button
           type="button"
           onClick={(e) => {

@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Calculator, Share2, Check, Smartphone } from 'lucide-react';
 import { calculateEMI, formatWhatsAppEMIQuote } from '../../utils/usedDevices';
 import { formatINR } from '../../i18n';
@@ -19,6 +20,17 @@ export const EMICalculatorModal: React.FC<EMICalculatorModalProps> = ({
   const [tenureMonths, setTenureMonths] = useState(6);
   const [interestRateStr, setInterestRateStr] = useState('14');
   const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
 
   const price = parseFloat(priceStr) || 0;
   const downPayment = parseFloat(downPaymentStr) || 0;
@@ -67,9 +79,9 @@ export const EMICalculatorModal: React.FC<EMICalculatorModalProps> = ({
     }
   };
 
-  return (
+  const modalElement = (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
-      <div className="w-full max-w-lg bg-white rounded-t-[24px] sm:rounded-[24px] p-5 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto">
+      <div className="w-full max-w-lg bg-white rounded-t-[24px] sm:rounded-[24px] p-5 pb-[calc(env(safe-area-inset-bottom)+24px)] sm:pb-5 shadow-2xl space-y-4 max-h-[90vh] max-h-[90dvh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[#E5E5EA] pb-3">
           <div className="flex items-center space-x-2.5">
@@ -229,4 +241,9 @@ export const EMICalculatorModal: React.FC<EMICalculatorModalProps> = ({
       </div>
     </div>
   );
+
+  if (typeof document !== 'undefined') {
+    return createPortal(modalElement, document.body);
+  }
+  return modalElement;
 };

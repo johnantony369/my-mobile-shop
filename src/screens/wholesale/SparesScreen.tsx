@@ -29,7 +29,25 @@ export interface SparesScreenProps {
   isActivated?: boolean;
 }
 
-const BRANDS = ['All', 'Xiaomi', 'Samsung', 'Vivo', 'Oppo', 'Realme', 'Apple', 'OnePlus'];
+const BRANDS = [
+  'All',
+  'Redmi',
+  'Poco',
+  'Xiaomi',
+  'Samsung',
+  'Vivo',
+  'Realme',
+  'Oppo',
+  'OnePlus',
+  'Apple',
+  'Motorola',
+  'Infinix',
+  'Tecno',
+  'iQOO',
+  'Nothing',
+];
+
+const PAGE_SIZE = 30;
 
 export const SparesScreen: React.FC<SparesScreenProps> = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -37,6 +55,7 @@ export const SparesScreen: React.FC<SparesScreenProps> = () => {
   const [devices, setDevices] = useState<MasterDevice[]>([]);
   const [spares, setSpares] = useState<MasterSparePart[]>([]);
   const [expandedDeviceId, setExpandedDeviceId] = useState<string | null>(null);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [loading, setLoading] = useState(true);
 
   // Modals
@@ -72,6 +91,11 @@ export const SparesScreen: React.FC<SparesScreenProps> = () => {
     };
   }, []);
 
+  // Reset pagination when filter or search changes
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [selectedBrand, searchQuery]);
+
   // Filter devices based on brand & search
   const filteredDevices = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -80,7 +104,13 @@ export const SparesScreen: React.FC<SparesScreenProps> = () => {
       if (!brandMatch) return false;
       if (!q) return true;
 
-      const deviceMatch = d.model.toLowerCase().includes(q) || d.brand.toLowerCase().includes(q);
+      const deviceMatch =
+        d.model.toLowerCase().includes(q) ||
+        d.brand.toLowerCase().includes(q) ||
+        ('modelCodes' in d &&
+          Array.isArray((d as { modelCodes?: string[] }).modelCodes) &&
+          (d as { modelCodes?: string[] }).modelCodes?.some((code) => code.toLowerCase().includes(q)));
+
       const partsMatch = spares.some(
         (s) =>
           s.deviceId === d.id &&
@@ -91,6 +121,10 @@ export const SparesScreen: React.FC<SparesScreenProps> = () => {
       return deviceMatch || partsMatch;
     });
   }, [devices, spares, selectedBrand, searchQuery]);
+
+  const visibleDevices = useMemo(() => {
+    return filteredDevices.slice(0, visibleCount);
+  }, [filteredDevices, visibleCount]);
 
   const handleSaveDevice = async (newDeviceData: Omit<MasterDevice, 'id'>) => {
     const created = await addCustomDevice(newDeviceData);
@@ -120,7 +154,9 @@ export const SparesScreen: React.FC<SparesScreenProps> = () => {
             Spares Catalog
           </h1>
           <p className="text-xs text-[#8E8E93] mt-0.5">
-            Pre-loaded smartphone models &amp; spare parts
+            {devices.length > 0
+              ? `${devices.length.toLocaleString()} models • ${spares.length.toLocaleString()}+ parts`
+              : 'Pre-loaded smartphone models & spare parts'}
           </p>
         </div>
         <div className="flex items-center gap-1.5">
@@ -188,7 +224,7 @@ export const SparesScreen: React.FC<SparesScreenProps> = () => {
         </div>
       ) : (
         <div className="space-y-3">
-          {filteredDevices.map((device) => {
+          {visibleDevices.map((device) => {
             const isExpanded = expandedDeviceId === device.id;
             const deviceSpares = spares.filter((s) => s.deviceId === device.id);
 
@@ -204,8 +240,20 @@ export const SparesScreen: React.FC<SparesScreenProps> = () => {
                   className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-slate-50/50 transition-colors"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-9 h-9 rounded-xl bg-blue-50 text-iosBlue flex items-center justify-center shrink-0">
-                      <Smartphone className="w-5 h-5" />
+                    <div className="w-10 h-10 rounded-xl bg-slate-50 border border-black/[0.04] flex items-center justify-center shrink-0 overflow-hidden">
+                      {device.photoUrl ? (
+                        <img
+                          src={device.photoUrl}
+                          alt={device.model}
+                          className="w-full h-full object-contain p-0.5"
+                          loading="lazy"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLElement).style.display = 'none';
+                          }}
+                        />
+                      ) : (
+                        <Smartphone className="w-5 h-5 text-iosBlue" />
+                      )}
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
@@ -314,6 +362,19 @@ export const SparesScreen: React.FC<SparesScreenProps> = () => {
               </div>
             );
           })}
+
+          {/* Show More Pagination Button */}
+          {filteredDevices.length > visibleCount && (
+            <div className="pt-2 pb-4 text-center">
+              <button
+                type="button"
+                onClick={() => setVisibleCount((prev) => prev + PAGE_SIZE)}
+                className="px-5 py-2 bg-white border border-slate-200 text-slate-700 text-xs font-semibold rounded-full hover:bg-slate-50 active:scale-95 transition-all shadow-2xs"
+              >
+                Show More Models ({visibleCount} of {filteredDevices.length})
+              </button>
+            </div>
+          )}
         </div>
       )}
 

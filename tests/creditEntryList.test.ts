@@ -39,6 +39,8 @@ describe('EntryList Credit Badge and Settlement', () => {
     expect(html).toContain('CREDIT');
     expect(html).toContain('Priya Verma');
     expect(html).toContain('Mark Paid');
+    // Slide left action button revealed in SwipeableRow
+    expect(html).toContain('aria-label="Paid"');
   });
 
   it('updates entry from credit to cash or upi when settled', async () => {

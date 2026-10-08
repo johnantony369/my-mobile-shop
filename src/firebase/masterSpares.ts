@@ -1,50 +1,103 @@
 import { collection, doc, getDocs, setDoc, query, where } from 'firebase/firestore';
-import { dbFirestore } from './config';
+import { dbFirestore, auth } from './config';
 import { MasterDevice, MasterSparePart } from '../types/wholesale';
 import { MASTER_DEVICES_SEED, MASTER_SPARES_SEED, searchMasterSparesInMemory } from '../data/masterSparesSeed';
 import { db } from '../db/db';
 
-export async function fetchMasterDevices(): Promise<MasterDevice[]> {
-  try {
-    if (!dbFirestore) return MASTER_DEVICES_SEED;
-    const colRef = collection(dbFirestore, 'master_devices');
-    const snap = await getDocs(colRef);
-    if (snap.empty) return MASTER_DEVICES_SEED;
+let cachedDevices: MasterDevice[] | null = null;
+let cachedSpares: MasterSparePart[] | null = null;
 
-    const list: MasterDevice[] = [];
-    snap.forEach((d) => list.push({ ...(d.data() as MasterDevice), id: d.id }));
-    return list.length > 0 ? list : MASTER_DEVICES_SEED;
+export async function loadFullDevices(): Promise<MasterDevice[]> {
+  if (cachedDevices) return cachedDevices;
+  try {
+    const mod = await import('../data/models_2019_present.json');
+    cachedDevices = (mod.default || mod) as MasterDevice[];
+    return cachedDevices;
   } catch (err) {
-    console.warn('Could not fetch cloud master devices, using seed:', err);
+    console.warn('Could not load full devices JSON, fallback to seed:', err);
     return MASTER_DEVICES_SEED;
   }
 }
 
-export async function fetchMasterSpares(deviceId?: string): Promise<MasterSparePart[]> {
+export async function loadFullSpares(): Promise<MasterSparePart[]> {
+  if (cachedSpares) return cachedSpares;
   try {
-    if (!dbFirestore) {
-      return deviceId ? MASTER_SPARES_SEED.filter((s) => s.deviceId === deviceId) : MASTER_SPARES_SEED;
-    }
-    const colRef = collection(dbFirestore, 'master_spares');
-    const q = deviceId ? query(colRef, where('deviceId', '==', deviceId)) : colRef;
-    const snap = await getDocs(q);
-    if (snap.empty) {
-      return deviceId ? MASTER_SPARES_SEED.filter((s) => s.deviceId === deviceId) : MASTER_SPARES_SEED;
+    const mod = await import('../data/master_spares_catalog.json');
+    cachedSpares = (mod.default || mod) as MasterSparePart[];
+    return cachedSpares;
+  } catch (err) {
+    console.warn('Could not load full spares JSON, fallback to seed:', err);
+    return MASTER_SPARES_SEED;
+  }
+}
+
+export async function fetchMasterDevices(): Promise<MasterDevice[]> {
+  const baseDevices = await loadFullDevices();
+  try {
+    const uid = auth?.currentUser?.uid;
+    if (!dbFirestore || !uid) {
+      return baseDevices;
     }
 
-    const list: MasterSparePart[] = [];
-    snap.forEach((d) => list.push({ ...(d.data() as MasterSparePart), id: d.id }));
-    return list;
+    // Fetch ONLY this shop's private custom devices (never polluted by other users)
+    const userDevicesCol = collection(dbFirestore, 'users', uid, 'custom_devices');
+    const snap = await getDocs(userDevicesCol);
+    if (snap.empty) return baseDevices;
+
+    const privateList: MasterDevice[] = [];
+    snap.forEach((d) => privateList.push({ ...(d.data() as MasterDevice), id: d.id }));
+    return [...privateList, ...baseDevices];
   } catch (err) {
-    console.warn('Could not fetch cloud master spares, using seed:', err);
-    return deviceId ? MASTER_SPARES_SEED.filter((s) => s.deviceId === deviceId) : MASTER_SPARES_SEED;
+    console.warn('Could not fetch user custom devices:', err);
+    return baseDevices;
+  }
+}
+
+export async function fetchMasterSpares(deviceId?: string): Promise<MasterSparePart[]> {
+  const allBaseSpares = await loadFullSpares();
+  const baseSpares = deviceId ? allBaseSpares.filter((s) => s.deviceId === deviceId) : allBaseSpares;
+
+  try {
+    const uid = auth?.currentUser?.uid;
+    if (!dbFirestore || !uid) {
+      return baseSpares;
+    }
+
+    // Fetch ONLY this shop's private custom spares (never polluted by other users)
+    const userSparesCol = collection(dbFirestore, 'users', uid, 'custom_spares');
+    const q = deviceId ? query(userSparesCol, where('deviceId', '==', deviceId)) : userSparesCol;
+    const snap = await getDocs(q);
+    if (snap.empty) return baseSpares;
+
+    const privateList: MasterSparePart[] = [];
+    snap.forEach((d) => privateList.push({ ...(d.data() as MasterSparePart), id: d.id }));
+    return [...privateList, ...baseSpares];
+  } catch (err) {
+    console.warn('Could not fetch user custom spares:', err);
+    return baseSpares;
   }
 }
 
 export async function searchMasterSpares(searchQuery: string): Promise<MasterSparePart[]> {
   try {
-    const seedMatches = searchMasterSparesInMemory(searchQuery);
-    return seedMatches;
+    const q = searchQuery.trim().toLowerCase();
+    const allSpares = await loadFullSpares();
+
+    if (!q) {
+      return allSpares.slice(0, 50);
+    }
+
+    return allSpares
+      .filter((part) => {
+        const matchModel = part.model.toLowerCase().includes(q);
+        const matchBrand = part.brand.toLowerCase().includes(q);
+        const matchName = part.partName.toLowerCase().includes(q);
+        const matchCode = part.partCode ? part.partCode.toLowerCase().includes(q) : false;
+        const matchCompat = part.compatibleModels?.some((m) => m.toLowerCase().includes(q));
+
+        return matchModel || matchBrand || matchName || matchCode || matchCompat;
+      })
+      .slice(0, 50);
   } catch (err) {
     console.warn('Error searching master spares:', err);
     return searchMasterSparesInMemory(searchQuery);
@@ -56,14 +109,19 @@ export async function addCustomDevice(device: Omit<MasterDevice, 'id'>): Promise
   const newDevice: MasterDevice = { ...device, id };
 
   try {
-    if (dbFirestore) {
-      await setDoc(doc(dbFirestore, 'master_devices', id), newDevice, { merge: true });
+    const uid = auth?.currentUser?.uid;
+    if (dbFirestore && uid) {
+      // Save strictly to the current user's private shop data — NEVER to the global catalog
+      await setDoc(doc(dbFirestore, 'users', uid, 'custom_devices', id), newDevice, { merge: true });
     }
   } catch (err) {
-    console.warn('Failed to save device to cloud:', err);
+    console.warn('Failed to save private custom device:', err);
   }
 
-  // Prepend to in-memory seed list
+  // Prepend to cached list & in-memory seed list for this shop session
+  if (cachedDevices) {
+    cachedDevices.unshift(newDevice);
+  }
   MASTER_DEVICES_SEED.unshift(newDevice);
   return newDevice;
 }
@@ -73,20 +131,25 @@ export async function addCustomSparePart(spare: Omit<MasterSparePart, 'id'>): Pr
   const newPart: MasterSparePart = { ...spare, id };
 
   try {
-    if (dbFirestore) {
-      await setDoc(doc(dbFirestore, 'master_spares', id), newPart, { merge: true });
+    const uid = auth?.currentUser?.uid;
+    if (dbFirestore && uid) {
+      // Save strictly to the current user's private shop data — NEVER to the global catalog
+      await setDoc(doc(dbFirestore, 'users', uid, 'custom_spares', id), newPart, { merge: true });
     }
   } catch (err) {
-    console.warn('Failed to save spare to cloud:', err);
+    console.warn('Failed to save private custom spare:', err);
   }
 
+  if (cachedSpares) {
+    cachedSpares.unshift(newPart);
+  }
   MASTER_SPARES_SEED.unshift(newPart);
   return newPart;
 }
 
 export async function updatePartCompatibility(partKey: string, compatibleModels: string[]): Promise<void> {
   try {
-    // 1. Update local Dexie custom compatibilities
+    // 1. Update local Dexie custom compatibilities for this shop
     const existing = await db.customCompatibilities.where('partKey').equals(partKey).first();
     if (existing && existing.id) {
       await db.customCompatibilities.update(existing.id, { compatibleModels, updatedAt: new Date().toISOString() });
@@ -98,11 +161,16 @@ export async function updatePartCompatibility(partKey: string, compatibleModels:
       });
     }
 
-    // 2. Also update in-memory seed part if present
-    const part = MASTER_SPARES_SEED.find((p) => p.id === partKey || p.partCode === partKey);
-    if (part) {
-      part.compatibleModels = Array.from(new Set([...part.compatibleModels, ...compatibleModels]));
-    }
+    // 2. Also update in-memory caches if present in current session
+    const updateInList = (list: MasterSparePart[]) => {
+      const part = list.find((p) => p.id === partKey || p.partCode === partKey);
+      if (part) {
+        part.compatibleModels = Array.from(new Set([...part.compatibleModels, ...compatibleModels]));
+      }
+    };
+
+    if (cachedSpares) updateInList(cachedSpares);
+    updateInList(MASTER_SPARES_SEED);
   } catch (err) {
     console.warn('Error saving custom compatibility:', err);
   }

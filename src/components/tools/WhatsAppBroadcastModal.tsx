@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Share2, Copy, Check, MessageSquare } from 'lucide-react';
 import { UsedDevice } from '../../types';
 import { formatWhatsAppStockCatalog } from '../../utils/usedDevices';
@@ -25,9 +26,15 @@ export const WhatsAppBroadcastModal: React.FC<WhatsAppBroadcastModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
+      document.body.style.overflow = 'hidden';
       const generated = formatWhatsAppStockCatalog(devices, shopName, shopPhone, shopAddress);
       setCatalogText(generated);
+    } else {
+      document.body.style.overflow = '';
     }
+    return () => {
+      document.body.style.overflow = '';
+    };
   }, [isOpen, devices, shopName, shopPhone, shopAddress]);
 
   if (!isOpen) return null;
@@ -51,9 +58,9 @@ export const WhatsAppBroadcastModal: React.FC<WhatsAppBroadcastModalProps> = ({
     window.open(`https://wa.me/?text=${encoded}`, '_blank');
   };
 
-  return (
+  const modalElement = (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
-      <div className="w-full max-w-lg bg-white rounded-t-[24px] sm:rounded-[24px] p-5 shadow-2xl space-y-4 max-h-[92vh] flex flex-col">
+      <div className="w-full max-w-lg bg-white rounded-t-[24px] sm:rounded-[24px] p-5 pb-[calc(env(safe-area-inset-bottom)+24px)] sm:pb-5 shadow-2xl space-y-4 max-h-[90vh] max-h-[90dvh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[#E5E5EA] pb-3">
           <div className="flex items-center space-x-2.5">
@@ -114,4 +121,9 @@ export const WhatsAppBroadcastModal: React.FC<WhatsAppBroadcastModalProps> = ({
       </div>
     </div>
   );
+
+  if (typeof document !== 'undefined') {
+    return createPortal(modalElement, document.body);
+  }
+  return modalElement;
 };

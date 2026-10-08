@@ -269,31 +269,33 @@ export const StockScreen: React.FC<StockScreenProps> = ({
 
         {view === 'stock' ? (
         <>
-        {/* Quick Summary Cards Carousel */}
-        <div className="flex gap-2.5 overflow-x-auto no-scrollbar scroll-smooth snap-x snap-mandatory momentum-scroll overscroll-x-contain touch-pan-x pb-1 -mx-4 px-4 sm:mx-0 sm:px-0">
+        {/* Quick Summary Cards */}
+        <div className="grid grid-cols-3 gap-2">
           {/* Card 1: Total Products */}
           <button
             type="button"
             onClick={() => setCurrentFilter(currentFilter === 'product' ? 'all' : 'product')}
-            className={`min-w-[130px] flex-1 snap-start p-3 rounded-[16px] text-left transition-all border shrink-0 ${
+            className={`p-2.5 sm:p-3 rounded-[14px] text-left transition-all border flex flex-col justify-between ${
               currentFilter === 'product'
                 ? 'bg-blue-50/80 border-iosBlue ring-2 ring-iosBlue/20 shadow-xs'
                 : 'bg-white border-black/[0.05] shadow-xs hover:border-gray-300'
             }`}
           >
-            <div className="flex items-center justify-between text-iosBlue mb-1.5">
-              <div className="w-6 h-6 rounded-lg bg-blue-100/70 flex items-center justify-center">
-                <Package className="w-3.5 h-3.5" />
+            <div className="flex items-center justify-between text-iosBlue mb-1">
+              <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-lg bg-blue-100/70 flex items-center justify-center shrink-0">
+                <Package className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               </div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">
+              <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-gray-500 truncate ml-1">
                 Products
               </span>
             </div>
-            <div className="text-xl font-extrabold text-black tracking-tight">
-              {metrics.productCount}
-            </div>
-            <div className="text-[10px] text-gray-500 mt-0.5 whitespace-nowrap">
-              {metrics.totalStockUnits} units in shop
+            <div>
+              <div className="text-lg sm:text-xl font-extrabold text-black tracking-tight leading-tight">
+                {metrics.productCount}
+              </div>
+              <div className="text-[9px] sm:text-[10px] text-gray-500 mt-0.5 truncate">
+                {metrics.totalStockUnits} units
+              </div>
             </div>
           </button>
 
@@ -301,25 +303,27 @@ export const StockScreen: React.FC<StockScreenProps> = ({
           <button
             type="button"
             onClick={() => setCurrentFilter(currentFilter === 'service' ? 'all' : 'service')}
-            className={`min-w-[130px] flex-1 snap-start p-3 rounded-[16px] text-left transition-all border shrink-0 ${
+            className={`p-2.5 sm:p-3 rounded-[14px] text-left transition-all border flex flex-col justify-between ${
               currentFilter === 'service'
                 ? 'bg-purple-50/80 border-purple-500 ring-2 ring-purple-500/20 shadow-xs'
                 : 'bg-white border-black/[0.05] shadow-xs hover:border-gray-300'
             }`}
           >
-            <div className="flex items-center justify-between text-purple-600 mb-1.5">
-              <div className="w-6 h-6 rounded-lg bg-purple-100/70 flex items-center justify-center">
-                <Wrench className="w-3.5 h-3.5" />
+            <div className="flex items-center justify-between text-purple-600 mb-1">
+              <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-lg bg-purple-100/70 flex items-center justify-center shrink-0">
+                <Wrench className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               </div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">
+              <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-gray-500 truncate ml-1">
                 Services
               </span>
             </div>
-            <div className="text-xl font-extrabold text-black tracking-tight">
-              {metrics.serviceCount}
-            </div>
-            <div className="text-[10px] text-gray-500 mt-0.5 whitespace-nowrap">
-              Repair & labour
+            <div>
+              <div className="text-lg sm:text-xl font-extrabold text-black tracking-tight leading-tight">
+                {metrics.serviceCount}
+              </div>
+              <div className="text-[9px] sm:text-[10px] text-gray-500 mt-0.5 truncate">
+                Repairs
+              </div>
             </div>
           </button>
 
@@ -327,7 +331,7 @@ export const StockScreen: React.FC<StockScreenProps> = ({
           <button
             type="button"
             onClick={() => setCurrentFilter(currentFilter === 'low_stock' ? 'all' : 'low_stock')}
-            className={`min-w-[130px] flex-1 snap-start p-3 rounded-[16px] text-left transition-all border shrink-0 ${
+            className={`p-2.5 sm:p-3 rounded-[14px] text-left transition-all border flex flex-col justify-between ${
               currentFilter === 'low_stock'
                 ? 'bg-amber-50/90 border-amber-500 ring-2 ring-amber-500/20 shadow-xs'
                 : metrics.lowStockCount > 0
@@ -335,19 +339,21 @@ export const StockScreen: React.FC<StockScreenProps> = ({
                 : 'bg-white border-black/[0.05] shadow-xs hover:border-gray-300'
             }`}
           >
-            <div className="flex items-center justify-between text-amber-600 mb-1.5">
-              <div className="w-6 h-6 rounded-lg bg-amber-100/70 flex items-center justify-center">
-                <AlertTriangle className="w-3.5 h-3.5" />
+            <div className="flex items-center justify-between text-amber-600 mb-1">
+              <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-lg bg-amber-100/70 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               </div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">
+              <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-gray-500 truncate ml-1">
                 Low Stock
               </span>
             </div>
-            <div className={`text-xl font-extrabold tracking-tight ${metrics.lowStockCount > 0 ? 'text-amber-600' : 'text-black'}`}>
-              {metrics.lowStockCount}
-            </div>
-            <div className="text-[10px] text-gray-500 mt-0.5 whitespace-nowrap">
-              {metrics.lowStockCount > 0 ? 'Needs reorder' : 'All well-stocked'}
+            <div>
+              <div className={`text-lg sm:text-xl font-extrabold tracking-tight leading-tight ${metrics.lowStockCount > 0 ? 'text-amber-600' : 'text-black'}`}>
+                {metrics.lowStockCount}
+              </div>
+              <div className="text-[9px] sm:text-[10px] text-gray-500 mt-0.5 truncate">
+                {metrics.lowStockCount > 0 ? 'Reorder' : 'Good'}
+              </div>
             </div>
           </button>
         </div>
