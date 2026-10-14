@@ -1,5 +1,6 @@
 import { FloatingAction } from '../components/FloatingAction';
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, calculateDaysInShop, softDeleteJob } from '../db/db';
 import { Job, Language } from '../types';
@@ -34,6 +35,8 @@ interface RepairsScreenProps {
   isActivated?: boolean;
   trialDays?: number;
   onOpenPaywall?: () => void;
+  initialCloudId?: string;
+  initialJobId?: number;
 }
 
 type RepairSegment = 'active' | 'ready' | 'history';
@@ -45,7 +48,10 @@ export const RepairsScreen: React.FC<RepairsScreenProps> = ({
   isActivated: _isActivated,
   trialDays: _trialDays,
   onOpenPaywall,
+  initialCloudId,
+  initialJobId,
 }) => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [currentSegment, setCurrentSegment] = useState<RepairSegment>('active');
   const [searchQuery, setSearchQuery] = useState('');
   const [isScrolled, setIsScrolled] = useState(false);
@@ -67,6 +73,32 @@ export const RepairsScreen: React.FC<RepairsScreenProps> = ({
   const [deliveryJob, setDeliveryJob] = useState<Job | null>(null);
   const [billingJob, setBillingJob] = useState<Job | null>(null);
   const [jobToDelete, setJobToDelete] = useState<Job | null>(null);
+
+  // Automatically reopen specific job sheet when navigated back with trackCloudId or jobId
+  useEffect(() => {
+    const targetCloudId = initialCloudId || searchParams.get('trackCloudId');
+    const targetJobId = initialJobId || (searchParams.get('jobId') ? Number(searchParams.get('jobId')) : undefined);
+
+    if (targetCloudId) {
+      db.jobs.where('cloudId').equals(targetCloudId).first().then((job) => {
+        if (job) {
+          setSelectedJob(job);
+          if (job.status === 'ready') setCurrentSegment('ready');
+          else if (job.status === 'delivered' || job.status === 'returned') setCurrentSegment('history');
+          else setCurrentSegment('active');
+        }
+      });
+    } else if (targetJobId) {
+      db.jobs.get(targetJobId).then((job) => {
+        if (job) {
+          setSelectedJob(job);
+          if (job.status === 'ready') setCurrentSegment('ready');
+          else if (job.status === 'delivered' || job.status === 'returned') setCurrentSegment('history');
+          else setCurrentSegment('active');
+        }
+      });
+    }
+  }, [initialCloudId, initialJobId, searchParams]);
 
   // Live query for all active jobs
   const allJobs = useLiveQuery(
@@ -556,7 +588,15 @@ export const RepairsScreen: React.FC<RepairsScreenProps> = ({
       {/* Job Detail Sheet */}
       <JobDetailSheet
         isOpen={!!selectedJob}
-        onClose={() => setSelectedJob(null)}
+        onClose={() => {
+          setSelectedJob(null);
+          if (searchParams.get('trackCloudId') || searchParams.get('jobId')) {
+            const nextParams = new URLSearchParams(searchParams);
+            nextParams.delete('trackCloudId');
+            nextParams.delete('jobId');
+            setSearchParams(nextParams, { replace: true });
+          }
+        }}
         job={selectedJob}
         shopName={shopName}
         language={language}

@@ -27,15 +27,21 @@ export const AddEditStockSheet: React.FC<AddEditStockSheetProps> = ({
   defaultCategory = 'product',
   initialSku = '',
 }) => {
-  const [category, setCategory] = useState<StockCategory>(defaultCategory);
-  const [name, setName] = useState('');
-  const [sellingPriceStr, setSellingPriceStr] = useState('');
-  const [costPriceStr, setCostPriceStr] = useState('');
-  const [quantity, setQuantity] = useState<number>(10);
-  const [unit, setUnit] = useState('pcs');
-  const [lowStockThreshold, setLowStockThreshold] = useState<number>(5);
-  const [sku, setSku] = useState(initialSku);
-  const [notes, setNotes] = useState('');
+  const [category, setCategory] = useState<StockCategory>(itemToEdit?.category || defaultCategory);
+  const [name, setName] = useState(itemToEdit?.name || '');
+  const [sellingPriceStr, setSellingPriceStr] = useState(itemToEdit?.sellingPrice ? itemToEdit.sellingPrice.toString() : '');
+  const [costPriceStr, setCostPriceStr] = useState(itemToEdit?.costPrice !== undefined && itemToEdit.costPrice !== null ? itemToEdit.costPrice.toString() : '');
+  const [quantityStr, setQuantityStr] = useState(() => {
+    if (!itemToEdit) return '10';
+    const q = typeof itemToEdit.quantity === 'number' ? itemToEdit.quantity : 0;
+    return q === 0 ? '' : q.toString();
+  });
+  const [unit, setUnit] = useState(itemToEdit?.unit || (defaultCategory === 'product' ? 'pcs' : 'service'));
+  const [lowStockThresholdStr, setLowStockThresholdStr] = useState(
+    typeof itemToEdit?.lowStockThreshold === 'number' ? itemToEdit.lowStockThreshold.toString() : '5'
+  );
+  const [sku, setSku] = useState(itemToEdit?.sku || initialSku);
+  const [notes, setNotes] = useState(itemToEdit?.notes || '');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
@@ -50,9 +56,10 @@ export const AddEditStockSheet: React.FC<AddEditStockSheetProps> = ({
         setName(itemToEdit.name);
         setSellingPriceStr(itemToEdit.sellingPrice ? itemToEdit.sellingPrice.toString() : '');
         setCostPriceStr(itemToEdit.costPrice !== undefined && itemToEdit.costPrice !== null ? itemToEdit.costPrice.toString() : '');
-        setQuantity(typeof itemToEdit.quantity === 'number' ? itemToEdit.quantity : 10);
+        const currentQty = typeof itemToEdit.quantity === 'number' ? itemToEdit.quantity : 0;
+        setQuantityStr(currentQty === 0 ? '' : currentQty.toString());
         setUnit(itemToEdit.unit || (itemToEdit.category === 'product' ? 'pcs' : 'service'));
-        setLowStockThreshold(typeof itemToEdit.lowStockThreshold === 'number' ? itemToEdit.lowStockThreshold : 5);
+        setLowStockThresholdStr(typeof itemToEdit.lowStockThreshold === 'number' ? itemToEdit.lowStockThreshold.toString() : '5');
         setSku(itemToEdit.sku || '');
         setNotes(itemToEdit.notes || '');
       } else {
@@ -60,9 +67,9 @@ export const AddEditStockSheet: React.FC<AddEditStockSheetProps> = ({
         setName('');
         setSellingPriceStr('');
         setCostPriceStr('');
-        setQuantity(10);
+        setQuantityStr('10');
         setUnit(defaultCategory === 'product' ? 'pcs' : 'service');
-        setLowStockThreshold(5);
+        setLowStockThresholdStr('5');
         setSku(initialSku || '');
         setNotes('');
       }
@@ -115,18 +122,26 @@ export const AddEditStockSheet: React.FC<AddEditStockSheetProps> = ({
       parsedCost = pCost;
     }
 
+    const parsedQty = quantityStr.trim() === '' ? 0 : parseInt(quantityStr, 10);
+    const cleanQty = isNaN(parsedQty) || parsedQty < 0 ? 0 : parsedQty;
+
+    const parsedThreshold = lowStockThresholdStr.trim() === '' ? 5 : parseInt(lowStockThresholdStr, 10);
+    const cleanThreshold = isNaN(parsedThreshold) || parsedThreshold < 1 ? 5 : parsedThreshold;
+
     try {
       const itemData: Omit<StockItem, 'id'> = {
         name: trimmedName,
         category,
         sellingPrice: parsedSell,
         costPrice: parsedCost,
-        quantity: category === 'product' ? Math.max(0, quantity) : undefined,
+        quantity: category === 'product' ? cleanQty : undefined,
         unit: unit.trim() || (category === 'product' ? 'pcs' : 'service'),
-        lowStockThreshold: category === 'product' ? Math.max(1, lowStockThreshold) : undefined,
+        lowStockThreshold: category === 'product' ? cleanThreshold : undefined,
         sku: sku.trim() || undefined,
         notes: notes.trim() || undefined,
         createdAt: itemToEdit?.createdAt || Date.now(),
+        updatedAt: new Date().toISOString(),
+        syncStatus: 'pending',
       };
 
       if (itemToEdit && itemToEdit.id) {
@@ -276,21 +291,48 @@ export const AddEditStockSheet: React.FC<AddEditStockSheetProps> = ({
               <div className="flex items-center space-x-2">
                 <button
                   type="button"
-                  onClick={() => setQuantity((q) => Math.max(0, q - 1))}
+                  aria-label="Decrease quantity"
+                  onClick={() => {
+                    const current = parseInt(quantityStr, 10) || 0;
+                    const next = Math.max(0, current - 1);
+                    setQuantityStr(next === 0 ? '' : String(next));
+                  }}
                   className="w-8 h-8 rounded-full bg-[#F2F2F7] active:bg-gray-300 flex items-center justify-center text-gray-700 transition-colors"
                 >
                   <Minus className="w-4 h-4" />
                 </button>
                 <input
-                  type="number"
-                  min="0"
-                  value={quantity}
-                  onChange={(e) => setQuantity(Math.max(0, parseInt(e.target.value) || 0))}
-                  className="w-14 text-center font-bold text-lg text-black bg-[#F2F2F7] rounded-[8px] py-1 focus:outline-none focus:ring-1 focus:ring-iosBlue"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={quantityStr}
+                  onFocus={(e) => {
+                    if (e.target.value === '0') {
+                      setQuantityStr('');
+                    } else {
+                      e.target.select();
+                    }
+                  }}
+                  onChange={(e) => {
+                    let val = e.target.value.replace(/[^0-9]/g, '');
+                    if (val.length > 1 && val.startsWith('0')) {
+                      val = val.replace(/^0+/, '');
+                    }
+                    if (val === '0') {
+                      val = '';
+                    }
+                    setQuantityStr(val);
+                  }}
+                  placeholder="0"
+                  className="w-16 text-center font-bold text-lg text-black bg-[#F2F2F7] rounded-[8px] py-1 focus:outline-none focus:ring-1 focus:ring-iosBlue"
                 />
                 <button
                   type="button"
-                  onClick={() => setQuantity((q) => q + 1)}
+                  aria-label="Increase quantity"
+                  onClick={() => {
+                    const current = parseInt(quantityStr, 10) || 0;
+                    setQuantityStr(String(current + 1));
+                  }}
                   className="w-8 h-8 rounded-full bg-[#F2F2F7] active:bg-gray-300 flex items-center justify-center text-gray-700 transition-colors"
                 >
                   <Plus className="w-4 h-4" />
@@ -305,7 +347,10 @@ export const AddEditStockSheet: React.FC<AddEditStockSheetProps> = ({
                 <button
                   key={num}
                   type="button"
-                  onClick={() => setQuantity((q) => q + num)}
+                  onClick={() => {
+                    const current = parseInt(quantityStr, 10) || 0;
+                    setQuantityStr(String(current + num));
+                  }}
                   className="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-md text-[11px] font-medium"
                 >
                   +{num}
@@ -319,10 +364,18 @@ export const AddEditStockSheet: React.FC<AddEditStockSheetProps> = ({
                   Low Stock Warning At
                 </label>
                 <input
-                  type="number"
-                  min="1"
-                  value={lowStockThreshold}
-                  onChange={(e) => setLowStockThreshold(Math.max(1, parseInt(e.target.value) || 1))}
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={lowStockThresholdStr}
+                  onFocus={(e) => e.target.select()}
+                  onChange={(e) => {
+                    let val = e.target.value.replace(/[^0-9]/g, '');
+                    if (val.length > 1 && val.startsWith('0')) {
+                      val = val.replace(/^0+/, '');
+                    }
+                    setLowStockThresholdStr(val);
+                  }}
                   placeholder="5"
                   className="w-full bg-[#F2F2F7] rounded-[8px] px-2.5 py-1.5 text-xs text-black focus:outline-none"
                 />

@@ -17,6 +17,15 @@ if (typeof (globalThis as any).window === 'undefined') {
   };
 }
 
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    useNavigate: () => vi.fn(),
+    useLocation: () => ({ pathname: '/app', search: '' }),
+  };
+});
+
 function extractText(node: any): string {
   if (!node) return '';
   if (typeof node === 'string' || typeof node === 'number') return String(node);
@@ -57,6 +66,11 @@ function render(componentElement: React.ReactElement) {
     useEffect: () => {},
     useCallback: (fn: any) => fn,
     useMemo: (fn: any) => fn(),
+    useContext: () => ({
+      basename: '/',
+      navigator: { push: vi.fn(), replace: vi.fn(), go: vi.fn(), createHref: vi.fn() },
+      location: { pathname: '/app', search: '', hash: '', state: null, key: 'default' },
+    }),
   };
 
   const prev = (React as any).__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED?.ReactCurrentDispatcher?.current;

@@ -585,34 +585,34 @@ export const StockScreen: React.FC<StockScreenProps> = ({
                   </div>
 
                   {/* Inventory Status Pill & Stepper */}
-                  <div className="flex items-center justify-between pt-0.5">
+                  <div className="flex items-center justify-between pt-0.5 gap-2">
                     {/* Status Pill on Left - STRICTLY NO short description under the pill */}
-                    <div>
+                    <div className="min-w-0 shrink">
                       {isProduct ? (
                         isOutOfStock ? (
                           /* Red for out of stock */
                           <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-red-100 text-red-800 text-[11px] font-bold">
-                            <span className="w-1.5 h-1.5 rounded-full bg-red-600" />
-                            <span>Out of stock</span>
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-600 shrink-0" />
+                            <span className="truncate">Out of stock</span>
                           </div>
                         ) : isLowStock ? (
                           /* Red for low stock */
                           <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-red-100 text-red-800 text-[11px] font-bold">
-                            <span className="w-1.5 h-1.5 rounded-full bg-red-600" />
-                            <span>Low Stock: {qty} {item.unit || 'pcs'}</span>
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-600 shrink-0" />
+                            <span className="truncate">Low Stock: {qty} {item.unit || 'pcs'}</span>
                           </div>
                         ) : (
                           /* Green for healthy stock */
                           <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-100 text-emerald-800 text-[11px] font-bold">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
-                            <span>Stock: {qty} {item.unit || 'pcs'}</span>
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 shrink-0" />
+                            <span className="truncate">Stock: {qty} {item.unit || 'pcs'}</span>
                           </div>
                         )
                       ) : (
                         /* Blue for service */
                         <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-100 text-blue-800 text-[11px] font-bold">
-                          <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
-                          <span>Service / Labour</span>
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0" />
+                          <span className="truncate">Service / Labour</span>
                         </div>
                       )}
                     </div>
@@ -621,25 +621,25 @@ export const StockScreen: React.FC<StockScreenProps> = ({
                     {isProduct && item.id && (
                       <div
                         onClick={(e) => e.stopPropagation()}
-                        className="flex items-center gap-1.5 bg-[#EEEDF3] p-1 rounded-xl"
+                        className="flex items-center gap-1.5 bg-[#EEEDF3] p-1 rounded-xl shrink-0"
                       >
                         <button
                           type="button"
                           aria-label="Reduce stock"
                           disabled={qty <= 0}
                           onClick={(e) => handleQuickAdjust(e, item.id!, -1, qty, item.unit)}
-                          className="w-9 h-9 rounded-lg bg-white text-gray-700 font-bold text-[16px] flex items-center justify-center active:scale-90 disabled:opacity-40 transition-transform shadow-xs"
+                          className="w-9 h-9 rounded-lg bg-white text-gray-700 font-bold text-[16px] flex items-center justify-center active:scale-90 disabled:opacity-40 transition-transform shadow-xs shrink-0"
                         >
                           <Minus className="w-4 h-4" />
                         </button>
-                        <span className="font-bold text-[15px] text-black w-7 text-center select-none">
+                        <span className="font-bold text-[15px] text-black min-w-[42px] px-1.5 text-center select-none tabular-nums">
                           {qty}
                         </span>
                         <button
                           type="button"
                           aria-label="Increase stock"
                           onClick={(e) => handleQuickAdjust(e, item.id!, 1, qty, item.unit)}
-                          className="w-9 h-9 rounded-lg bg-iosBlue text-white font-bold text-[16px] flex items-center justify-center active:scale-90 transition-transform shadow-xs shadow-iosBlue/25"
+                          className="w-9 h-9 rounded-lg bg-iosBlue text-white font-bold text-[16px] flex items-center justify-center active:scale-90 transition-transform shadow-xs shadow-iosBlue/25 shrink-0"
                         >
                           <Plus className="w-4 h-4 stroke-[2.5]" />
                         </button>
@@ -796,7 +796,7 @@ export const StockScreen: React.FC<StockScreenProps> = ({
                   className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white rounded-xl font-bold text-sm shadow-md shadow-emerald-600/25 flex items-center justify-center space-x-1.5 transition-all"
                 >
                   <Plus className="w-4 h-4 stroke-[2.5]" />
-                  <span>+1 Stock Unit</span>
+                  <span>Add 1 Stock Unit</span>
                 </button>
 
                 <button

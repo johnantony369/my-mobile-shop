@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/db';
 import { TabType } from '../../components/TabBar';
@@ -25,7 +26,12 @@ import { hasFullAccess } from '../../utils/admin';
 import { useAuth } from '../../firebase/useAuth';
 
 export function WebApp() {
-  const [currentTab, setCurrentTab] = useState<TabType>('book');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const validTabs: TabType[] = ['book', 'stock', 'repairs', 'tools', 'settings'];
+  const urlTab = searchParams.get('tab') as TabType | null;
+  const [currentTab, setCurrentTab] = useState<TabType>(
+    urlTab && validTabs.includes(urlTab) ? urlTab : 'book'
+  );
   const [selectedDate, setSelectedDate] = useState<string>(getLocalDateString());
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isPaywallOpen, setIsPaywallOpen] = useState(false);
@@ -40,6 +46,36 @@ export function WebApp() {
   const [isAddJobOpen, setIsAddJobOpen] = useState(false);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [isAddUsedOpen, setIsAddUsedOpen] = useState(false);
+
+  // Sync tab from searchParams
+  useEffect(() => {
+    const nextTab = searchParams.get('tab') as TabType | null;
+    if (nextTab && validTabs.includes(nextTab) && nextTab !== currentTab) {
+      setCurrentTab(nextTab);
+    }
+  }, [searchParams]);
+
+  // Automatically reopen specific job when navigated with trackCloudId or jobId
+  useEffect(() => {
+    const targetCloudId = searchParams.get('trackCloudId');
+    const targetJobId = searchParams.get('jobId') ? Number(searchParams.get('jobId')) : undefined;
+
+    if (targetCloudId) {
+      db.jobs.where('cloudId').equals(targetCloudId).first().then((job) => {
+        if (job) {
+          setSelectedJob(job);
+          setCurrentTab('repairs');
+        }
+      });
+    } else if (targetJobId) {
+      db.jobs.get(targetJobId).then((job) => {
+        if (job) {
+          setSelectedJob(job);
+          setCurrentTab('repairs');
+        }
+      });
+    }
+  }, [searchParams]);
 
   const { user, syncState, triggerSync, signOut } = useAuth();
 
@@ -328,7 +364,15 @@ export function WebApp() {
       {selectedJob && (
         <JobDetailSheet
           isOpen={!!selectedJob}
-          onClose={() => setSelectedJob(null)}
+          onClose={() => {
+            setSelectedJob(null);
+            if (searchParams.has('trackCloudId') || searchParams.has('jobId')) {
+              const nextParams = new URLSearchParams(searchParams);
+              nextParams.delete('trackCloudId');
+              nextParams.delete('jobId');
+              setSearchParams(nextParams, { replace: true });
+            }
+          }}
           job={selectedJob}
           shopName={settings?.shopName || 'My Mobile Shop'}
           language={language}
@@ -341,9 +385,23 @@ export function WebApp() {
                 updatedAt: new Date().toISOString(),
               });
               setSelectedJob(null);
+              if (searchParams.has('trackCloudId') || searchParams.has('jobId')) {
+                const nextParams = new URLSearchParams(searchParams);
+                nextParams.delete('trackCloudId');
+                nextParams.delete('jobId');
+                setSearchParams(nextParams, { replace: true });
+              }
             }
           }}
-          onOpenDelivery={() => setSelectedJob(null)}
+          onOpenDelivery={() => {
+            setSelectedJob(null);
+            if (searchParams.has('trackCloudId') || searchParams.has('jobId')) {
+              const nextParams = new URLSearchParams(searchParams);
+              nextParams.delete('trackCloudId');
+              nextParams.delete('jobId');
+              setSearchParams(nextParams, { replace: true });
+            }
+          }}
           onJobUpdated={() => {}}
         />
       )}

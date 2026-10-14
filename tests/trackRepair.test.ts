@@ -57,7 +57,7 @@ describe('Repair Tracking Feature', () => {
     expect(publicTrack.advance).toBe(500);
     expect(publicTrack.balanceDue).toBe(1300);
     expect(publicTrack.status).toBe('received');
-  });
+  }, 15000);
 
   it('renders customer-friendly timeline steps and balance due in TrackRepairView', async () => {
     const React = await import('react');

@@ -17,6 +17,15 @@ if (typeof (globalThis as any).window === 'undefined') {
   };
 }
 
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    useNavigate: () => vi.fn(),
+    useLocation: () => ({ pathname: '/app', search: '' }),
+  };
+});
+
 // Custom matchers
 expect.extend({
   toBeInTheDocument(received: any) {
@@ -155,6 +164,11 @@ function render(componentElement: React.ReactElement) {
       effectQueue.push(fn);
     },
     useSyncExternalStore: (_sub: any, snap: any, ssnap: any) => (ssnap ? ssnap() : snap ? snap() : undefined),
+    useContext: () => ({
+      basename: '/',
+      navigator: { push: vi.fn(), replace: vi.fn(), go: vi.fn(), createHref: vi.fn() },
+      location: { pathname: '/app', search: '', hash: '', state: null, key: 'default' },
+    }),
   };
 
   currentDispatcher = dispatcher;

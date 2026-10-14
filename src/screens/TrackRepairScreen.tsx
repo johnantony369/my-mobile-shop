@@ -523,14 +523,36 @@ export const TrackRepairScreen: React.FC = () => {
   const isFromApp =
     searchParams.get('from') === 'app' ||
     Boolean((location.state as any)?.fromApp) ||
-    (typeof window !== 'undefined' && window.history.length > 1);
+    Boolean(searchParams.get('jobId'));
 
   const handleBack = () => {
-    if (typeof window !== 'undefined' && window.history.length > 1) {
-      navigate(-1);
-    } else {
-      navigate('/');
+    const fromPath = (location.state as any)?.fromPath || searchParams.get('fromPath');
+    const jobId = (location.state as any)?.jobId || searchParams.get('jobId');
+    const targetCloudId = trackingId || repair?.cloudId;
+
+    const isWeb = Boolean(fromPath?.includes('/web')) || searchParams.get('mode') === 'web';
+    const targetBase = isWeb ? '/web/app' : '/app';
+
+    const params = new URLSearchParams();
+    params.set('tab', 'repairs');
+    if (targetCloudId) params.set('trackCloudId', targetCloudId);
+    if (jobId) params.set('jobId', String(jobId));
+
+    const returnUrl = `${targetBase}?${params.toString()}`;
+
+    // If opened in a popup window with an opener
+    if (typeof window !== 'undefined' && window.opener && !window.opener.closed) {
+      try {
+        window.opener.location.href = returnUrl;
+        window.opener.focus();
+        window.close();
+        return;
+      } catch {
+        // Fallback to in-window navigation if cross-origin blocked
+      }
     }
+
+    navigate(returnUrl, { replace: true, state: { fromApp: true, tab: 'repairs', trackCloudId: targetCloudId, jobId } });
   };
 
   const [repair, setRepair] = useState<PublicRepairTrack | null>(null);

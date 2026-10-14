@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, updateAppSettings, clearLocalDatabase } from './db/db';
 import { TabBar, TabType } from './components/TabBar';
@@ -25,7 +26,20 @@ import { scheduleDailyNotification } from './utils/notifications';
 import { initHardwareBackButton } from './utils/hardwareBackButton';
 
 export default function App() {
-  const [currentTab, setCurrentTab] = useState<TabType>('book');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const validTabs: TabType[] = ['book', 'stock', 'repairs', 'tools', 'settings', 'spares', 'clients'];
+  const urlTab = searchParams.get('tab') as TabType | null;
+  const [currentTab, setCurrentTab] = useState<TabType>(
+    urlTab && validTabs.includes(urlTab) ? urlTab : 'book'
+  );
+
+  useEffect(() => {
+    const nextTab = searchParams.get('tab') as TabType | null;
+    if (nextTab && validTabs.includes(nextTab) && nextTab !== currentTab) {
+      setCurrentTab(nextTab);
+    }
+  }, [searchParams]);
+
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [loadingTimeout, setLoadingTimeout] = useState(false);
   const [isPaywallOpen, setIsPaywallOpen] = useState(false);
@@ -283,6 +297,8 @@ export default function App() {
             isActivated={isActivated}
             trialDays={trialDays}
             onOpenPaywall={() => setIsPaywallOpen(true)}
+            initialCloudId={searchParams.get('trackCloudId') || undefined}
+            initialJobId={searchParams.get('jobId') ? Number(searchParams.get('jobId')) : undefined}
           />
         )}
         {!isWholesale && currentTab === 'tools' && (
@@ -313,7 +329,16 @@ export default function App() {
       {/* Persistent Bottom Tab Bar */}
       <TabBar
         currentTab={currentTab}
-        onTabChange={(tab) => setCurrentTab(tab)}
+        onTabChange={(tab) => {
+          setCurrentTab(tab);
+          if (searchParams.get('tab') || searchParams.get('trackCloudId') || searchParams.get('jobId')) {
+            const nextParams = new URLSearchParams(searchParams);
+            nextParams.delete('trackCloudId');
+            nextParams.delete('jobId');
+            nextParams.set('tab', tab);
+            setSearchParams(nextParams, { replace: true });
+          }
+        }}
         language={language}
         showRepairs={showRepairs}
         showStock={showStock}

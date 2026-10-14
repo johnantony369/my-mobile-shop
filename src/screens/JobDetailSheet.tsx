@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { BottomSheet } from '../components/BottomSheet';
 import { Job, Language, JobStatus } from '../types';
 import { t, formatINR } from '../i18n';
@@ -52,6 +53,8 @@ export const JobDetailSheet: React.FC<JobDetailSheetProps> = ({
   onOpenBilling,
   onJobUpdated,
 }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [showOtherStatuses, setShowOtherStatuses] = useState(false);
   const [showReturnConfirm, setShowReturnConfirm] = useState(false);
   const [showReopenConfirm, setShowReopenConfirm] = useState(false);
@@ -362,14 +365,25 @@ export const JobDetailSheet: React.FC<JobDetailSheetProps> = ({
             </div>
             <div className="p-2 bg-[#F2F2F7] rounded-[10px] text-xs font-mono text-slate-600 truncate select-all flex items-center justify-between">
               <span className="truncate">{trackingUrl}</span>
-              <a
-                href={`${trackingUrl}${trackingUrl.includes('?') ? '&' : '?'}from=app`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="ml-2 text-iosBlue text-xs font-sans font-semibold shrink-0 hover:underline"
+              <button
+                type="button"
+                onClick={() => {
+                  if (!job.cloudId) return;
+                  const isWeb = location.pathname.startsWith('/web');
+                  const targetTrackUrl = `/track/${job.cloudId}?from=app&jobId=${job.id || ''}${isWeb ? '&mode=web' : ''}`;
+                  navigate(targetTrackUrl, {
+                    state: {
+                      fromApp: true,
+                      jobId: job.id,
+                      trackCloudId: job.cloudId,
+                      fromPath: location.pathname,
+                    },
+                  });
+                }}
+                className="ml-2 text-iosBlue text-xs font-sans font-semibold shrink-0 hover:underline cursor-pointer active:opacity-70"
               >
                 Preview
-              </a>
+              </button>
             </div>
           </div>
         )}
