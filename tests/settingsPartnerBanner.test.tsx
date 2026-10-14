@@ -32,10 +32,11 @@ describe('SettingsScreen Partner Program Banner', () => {
       </MemoryRouter>
     );
 
-    // Banner image and content
-    expect(html).toContain('partner-program-banner.jpg');
-    expect(html).toContain('Partner Program');
-    expect(html).toContain('Distributor Network');
-    expect(html).toContain('Earn commissions on shop referrals &amp; access distributor tools');
+    // Option 1 Premium Midnight Obsidian Banner Elements
+    expect(html).toContain('Partner Network');
+    expect(html).toContain('₹300 / Referral');
+    expect(html).toContain('Earn with Every Mobile Shop');
+    expect(html).toContain('Free Acrylic Standee');
+    expect(html).toContain('Open Partner Portal');
   });
 });

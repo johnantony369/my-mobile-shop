@@ -589,7 +589,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           {t('settings_header', language)}
         </h1>
 
-        {/* Partner Program Card Banner */}
+        {/* Partner Program Premium Obsidian Banner */}
         <div
           role="button"
           tabIndex={0}
@@ -600,34 +600,56 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               navigate('/partner');
             }
           }}
-          className="w-full bg-white rounded-[16px] overflow-hidden border border-black/[0.06] shadow-sm active:scale-[0.99] transition-all cursor-pointer group text-left focus:outline-hidden focus:ring-2 focus:ring-iosBlue/50"
+          className="relative overflow-hidden rounded-[18px] bg-gradient-to-br from-[#0B1328] via-[#101C38] to-[#080D1A] p-4.5 sm:p-5 text-white shadow-lg shadow-blue-950/20 border border-white/10 group cursor-pointer transition-all active:scale-[0.99] focus:outline-hidden focus:ring-2 focus:ring-iosBlue/50 text-left"
           aria-label="Open Partner Program Portal"
         >
-          <div className="relative aspect-[16/9] w-full bg-slate-900 overflow-hidden">
-            <img
-              src="/partner-program-banner.jpg"
-              alt="Partner Program Banner"
-              className="w-full h-full object-cover group-hover:scale-[1.01] transition-transform duration-300"
-              loading="eager"
-            />
-          </div>
-          <div className="p-3.5 flex items-center justify-between bg-white">
-            <div className="flex-1 pr-2">
-              <div className="flex items-center gap-1.5">
-                <span className="text-[11px] font-bold text-iosBlue bg-blue-50 px-2 py-0.5 rounded-full uppercase tracking-wider">
-                  Partner Program
-                </span>
-                <span className="text-xs font-semibold text-black">
-                  Distributor Network
-                </span>
-              </div>
-              <p className="text-xs text-[#8E8E93] mt-1 line-clamp-1">
-                Earn commissions on shop referrals &amp; access distributor tools
+          {/* Ambient Lighting Blobs */}
+          <div className="absolute -top-12 -right-12 w-44 h-44 bg-blue-500/20 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-12 -left-12 w-40 h-40 bg-purple-500/15 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="relative z-10 space-y-3">
+            {/* Header Row: Badges */}
+            <div className="flex items-center justify-between">
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-bold tracking-wider text-cyan-300 bg-cyan-950/80 border border-cyan-500/30 px-2.5 py-0.5 rounded-full uppercase shadow-xs">
+                <span>✦</span> Partner Network
+              </span>
+              <span className="inline-flex items-center text-[11px] font-extrabold text-emerald-300 bg-emerald-950/70 border border-emerald-500/30 px-2.5 py-0.5 rounded-full shadow-xs">
+                ₹300 / Referral
+              </span>
+            </div>
+
+            {/* Title & Copy */}
+            <div>
+              <h3 className="text-[17px] sm:text-lg font-extrabold text-white tracking-tight leading-snug">
+                Earn with Every Mobile Shop
+              </h3>
+              <p className="text-xs text-slate-300 font-normal leading-relaxed mt-1">
+                Distributors, wholesalers &amp; technicians: earn instant UPI payouts on Pro upgrades + receive a branded counter standee.
               </p>
             </div>
-            <div className="flex items-center gap-1 text-xs font-semibold text-iosBlue flex-shrink-0 group-hover:translate-x-0.5 transition-transform">
-              <span>Open</span>
-              <ChevronRight className="w-4 h-4" />
+
+            {/* Feature Pills */}
+            <div className="flex flex-wrap gap-1.5 pt-0.5">
+              <span className="text-[11px] font-medium text-slate-200 bg-white/10 px-2.5 py-1 rounded-lg backdrop-blur-md">
+                ⚡ Direct UPI Transfer
+              </span>
+              <span className="text-[11px] font-medium text-slate-200 bg-white/10 px-2.5 py-1 rounded-lg backdrop-blur-md">
+                🪧 Free Acrylic Standee
+              </span>
+              <span className="text-[11px] font-medium text-slate-200 bg-white/10 px-2.5 py-1 rounded-lg backdrop-blur-md">
+                📊 Live Lead CRM
+              </span>
+            </div>
+
+            {/* Action CTA Button */}
+            <div className="pt-1.5">
+              <button
+                type="button"
+                className="w-full py-2.5 px-4 bg-white hover:bg-slate-100 text-slate-950 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-sm transition-all group-hover:bg-slate-50"
+              >
+                <span>Open Partner Portal</span>
+                <ChevronRight className="w-4 h-4 text-slate-900" />
+              </button>
             </div>
           </div>
         </div>
