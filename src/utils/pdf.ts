@@ -66,6 +66,14 @@ export function generateBillPDF({ bill, shopName, shopAddress, shopPhone, shopLo
     cursorY += 2;
   }
 
+  if (bill.isGst && bill.shopGstin) {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(30, 41, 59);
+    doc.text(`GSTIN: ${bill.shopGstin.trim().toUpperCase()}`, margin, cursorY + 2);
+    cursorY += 4.5;
+  }
+
   // Divider line
   doc.setDrawColor(226, 232, 240); // Slate-200
   doc.setLineWidth(0.4);
@@ -76,7 +84,8 @@ export function generateBillPDF({ bill, shopName, shopAddress, shopPhone, shopLo
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
   doc.setTextColor(15, 23, 42); // Slate-900
-  doc.text(`INVOICE: ${bill.invoiceNo}`, margin, cursorY + 1);
+  const invoiceLabel = bill.isGst ? `TAX INVOICE: ${bill.invoiceNo}` : `INVOICE: ${bill.invoiceNo}`;
+  doc.text(invoiceLabel, margin, cursorY + 1);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8.5);
@@ -85,10 +94,11 @@ export function generateBillPDF({ bill, shopName, shopAddress, shopPhone, shopLo
   doc.text(dateStr, pageWidth - margin, cursorY + 1, { align: 'right' });
   cursorY += 6;
 
-  if (bill.customerName || bill.customerPhone) {
+  if (bill.customerName || bill.customerPhone || (bill.isGst && bill.customerGstin)) {
     const custParts = [
       bill.customerName ? `Customer: ${bill.customerName}` : '',
       bill.customerPhone ? `Ph: ${bill.customerPhone}` : '',
+      bill.isGst && bill.customerGstin ? `GSTIN: ${bill.customerGstin.toUpperCase()}` : '',
     ].filter(Boolean);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8.5);
@@ -142,7 +152,7 @@ export function generateBillPDF({ bill, shopName, shopAddress, shopPhone, shopLo
 
   // 4. Totals & Payment Summary (Right aligned totals block)
   const totalsX = pageWidth - margin;
-  const labelX = totalsX - 32;
+  const labelX = totalsX - 34;
 
   doc.setFontSize(8.5);
 
@@ -158,6 +168,30 @@ export function generateBillPDF({ bill, shopName, shopAddress, shopPhone, shopLo
     doc.setTextColor(220, 38, 38); // Red
     doc.text('Discount:', labelX, cursorY, { align: 'right' });
     doc.text(`-${formatPDFCurrency(bill.discount)}`, totalsX, cursorY, { align: 'right' });
+    cursorY += 4.5;
+  }
+
+  if (bill.isGst) {
+    const rate = bill.gstRate ?? 18;
+    const halfRate = rate / 2;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100, 116, 139);
+    doc.text('Taxable Value:', labelX, cursorY, { align: 'right' });
+    doc.setTextColor(30, 41, 59);
+    doc.text(formatPDFCurrency(bill.taxableAmount ?? bill.total), totalsX, cursorY, { align: 'right' });
+    cursorY += 4.5;
+
+    doc.setTextColor(100, 116, 139);
+    doc.text(`CGST (${halfRate}%):`, labelX, cursorY, { align: 'right' });
+    doc.setTextColor(30, 41, 59);
+    doc.text(formatPDFCurrency(bill.cgstAmount ?? 0), totalsX, cursorY, { align: 'right' });
+    cursorY += 4.5;
+
+    doc.setTextColor(100, 116, 139);
+    doc.text(`SGST (${halfRate}%):`, labelX, cursorY, { align: 'right' });
+    doc.setTextColor(30, 41, 59);
+    doc.text(formatPDFCurrency(bill.sgstAmount ?? 0), totalsX, cursorY, { align: 'right' });
     cursorY += 4.5;
   }
 
@@ -208,4 +242,34 @@ export function downloadBillPDF(options: GenerateBillPDFOptions): void {
 export function getBillPDFBlob(options: GenerateBillPDFOptions): Blob {
   const doc = generateBillPDF(options);
   return doc.output('blob');
+}
+
+export async function shareBillPDF(options: GenerateBillPDFOptions): Promise<boolean> {
+  const doc = generateBillPDF(options);
+  const invoiceTitle = options.bill.invoiceNo || 'Bill';
+  const filename = `${invoiceTitle}.pdf`;
+  const blob = doc.output('blob');
+
+  // Check Web Share API Level 2 (files support)
+  const file = new File([blob], filename, { type: 'application/pdf' });
+  if (typeof navigator !== 'undefined' && navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({
+        title: `${options.shopName || 'Shop'} - ${invoiceTitle}`,
+        text: `Invoice ${invoiceTitle} from ${options.shopName || 'Shop'}`,
+        files: [file],
+      });
+      return true;
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        return false;
+      }
+    }
+  }
+
+  // Fallback if file sharing not supported or failed: download the PDF directly
+  if (typeof doc.save === 'function') {
+    doc.save(filename);
+  }
+  return true;
 }

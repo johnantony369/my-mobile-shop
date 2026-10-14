@@ -14,7 +14,6 @@ import {
   Phone,
   MessageSquare,
   Copy,
-  ChevronRight,
   Edit3,
   Trash2,
   CheckCircle,
@@ -22,6 +21,9 @@ import {
   RotateCcw,
   Check,
   ExternalLink,
+  Undo2,
+  Receipt,
+  Wrench,
 } from 'lucide-react';
 import { ConfirmModal } from '../components/ConfirmModal';
 
@@ -34,6 +36,7 @@ interface JobDetailSheetProps {
   onEdit: (job: Job) => void;
   onDelete: (job: Job) => void;
   onOpenDelivery: (job: Job) => void;
+  onOpenBilling?: (job: Job) => void;
   onJobUpdated: () => void;
 }
 
@@ -46,13 +49,17 @@ export const JobDetailSheet: React.FC<JobDetailSheetProps> = ({
   onEdit,
   onDelete,
   onOpenDelivery,
+  onOpenBilling,
   onJobUpdated,
 }) => {
   const [showOtherStatuses, setShowOtherStatuses] = useState(false);
   const [showReturnConfirm, setShowReturnConfirm] = useState(false);
+  const [showReopenConfirm, setShowReopenConfirm] = useState(false);
+  const [pendingReopenStatus, setPendingReopenStatus] = useState<'ready' | 'in_progress' | 'waiting' | 'received'>('ready');
   const [showReadyPhotoPrompt, setShowReadyPhotoPrompt] = useState(false);
   const [isUploadingReadyPhoto, setIsUploadingReadyPhoto] = useState(false);
   const readyFileInputRef = React.useRef<HTMLInputElement>(null);
+  const isUpdatingStatusRef = React.useRef(false);
   const [copiedToast, setCopiedToast] = useState(false);
   const [copiedLinkToast, setCopiedLinkToast] = useState(false);
   const [photos, setPhotos] = useState<JobPhoto[]>([]);
@@ -76,11 +83,13 @@ export const JobDetailSheet: React.FC<JobDetailSheetProps> = ({
   const getStatusBadge = (status: JobStatus) => {
     switch (status) {
       case 'received':
-        return { label: t('status_received', language), color: 'bg-gray-100 text-gray-700' };
+        return { label: t('status_received', language), color: 'bg-slate-100 text-slate-700' };
+      case 'in_progress':
+        return { label: t('status_in_progress', language), color: 'bg-indigo-100 text-indigo-700' };
       case 'waiting':
         return { label: t('status_waiting', language), color: 'bg-amber-100 text-[#FF9500]' };
       case 'ready':
-        return { label: t('status_ready', language), color: 'bg-green-100 text-iosGreen' };
+        return { label: t('status_ready', language), color: 'bg-emerald-100 text-emerald-700' };
       case 'delivered':
         return { label: t('status_delivered', language), color: 'bg-blue-100 text-iosBlue' };
       case 'returned':
@@ -91,18 +100,24 @@ export const JobDetailSheet: React.FC<JobDetailSheetProps> = ({
   const badge = getStatusBadge(job.status);
 
   const confirmMarkReady = async () => {
-    if (!job.id) return;
-    const now = Date.now();
-    await db.jobs.update(job.id, { status: 'ready', readyAt: now });
-    pushSinglePublicRepair({ ...job, status: 'ready', readyAt: now }).catch(() => {});
-    setShowReadyPhotoPrompt(false);
-    onJobUpdated();
+    if (!job.id || isUpdatingStatusRef.current) return;
+    isUpdatingStatusRef.current = true;
+    try {
+      const now = Date.now();
+      await db.jobs.update(job.id, { status: 'ready', readyAt: now });
+      pushSinglePublicRepair({ ...job, status: 'ready', readyAt: now }).catch(() => {});
+      setShowReadyPhotoPrompt(false);
+      onJobUpdated();
+    } finally {
+      isUpdatingStatusRef.current = false;
+    }
   };
 
   const handleReadyPhotoCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files || files.length === 0 || !job.id) return;
+    if (!files || files.length === 0 || !job.id || isUpdatingStatusRef.current) return;
 
+    isUpdatingStatusRef.current = true;
     setIsUploadingReadyPhoto(true);
     try {
       const targetCloudId = job.cloudId || generateCloudId();
@@ -141,34 +156,64 @@ export const JobDetailSheet: React.FC<JobDetailSheetProps> = ({
       onJobUpdated();
     } finally {
       setIsUploadingReadyPhoto(false);
+      isUpdatingStatusRef.current = false;
       if (readyFileInputRef.current) readyFileInputRef.current.value = '';
     }
   };
 
-  // Status advancement
-  const handleAdvanceStatus = async () => {
-    if (!job.id) return;
-    if (job.status === 'received') {
-      await db.jobs.update(job.id, { status: 'waiting' });
-      pushSinglePublicRepair({ ...job, status: 'waiting' }).catch(() => {});
-      onJobUpdated();
-    } else if (job.status === 'waiting') {
-      setShowReadyPhotoPrompt(true);
-    } else if (job.status === 'ready') {
-      onOpenDelivery(job);
-    }
-  };
-
-  const handleSetStatus = async (newStatus: 'received' | 'waiting' | 'ready') => {
-    if (!job.id) return;
+  const handleSetStatus = async (newStatus: 'received' | 'in_progress' | 'waiting' | 'ready') => {
+    if (!job.id || isUpdatingStatusRef.current) return;
     if (newStatus === 'ready') {
       setShowOtherStatuses(false);
       setShowReadyPhotoPrompt(true);
       return;
     }
-    const updates: Partial<Job> = { status: newStatus };
+    isUpdatingStatusRef.current = true;
+    try {
+      const updates: Partial<Job> = { status: newStatus };
+      await db.jobs.update(job.id, updates);
+      pushSinglePublicRepair({ ...job, ...updates, status: newStatus }).catch(() => {});
+      setShowOtherStatuses(false);
+      onJobUpdated();
+    } finally {
+      isUpdatingStatusRef.current = false;
+    }
+  };
+
+  const handleReopenJob = async () => {
+    if (!job.id) return;
+    const targetStatus = pendingReopenStatus;
+
+    // 1. If job was delivered with an associated Day Book entry, remove/softDelete that delivery entry
+    if (job.status === 'delivered') {
+      try {
+        if (job.bookEntryId) {
+          const entry = await db.entries.get(job.bookEntryId);
+          if (entry) {
+            const nowIso = new Date().toISOString();
+            await db.entries.update(job.bookEntryId, {
+              syncStatus: 'deleted',
+              deletedAt: nowIso,
+              updatedAt: nowIso,
+            });
+          }
+        }
+      } catch (err) {
+        console.warn('Error rolling back linked Day Book entry for repair delivery:', err);
+      }
+    }
+
+    // 2. Clear deliveredAt and bookEntryId, restore finalAmount if needed or leave estimate
+    const updates: Partial<Job> = {
+      status: targetStatus,
+      deliveredAt: null,
+      bookEntryId: null,
+      ...(targetStatus === 'ready' ? { readyAt: job.readyAt || Date.now() } : {}),
+    };
+
     await db.jobs.update(job.id, updates);
-    pushSinglePublicRepair({ ...job, ...updates, status: newStatus }).catch(() => {});
+    pushSinglePublicRepair({ ...job, ...updates }).catch(() => {});
+    setShowReopenConfirm(false);
     setShowOtherStatuses(false);
     onJobUpdated();
   };
@@ -318,7 +363,7 @@ export const JobDetailSheet: React.FC<JobDetailSheetProps> = ({
             <div className="p-2 bg-[#F2F2F7] rounded-[10px] text-xs font-mono text-slate-600 truncate select-all flex items-center justify-between">
               <span className="truncate">{trackingUrl}</span>
               <a
-                href={trackingUrl}
+                href={`${trackingUrl}${trackingUrl.includes('?') ? '&' : '?'}from=app`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="ml-2 text-iosBlue text-xs font-sans font-semibold shrink-0 hover:underline"
@@ -329,8 +374,8 @@ export const JobDetailSheet: React.FC<JobDetailSheetProps> = ({
           </div>
         )}
 
-        {/* Suggestion Card for RECEIVED / WAITING Jobs: Send Job Intake Slip */}
-        {(job.status === 'received' || job.status === 'waiting') && (
+        {/* Suggestion Card for ACTIVE (Received / In Progress / Waiting) Jobs: Send Job Intake Slip */}
+        {(job.status === 'received' || job.status === 'in_progress' || job.status === 'waiting') && (
           <div className="bg-blue-50/80 border border-blue-200/90 rounded-[14px] p-3.5 shadow-sm space-y-2">
             <div className="flex items-center space-x-2">
               <MessageSquare className="w-4 h-4 text-iosBlue" />
@@ -521,30 +566,263 @@ export const JobDetailSheet: React.FC<JobDetailSheetProps> = ({
           )}
         </div>
 
-        {/* Primary Action Buttons */}
+        {/* Primary Action & Status Workflow Area */}
         {!isTerminal ? (
-          <div className="space-y-2 pt-2">
-            {/* Advance Status Primary Button */}
+          <div className="space-y-3 pt-2">
+            {/* Visual Interactive Stepper */}
+            <div className="bg-[#F8F9FA] border border-black/[0.06] rounded-2xl p-3 sm:p-3.5 select-none shadow-2xs">
+              <div className="flex items-center justify-between mb-2.5">
+                <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                  Repair Progress
+                </span>
+                {job.status === 'waiting' ? (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[11px] font-bold animate-pulse">
+                    <Clock className="w-3 h-3 text-amber-600" />
+                    <span>On Hold: Waiting for Parts</span>
+                  </span>
+                ) : (
+                  <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${badge.color}`}>
+                    {badge.label}
+                  </span>
+                )}
+              </div>
+
+              {/* Stepper Steps Row */}
+              <div className="grid grid-cols-4 gap-1 relative items-center">
+                {/* Step 1: Received */}
+                <button
+                  type="button"
+                  onClick={() => handleSetStatus('received')}
+                  className={`flex flex-col items-center gap-1 py-1.5 px-1 rounded-xl transition-all ${
+                    job.status === 'received'
+                      ? 'bg-white shadow-xs border border-black/[0.08]'
+                      : 'hover:bg-black/[0.03]'
+                  }`}
+                >
+                  <div
+                    className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold ${
+                      job.status === 'received'
+                        ? 'bg-slate-800 text-white shadow-xs'
+                        : 'bg-emerald-500 text-white'
+                    }`}
+                  >
+                    {job.status === 'received' ? '1' : <Check className="w-3.5 h-3.5" />}
+                  </div>
+                  <span
+                    className={`text-[11px] font-bold text-center leading-tight ${
+                      job.status === 'received' ? 'text-slate-900 font-extrabold' : 'text-slate-600'
+                    }`}
+                  >
+                    Received
+                  </span>
+                </button>
+
+                {/* Step 2: In Progress (or Waiting) */}
+                <button
+                  type="button"
+                  onClick={() => handleSetStatus('in_progress')}
+                  className={`flex flex-col items-center gap-1 py-1.5 px-1 rounded-xl transition-all ${
+                    job.status === 'in_progress' || job.status === 'waiting'
+                      ? 'bg-white shadow-xs border border-black/[0.08]'
+                      : 'hover:bg-black/[0.03]'
+                  }`}
+                >
+                  <div
+                    className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold ${
+                      job.status === 'in_progress'
+                        ? 'bg-indigo-600 text-white ring-2 ring-indigo-200'
+                        : job.status === 'waiting'
+                        ? 'bg-amber-500 text-white ring-2 ring-amber-200'
+                        : job.status === 'ready' || job.status === 'delivered'
+                        ? 'bg-emerald-500 text-white'
+                        : 'bg-gray-200 text-gray-500'
+                    }`}
+                  >
+                    {job.status === 'ready' || job.status === 'delivered' ? (
+                      <Check className="w-3.5 h-3.5" />
+                    ) : job.status === 'waiting' ? (
+                      <Clock className="w-3 h-3" />
+                    ) : (
+                      '2'
+                    )}
+                  </div>
+                  <span
+                    className={`text-[11px] font-bold text-center leading-tight ${
+                      job.status === 'in_progress'
+                        ? 'text-indigo-900 font-extrabold'
+                        : job.status === 'waiting'
+                        ? 'text-amber-800 font-extrabold'
+                        : job.status === 'ready' || job.status === 'delivered'
+                        ? 'text-slate-600'
+                        : 'text-gray-400'
+                    }`}
+                  >
+                    {job.status === 'waiting' ? 'Parts Hold' : 'In Progress'}
+                  </span>
+                </button>
+
+                {/* Step 3: Ready */}
+                <button
+                  type="button"
+                  onClick={() => handleSetStatus('ready')}
+                  className={`flex flex-col items-center gap-1 py-1.5 px-1 rounded-xl transition-all ${
+                    job.status === 'ready'
+                      ? 'bg-white shadow-xs border border-black/[0.08]'
+                      : 'hover:bg-black/[0.03]'
+                  }`}
+                >
+                  <div
+                    className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold ${
+                      job.status === 'ready'
+                        ? 'bg-emerald-600 text-white ring-2 ring-emerald-200 shadow-xs'
+                        : job.status === 'delivered'
+                        ? 'bg-emerald-500 text-white'
+                        : 'bg-gray-200 text-gray-500'
+                    }`}
+                  >
+                    {job.status === 'delivered' ? <Check className="w-3.5 h-3.5" /> : '3'}
+                  </div>
+                  <span
+                    className={`text-[11px] font-bold text-center leading-tight ${
+                      job.status === 'ready'
+                        ? 'text-emerald-900 font-extrabold'
+                        : job.status === 'delivered'
+                        ? 'text-slate-600'
+                        : 'text-gray-400'
+                    }`}
+                  >
+                    Ready
+                  </span>
+                </button>
+
+                {/* Step 4: Delivered */}
+                <button
+                  type="button"
+                  onClick={() => onOpenDelivery(job)}
+                  className={`flex flex-col items-center gap-1 py-1.5 px-1 rounded-xl transition-all ${
+                    job.status === 'delivered'
+                      ? 'bg-white shadow-xs border border-black/[0.08]'
+                      : 'hover:bg-black/[0.03]'
+                  }`}
+                >
+                  <div
+                    className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold ${
+                      job.status === 'delivered'
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'bg-gray-200 text-gray-500'
+                    }`}
+                  >
+                    {job.status === 'delivered' ? <Check className="w-3.5 h-3.5" /> : '4'}
+                  </div>
+                  <span
+                    className={`text-[11px] font-bold text-center leading-tight ${
+                      job.status === 'delivered' ? 'text-blue-900 font-extrabold' : 'text-gray-400'
+                    }`}
+                  >
+                    Delivered
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            {/* Smart Contextual Primary Actions */}
             {job.status === 'received' && (
-              <button
-                type="button"
-                onClick={handleAdvanceStatus}
-                className="w-full h-12 bg-iosBlue text-white rounded-[12px] font-semibold text-[15px] flex items-center justify-center space-x-1.5 shadow-md shadow-iosBlue/20 active:opacity-85"
-              >
-                <span>{t('advance_status_action', language, { next: t('status_waiting', language) })}</span>
-                <ChevronRight className="w-4 h-4" />
-              </button>
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => handleSetStatus('ready')}
+                  className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white rounded-[12px] font-semibold text-[15px] flex items-center justify-center space-x-1.5 shadow-md shadow-emerald-600/20 active:opacity-85 transition-colors"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  <span>{t('mark_ready_action', language)}</span>
+                </button>
+
+                <div className="flex items-center space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => handleSetStatus('in_progress')}
+                    className="flex-1 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/80 rounded-[10px] text-xs font-bold flex items-center justify-center space-x-1.5 active:scale-98 transition-all"
+                  >
+                    <Wrench className="w-3.5 h-3.5 text-indigo-600" />
+                    <span>{t('start_repair_action', language)}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleSetStatus('waiting')}
+                    className="flex-1 py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200/80 rounded-[10px] text-xs font-bold flex items-center justify-center space-x-1.5 active:scale-98 transition-all"
+                  >
+                    <Clock className="w-3.5 h-3.5 text-amber-600" />
+                    <span>{t('waiting_parts_action', language)}</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {job.status === 'in_progress' && (
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => handleSetStatus('ready')}
+                  className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white rounded-[12px] font-semibold text-[15px] flex items-center justify-center space-x-1.5 shadow-md shadow-emerald-600/20 active:opacity-85 transition-colors"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  <span>{t('mark_ready_action', language)}</span>
+                </button>
+
+                <div className="flex items-center space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => handleSetStatus('waiting')}
+                    className="flex-1 py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200/80 rounded-[10px] text-xs font-bold flex items-center justify-center space-x-1.5 active:scale-98 transition-all"
+                  >
+                    <Clock className="w-3.5 h-3.5 text-amber-600" />
+                    <span>{t('waiting_parts_action', language)}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowReturnConfirm(true)}
+                    className="flex-1 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/80 rounded-[10px] text-xs font-bold flex items-center justify-center space-x-1.5 active:scale-98 transition-all"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 text-rose-600" />
+                    <span>{t('return_without_repair_action', language)}</span>
+                  </button>
+                </div>
+              </div>
             )}
 
             {job.status === 'waiting' && (
-              <button
-                type="button"
-                onClick={handleAdvanceStatus}
-                className="w-full h-12 bg-iosGreen text-white rounded-[12px] font-semibold text-[15px] flex items-center justify-center space-x-1.5 shadow-md shadow-iosGreen/20 active:opacity-85"
-              >
-                <span>{t('advance_status_action', language, { next: t('status_ready', language) })}</span>
-                <CheckCircle className="w-4 h-4" />
-              </button>
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => handleSetStatus('ready')}
+                  className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white rounded-[12px] font-semibold text-[15px] flex items-center justify-center space-x-1.5 shadow-md shadow-emerald-600/20 active:opacity-85 transition-colors"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  <span>{t('mark_ready_action', language)}</span>
+                </button>
+
+                <div className="flex items-center space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => handleSetStatus('in_progress')}
+                    className="flex-1 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/80 rounded-[10px] text-xs font-bold flex items-center justify-center space-x-1.5 active:scale-98 transition-all"
+                  >
+                    <Wrench className="w-3.5 h-3.5 text-indigo-600" />
+                    <span>{t('resume_repair_action', language)}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowReturnConfirm(true)}
+                    className="flex-1 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/80 rounded-[10px] text-xs font-bold flex items-center justify-center space-x-1.5 active:scale-98 transition-all"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 text-rose-600" />
+                    <span>{t('return_without_repair_action', language)}</span>
+                  </button>
+                </div>
+              </div>
             )}
 
             {job.status === 'ready' && (
@@ -554,9 +832,21 @@ export const JobDetailSheet: React.FC<JobDetailSheetProps> = ({
                   onClick={() => onOpenDelivery(job)}
                   className="w-full h-12 bg-iosBlue text-white rounded-[12px] font-semibold text-[15px] flex items-center justify-center space-x-1.5 shadow-md shadow-iosBlue/20 active:opacity-85"
                 >
-                  <span>{t('mark_delivered_action', language)}</span>
                   <Check className="w-4 h-4" />
+                  <span>{t('mark_delivered_action', language)}</span>
                 </button>
+
+                {/* Instant Billing button for Ready Jobs */}
+                {onOpenBilling && (
+                  <button
+                    type="button"
+                    onClick={() => onOpenBilling(job)}
+                    className="w-full py-2.5 bg-gradient-to-r from-emerald-50 to-teal-50 hover:from-emerald-100 hover:to-teal-100 text-emerald-800 border border-emerald-300 rounded-[10px] text-xs font-bold flex items-center justify-center space-x-1.5 active:scale-98 transition-all shadow-2xs"
+                  >
+                    <Receipt className="w-3.5 h-3.5 text-emerald-700" />
+                    <span>Generate Bill / Receipt</span>
+                  </button>
+                )}
 
                 {/* Take Photo button above other status button */}
                 <button
@@ -600,6 +890,15 @@ export const JobDetailSheet: React.FC<JobDetailSheetProps> = ({
                       className="w-full text-left px-3 py-2 text-xs rounded-[8px] hover:bg-gray-100 font-medium text-black"
                     >
                       {t('status_received', language)}
+                    </button>
+                  )}
+                  {job.status !== 'in_progress' && (
+                    <button
+                      type="button"
+                      onClick={() => handleSetStatus('in_progress')}
+                      className="w-full text-left px-3 py-2 text-xs rounded-[8px] hover:bg-gray-100 font-medium text-indigo-700"
+                    >
+                      {t('status_in_progress', language)}
                     </button>
                   )}
                   {job.status !== 'waiting' && (
@@ -670,8 +969,115 @@ export const JobDetailSheet: React.FC<JobDetailSheetProps> = ({
             </div>
           </div>
         ) : (
-          <div className="p-3 bg-gray-100 rounded-[10px] text-center text-xs text-[#8E8E93]">
-            {job.status === 'delivered' ? t('status_delivered', language) : t('status_returned', language)}
+          <div className="space-y-3 pt-2">
+            <div className="p-3 bg-gray-50 border border-gray-200 rounded-[12px] flex items-center justify-between">
+              <div>
+                <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block">
+                  Status in History
+                </span>
+                <span className="text-sm font-bold text-gray-900">
+                  {job.status === 'delivered' ? t('status_delivered', language) : t('status_returned', language)}
+                </span>
+              </div>
+              <span className={`text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${badge.color}`}>
+                {badge.label}
+              </span>
+            </div>
+
+            {/* Reopen / Update Back Button */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowOtherStatuses(!showOtherStatuses)}
+                className="w-full h-12 bg-iosBlue hover:bg-blue-600 text-white rounded-[12px] font-semibold text-[15px] flex items-center justify-center space-x-2 shadow-md shadow-iosBlue/20 active:opacity-85 transition-all"
+              >
+                <Undo2 className="w-4 h-4 stroke-[2.5]" />
+                <span>Reopen / Update Back</span>
+              </button>
+
+              {showOtherStatuses && (
+                <div className="mt-1 bg-white rounded-[12px] shadow-xl border border-black/[0.08] p-1.5 space-y-1 animate-dialog-pop z-20">
+                  <div className="px-3 py-1.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100">
+                    Revert status to:
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPendingReopenStatus('ready');
+                      setShowReopenConfirm(true);
+                      setShowOtherStatuses(false);
+                    }}
+                    className="w-full text-left px-3 py-2.5 text-xs rounded-[8px] hover:bg-green-50 font-semibold text-iosGreen flex items-center justify-between transition-colors"
+                  >
+                    <span>{t('status_ready', language)} (Ready for Delivery)</span>
+                    <CheckCircle className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPendingReopenStatus('in_progress');
+                      setShowReopenConfirm(true);
+                      setShowOtherStatuses(false);
+                    }}
+                    className="w-full text-left px-3 py-2.5 text-xs rounded-[8px] hover:bg-indigo-50 font-semibold text-indigo-700 flex items-center justify-between transition-colors"
+                  >
+                    <span>{t('status_in_progress', language)} (Under Repair)</span>
+                    <Wrench className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPendingReopenStatus('waiting');
+                      setShowReopenConfirm(true);
+                      setShowOtherStatuses(false);
+                    }}
+                    className="w-full text-left px-3 py-2.5 text-xs rounded-[8px] hover:bg-amber-50 font-semibold text-[#FF9500] flex items-center justify-between transition-colors"
+                  >
+                    <span>{t('status_waiting', language)} (Waiting for Parts)</span>
+                    <Clock className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPendingReopenStatus('received');
+                      setShowReopenConfirm(true);
+                      setShowOtherStatuses(false);
+                    }}
+                    className="w-full text-left px-3 py-2.5 text-xs rounded-[8px] hover:bg-blue-50 font-semibold text-iosBlue flex items-center justify-between transition-colors"
+                  >
+                    <span>{t('status_received', language)} (Received / In Queue)</span>
+                    <RotateCcw className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Row with Edit & Delete */}
+            <div className="flex items-center space-x-2 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onEdit(job);
+                }}
+                className="flex-1 py-2.5 bg-white border border-[#E5E5EA] rounded-[10px] text-xs font-semibold text-black flex items-center justify-center space-x-1.5 active:bg-gray-50"
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+                <span>{t('edit_action', language)}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onDelete(job);
+                }}
+                className="flex-1 py-2.5 bg-red-50 border border-red-200 rounded-[10px] text-xs font-semibold text-iosRed flex items-center justify-center space-x-1.5 active:bg-red-100"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>{t('delete_action', language)}</span>
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -686,6 +1092,22 @@ export const JobDetailSheet: React.FC<JobDetailSheetProps> = ({
         isDestructive={true}
         onConfirm={handleReturnWithoutRepair}
         onCancel={() => setShowReturnConfirm(false)}
+      />
+
+      {/* Reopen / Update Back Confirmation modal */}
+      <ConfirmModal
+        isOpen={showReopenConfirm}
+        title="Reopen Repair Ticket?"
+        message={
+          job.status === 'delivered'
+            ? `Revert ticket #${job.id ? String(job.id).padStart(4, '0') : ''} from Delivered back to "${pendingReopenStatus.toUpperCase()}"? Any Day Book balance collected on delivery will be removed.`
+            : `Revert ticket #${job.id ? String(job.id).padStart(4, '0') : ''} from Returned back to "${pendingReopenStatus.toUpperCase()}" active status?`
+        }
+        confirmLabel="Reopen Ticket"
+        cancelLabel={t('cancel_action', language)}
+        isDestructive={false}
+        onConfirm={handleReopenJob}
+        onCancel={() => setShowReopenConfirm(false)}
       />
 
       {/* Mark as Ready Photo Prompt Modal */}

@@ -39,6 +39,8 @@ describe('EntryList Credit Badge and Settlement', () => {
     expect(html).toContain('CREDIT');
     expect(html).toContain('Priya Verma');
     expect(html).toContain('Mark Paid');
+    expect(html).toContain('whitespace-nowrap');
+    expect(html).toContain('shrink-0');
     // Slide left action button revealed in SwipeableRow
     expect(html).toContain('aria-label="Paid"');
   });
@@ -63,5 +65,57 @@ describe('EntryList Credit Badge and Settlement', () => {
     const updated = await db.entries.get(id);
     expect(updated?.paymentMethod).toBe('cash');
     expect(updated?.updatedAt).toBe(now);
+  });
+
+  it('renders Unpaid slide action for paid entries', () => {
+    const entries: Entry[] = [
+      {
+        id: 2,
+        type: 'in',
+        amount: 500,
+        paymentMethod: 'cash',
+        customerName: 'Amit',
+        item: 'Charger',
+        date: '2026-10-05',
+        createdAt: Date.now(),
+      },
+    ];
+
+    const html = renderToString(
+      React.createElement(EntryList, {
+        entries,
+        isToday: true,
+        language: 'en',
+        onEdit: () => {},
+        onDelete: () => {},
+        onAddClick: () => {},
+      })
+    );
+
+    expect(html).toContain('aria-label="Unpaid"');
+    expect(html).toContain('Unpaid');
+  });
+
+  it('updates entry from paid to credit when marked unpaid', async () => {
+    const id = await db.entries.add({
+      type: 'in',
+      amount: 1500,
+      paymentMethod: 'cash',
+      customerName: 'Karan',
+      date: '2026-10-05',
+      createdAt: Date.now(),
+    });
+
+    const now = new Date().toISOString();
+    await db.entries.update(id, {
+      paymentMethod: 'credit',
+      updatedAt: now,
+      syncStatus: 'pending',
+    });
+
+    const updated = await db.entries.get(id);
+    expect(updated?.paymentMethod).toBe('credit');
+    expect(typeof updated?.updatedAt).toBe('string');
+    expect(new Date(updated?.updatedAt || '').getTime()).not.toBeNaN();
   });
 });

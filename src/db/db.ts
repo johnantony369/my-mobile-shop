@@ -300,7 +300,7 @@ export async function clearLocalDatabase(): Promise<void> {
 export async function initAppSettings(
   shopName: string,
   language: Language = 'en',
-  showRepairs: boolean = false,
+  showRepairs: boolean = true,
   showStock: boolean = true,
   ownerUid?: string,
   shopAddress?: string,
@@ -350,7 +350,7 @@ export async function updateAppSettings(partial: Partial<AppSettings>): Promise<
       firstLaunchDate: getLocalDateString(),
       activated: false,
       lastBackupAt: null,
-      showRepairs: false,
+      showRepairs: true,
       showStock: true,
       cloudId: generateCloudId(),
       updatedAt: now,
@@ -418,9 +418,9 @@ export async function adjustStockQuantity(id: number, delta: number): Promise<nu
   return newQty;
 }
 
-export async function getNextInvoiceNo(): Promise<string> {
+export async function getNextInvoiceNo(isGst = false): Promise<string> {
   const count = await db.bills.count();
-  return formatInvoiceNo(count + 1);
+  return formatInvoiceNo(count + 1, isGst);
 }
 
 export interface CreateBillInput {
@@ -430,6 +430,11 @@ export interface CreateBillInput {
   discount: number;
   paymentMethod: PaymentMethod;
   date: string;
+  isGst?: boolean;
+  gstRate?: number;
+  shopGstin?: string;
+  customerGstin?: string;
+  isTaxInclusive?: boolean;
 }
 
 /**
@@ -437,13 +442,19 @@ export interface CreateBillInput {
  * for product items, all in one transaction.
  */
 export async function createBill(input: CreateBillInput): Promise<Bill> {
-  const { subtotal, total } = computeBillTotals(input.items, input.discount);
-  return db.transaction('rw', db.bills, db.entries, db.stock, async () => {
-    const invoiceNo = await getNextInvoiceNo();
+  const totals = computeBillTotals(
+    input.items,
+    input.discount,
+    input.isGst,
+    input.gstRate ?? 18,
+    input.isTaxInclusive ?? true
+  );
+  return db.transaction('rw', db.bills, db.entries, db.stock, db.settings, async () => {
+    const invoiceNo = await getNextInvoiceNo(input.isGst);
     const now = Date.now();
     const entryId = await db.entries.add({
       type: 'in',
-      amount: total,
+      amount: totals.total,
       item: summarizeBillItems(input.items),
       customerName: input.customerName?.trim() || undefined,
       note: invoiceNo,
@@ -457,17 +468,38 @@ export async function createBill(input: CreateBillInput): Promise<Bill> {
       customerName: input.customerName?.trim() || undefined,
       customerPhone: input.customerPhone?.trim() || undefined,
       items: input.items,
-      subtotal,
+      subtotal: totals.subtotal,
       discount: Math.max(0, input.discount || 0),
-      total,
+      total: totals.total,
       paymentMethod: input.paymentMethod,
       entryId: entryId as number,
       createdAt: now,
+      isGst: input.isGst,
+      gstRate: input.isGst ? (input.gstRate ?? 18) : undefined,
+      shopGstin: input.isGst ? input.shopGstin?.trim() : undefined,
+      customerGstin: input.isGst ? input.customerGstin?.trim() : undefined,
+      taxableAmount: totals.taxableAmount,
+      cgstAmount: totals.cgstAmount,
+      sgstAmount: totals.sgstAmount,
+      igstAmount: totals.igstAmount,
+      isTaxInclusive: input.isTaxInclusive ?? true,
     };
     const id = await db.bills.add(bill);
     for (const it of input.items) {
       if (it.stockId) await adjustStockQuantity(it.stockId, -it.qty);
     }
+
+    // Persist shop GSTIN to settings if provided
+    if (input.isGst && input.shopGstin?.trim()) {
+      const s = await db.settings.toCollection().first();
+      if (s && s.id) {
+        await db.settings.update(s.id, {
+          shopGstin: input.shopGstin.trim(),
+          updatedAt: new Date().toISOString(),
+        });
+      }
+    }
+
     return { ...bill, id: id as number };
   });
 }
@@ -476,32 +508,56 @@ export async function createBill(input: CreateBillInput): Promise<Bill> {
  * Creates a Bill for an existing Entry without creating a duplicate book entry.
  * Also appends or sets the invoiceNo in the entry's note field.
  */
-export async function createBillForEntry(entry: Entry): Promise<Bill> {
+export async function createBillForEntry(
+  entry: Entry,
+  options?: Partial<CreateBillInput>
+): Promise<Bill> {
   const entryId = entry.id;
   if (!entryId) {
     throw new Error('Entry must be saved before generating a bill');
   }
-  return db.transaction('rw', db.bills, db.entries, async () => {
-    const invoiceNo = await getNextInvoiceNo();
+  return db.transaction('rw', db.bills, db.entries, db.settings, async () => {
+    const isGst = options?.isGst ?? false;
+    const gstRate = options?.gstRate ?? 18;
+    const isTaxInclusive = options?.isTaxInclusive ?? true;
+    const invoiceNo = await getNextInvoiceNo(isGst);
     const now = Date.now();
     const itemName = entry.item?.trim() || 'General Sale';
+    const items: BillItem[] =
+      options?.items && options.items.length > 0
+        ? options.items
+        : [
+            {
+              name: itemName,
+              qty: 1,
+              price: entry.amount,
+            },
+          ];
+
+    const discount = options?.discount ?? 0;
+    const totals = computeBillTotals(items, discount, isGst, gstRate, isTaxInclusive);
+
     const bill: Bill = {
       invoiceNo,
       date: entry.date,
-      customerName: entry.customerName?.trim() || undefined,
-      items: [
-        {
-          name: itemName,
-          qty: 1,
-          price: entry.amount,
-        },
-      ],
-      subtotal: entry.amount,
-      discount: 0,
-      total: entry.amount,
-      paymentMethod: entry.paymentMethod || 'cash',
+      customerName: options?.customerName?.trim() || entry.customerName?.trim() || undefined,
+      customerPhone: options?.customerPhone?.trim() || undefined,
+      items,
+      subtotal: totals.subtotal,
+      discount: totals.discount,
+      total: totals.total,
+      paymentMethod: (options?.paymentMethod || entry.paymentMethod || 'cash') as PaymentMethod,
       entryId: entryId,
       createdAt: now,
+      isGst,
+      gstRate: isGst ? gstRate : undefined,
+      shopGstin: isGst ? options?.shopGstin?.trim() : undefined,
+      customerGstin: isGst ? options?.customerGstin?.trim() : undefined,
+      taxableAmount: totals.taxableAmount,
+      cgstAmount: totals.cgstAmount,
+      sgstAmount: totals.sgstAmount,
+      igstAmount: totals.igstAmount,
+      isTaxInclusive,
     };
     const id = await db.bills.add(bill);
 
@@ -510,9 +566,21 @@ export async function createBillForEntry(entry: Entry): Promise<Bill> {
     const updatedNote = existingNote ? `${existingNote} · ${invoiceNo}` : invoiceNo;
     await db.entries.update(entryId, {
       note: updatedNote,
+      amount: totals.total,
       updatedAt: new Date().toISOString(),
       syncStatus: 'pending',
     });
+
+    // Persist shop GSTIN to settings if provided
+    if (isGst && options?.shopGstin?.trim()) {
+      const s = await db.settings.toCollection().first();
+      if (s && s.id) {
+        await db.settings.update(s.id, {
+          shopGstin: options.shopGstin.trim(),
+          updatedAt: new Date().toISOString(),
+        });
+      }
+    }
 
     return { ...bill, id: id as number };
   });

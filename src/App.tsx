@@ -152,7 +152,7 @@ export default function App() {
   const currentSettings = settingsList && settingsList[0];
   const isWholesale = Boolean(currentSettings?.wholesaleMode);
   const showStock = currentSettings ? currentSettings.showStock !== false : true;
-  const showRepairs = currentSettings ? !!currentSettings.showRepairs : false;
+  const showRepairs = currentSettings ? currentSettings.showRepairs !== false : true;
   const isAdmin = isSuperAdmin(user);
 
   useEffect(() => {

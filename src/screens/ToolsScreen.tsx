@@ -210,7 +210,7 @@ export const ToolsScreen: React.FC<ToolsScreenProps> = ({
                   className="w-full py-2.5 bg-purple-600 hover:bg-purple-500 active:scale-95 text-white text-xs font-bold rounded-[12px] shadow-md shadow-purple-900/40 flex items-center justify-center space-x-1.5 transition-all"
                 >
                   <Plus className="w-4 h-4 stroke-[2.5]" />
-                  <span>+ New Intake</span>
+                  <span>New Intake</span>
                 </button>
 
                 <button

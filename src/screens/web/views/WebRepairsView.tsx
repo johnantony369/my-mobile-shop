@@ -26,11 +26,11 @@ export const WebRepairsView: React.FC<WebRepairsViewProps> = ({
   onSelectJob,
   isReadOnly = false,
 }) => {
-  const [statusFilter, setStatusFilter] = useState<'all' | 'received' | 'waiting' | 'ready' | 'delivered'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'received' | 'in_progress' | 'waiting' | 'ready' | 'delivered'>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   const readyJobsCount = jobs.filter((j) => j.status === 'ready').length;
-  const inProgressCount = jobs.filter((j) => j.status === 'received' || j.status === 'waiting').length;
+  const inProgressCount = jobs.filter((j) => j.status === 'received' || j.status === 'in_progress' || j.status === 'waiting').length;
 
   const filteredJobs = jobs.filter((job) => {
     if (statusFilter !== 'all' && job.status !== statusFilter) return false;
@@ -114,11 +114,22 @@ export const WebRepairsView: React.FC<WebRepairsViewProps> = ({
               onClick={() => setStatusFilter('received')}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                 statusFilter === 'received'
+                  ? 'bg-slate-700 text-white'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }`}
+            >
+              Received
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter('in_progress')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                statusFilter === 'in_progress'
                   ? 'bg-indigo-600 text-white'
                   : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
               }`}
             >
-              Received
+              In Progress
             </button>
             <button
               type="button"
@@ -220,13 +231,17 @@ export const WebRepairsView: React.FC<WebRepairsViewProps> = ({
                             job.status === 'ready'
                               ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
                               : job.status === 'delivered'
-                              ? 'bg-slate-100 text-slate-600'
+                              ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                              : job.status === 'in_progress'
+                              ? 'bg-indigo-100 text-indigo-800 border border-indigo-300'
                               : job.status === 'waiting'
                               ? 'bg-amber-100 text-amber-900 border border-amber-300'
-                              : 'bg-indigo-50 text-indigo-700'
+                              : job.status === 'returned'
+                              ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                              : 'bg-slate-100 text-slate-700 border border-slate-200'
                           }`}
                         >
-                          {job.status}
+                          {job.status === 'in_progress' ? 'In Progress' : job.status}
                         </span>
                       </td>
                       <td className="py-3 px-5 text-center">

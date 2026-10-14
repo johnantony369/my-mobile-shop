@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Edit3, Trash2, CheckCircle } from 'lucide-react';
+import { Edit3, Trash2, CheckCircle, Clock } from 'lucide-react';
 
 interface SwipeableRowProps {
   children: React.ReactNode;
@@ -8,9 +8,11 @@ interface SwipeableRowProps {
   onTap: () => void;
   onLongPress?: () => void;
   onMarkPaid?: () => void;
+  onMarkUnpaid?: () => void;
   editLabel?: string;
   deleteLabel?: string;
   markPaidLabel?: string;
+  markUnpaidLabel?: string;
 }
 
 export const SwipeableRow: React.FC<SwipeableRowProps> = ({
@@ -20,9 +22,11 @@ export const SwipeableRow: React.FC<SwipeableRowProps> = ({
   onTap,
   onLongPress,
   onMarkPaid,
+  onMarkUnpaid,
   editLabel = 'Edit',
   deleteLabel = 'Delete',
   markPaidLabel = 'Paid',
+  markUnpaidLabel = 'Unpaid',
 }) => {
   const [offsetX, setOffsetX] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
@@ -34,7 +38,10 @@ export const SwipeableRow: React.FC<SwipeableRowProps> = ({
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
   const isLongPressTriggered = useRef(false);
 
-  const ACTIONS_WIDTH = onMarkPaid ? 210 : 140; // width of action buttons combined
+  let actionsCount = 2; // Edit and Delete
+  if (onMarkPaid) actionsCount += 1;
+  if (onMarkUnpaid) actionsCount += 1;
+  const ACTIONS_WIDTH = actionsCount * 70; // width of action buttons combined
 
   const handleTouchStart = (e: React.TouchEvent | React.MouseEvent) => {
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
@@ -179,6 +186,22 @@ export const SwipeableRow: React.FC<SwipeableRowProps> = ({
           >
             <CheckCircle className="w-5 h-5 mb-1" />
             <span>{markPaidLabel}</span>
+          </button>
+        )}
+        {onMarkUnpaid && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsOpen(false);
+              setOffsetX(0);
+              onMarkUnpaid();
+            }}
+            className="w-[70px] bg-amber-500 text-white flex flex-col items-center justify-center text-xs font-medium active:opacity-80 transition-opacity"
+            aria-label={markUnpaidLabel}
+          >
+            <Clock className="w-5 h-5 mb-1" />
+            <span>{markUnpaidLabel}</span>
           </button>
         )}
         <button

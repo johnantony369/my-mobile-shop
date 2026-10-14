@@ -7,9 +7,8 @@ import { StockPickerSheet } from '../components/StockPickerSheet';
 import { createBill, db } from '../db/db';
 import { formatINR } from '../i18n';
 import { Bill, BillItem, Language, PaymentMethod, StockItem } from '../types';
-import { buildBillText, buildWhatsAppUrl, computeBillTotals } from '../utils/billing';
-import { shareSummary } from '../utils/share';
-import { downloadBillPDF } from '../utils/pdf';
+import { buildBillText, computeBillTotals } from '../utils/billing';
+import { downloadBillPDF, shareBillPDF } from '../utils/pdf';
 
 interface BillSheetProps {
   isOpen: boolean;
@@ -18,6 +17,9 @@ interface BillSheetProps {
   shopName: string;
   shopAddress?: string;
   language: Language;
+  initialItems?: BillItem[];
+  initialCustomerName?: string;
+  initialCustomerPhone?: string;
 }
 
 const inputCls =
@@ -30,6 +32,9 @@ export const BillSheet: React.FC<BillSheetProps> = ({
   shopName,
   shopAddress,
   language,
+  initialItems,
+  initialCustomerName,
+  initialCustomerPhone,
 }) => {
   const settings = useLiveQuery(() => db.settings.toCollection().first());
   const effectiveShopName = shopName || settings?.shopName || 'My Mobile Shop';
@@ -41,6 +46,11 @@ export const BillSheet: React.FC<BillSheetProps> = ({
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
+  const [billType, setBillType] = useState<'nongst' | 'gst'>('nongst');
+  const [gstRate, setGstRate] = useState<number>(18);
+  const [shopGstin, setShopGstin] = useState<string>('');
+  const [customerGstin, setCustomerGstin] = useState<string>('');
+  const [isTaxInclusive, setIsTaxInclusive] = useState<boolean>(true);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [error, setError] = useState('');
   const [savedBill, setSavedBill] = useState<Bill | null>(null);
@@ -49,22 +59,43 @@ export const BillSheet: React.FC<BillSheetProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      setItems([]);
+      setItems(initialItems && initialItems.length > 0 ? initialItems : []);
       setCustomName('');
       setCustomPrice('');
       setDiscountStr('');
-      setCustomerName('');
-      setCustomerPhone('');
+      setCustomerName(initialCustomerName || '');
+      setCustomerPhone(initialCustomerPhone || '');
       setPaymentMethod('cash');
+      setBillType('nongst');
+      setGstRate(18);
+      setCustomerGstin('');
+      setIsTaxInclusive(true);
       setError('');
       setSavedBill(null);
       isSubmittingRef.current = false;
       setIsSubmitting(false);
+
+      if (settings?.shopGstin) {
+        setShopGstin(settings.shopGstin);
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, initialItems, initialCustomerName, initialCustomerPhone]);
+
+  useEffect(() => {
+    if (settings?.shopGstin && !shopGstin) {
+      setShopGstin(settings.shopGstin);
+    }
+  }, [settings?.shopGstin]);
 
   const discount = parseFloat(discountStr) || 0;
-  const { subtotal, total } = computeBillTotals(items, discount);
+  const totals = computeBillTotals(
+    items,
+    discount,
+    billType === 'gst',
+    gstRate,
+    isTaxInclusive
+  );
+  const { subtotal, total, taxableAmount, cgstAmount, sgstAmount } = totals;
 
   const addFromStock = (si: StockItem) => {
     setItems((prev) => {
@@ -114,6 +145,12 @@ export const BillSheet: React.FC<BillSheetProps> = ({
       setIsSubmitting(false);
       return;
     }
+    if (billType === 'gst' && shopGstin.trim() && shopGstin.trim().length < 15) {
+      setError('Please enter a valid 15-character GSTIN');
+      isSubmittingRef.current = false;
+      setIsSubmitting(false);
+      return;
+    }
     try {
       const bill = await createBill({
         items,
@@ -122,6 +159,11 @@ export const BillSheet: React.FC<BillSheetProps> = ({
         customerPhone,
         paymentMethod,
         date: defaultDate,
+        isGst: billType === 'gst',
+        gstRate,
+        shopGstin: shopGstin.trim() || undefined,
+        customerGstin: customerGstin.trim() || undefined,
+        isTaxInclusive,
       });
       setSavedBill(bill);
     } catch (err) {
@@ -134,12 +176,13 @@ export const BillSheet: React.FC<BillSheetProps> = ({
 
   const handleShare = async () => {
     if (!savedBill) return;
-    const text = buildBillText(savedBill, effectiveShopName, effectiveShopAddress);
-    if (savedBill.customerPhone) {
-      window.open(buildWhatsAppUrl(text, savedBill.customerPhone), '_blank');
-    } else {
-      await shareSummary(text, `Bill ${savedBill.invoiceNo}`);
-    }
+    await shareBillPDF({
+      bill: savedBill,
+      shopName: effectiveShopName,
+      shopAddress: effectiveShopAddress,
+      shopPhone: settings?.shopPhone,
+      shopLogo: settings?.shopLogo,
+    });
   };
 
   const handleDownloadPDF = () => {
@@ -252,18 +295,105 @@ export const BillSheet: React.FC<BillSheetProps> = ({
             </button>
           </div>
 
-          {/* Discount & totals */}
+          {/* Invoice Type */}
+          <div>
+            <span className="text-xs font-semibold text-[#8E8E93] uppercase tracking-wider block mb-1">
+              Invoice Type
+            </span>
+            <SegmentedControl<'nongst' | 'gst'>
+              value={billType}
+              onChange={(v) => setBillType(v)}
+              size="sm"
+              options={[
+                { value: 'nongst', label: 'Non-GST (Regular)' },
+                { value: 'gst', label: 'GST (Tax Invoice)' },
+              ]}
+            />
+          </div>
+
+          {/* Discount */}
           <div className="flex items-center justify-between gap-3">
             <span className="text-sm font-medium text-[#8E8E93]">Discount (₹)</span>
             <input className={`${inputCls} w-28 text-right`} placeholder="0" inputMode="decimal" value={discountStr} onChange={(e) => setDiscountStr(e.target.value.replace(/[^0-9.]/g, ''))} />
           </div>
-          <div className="flex items-center justify-between text-sm text-[#8E8E93]">
-            <span>Subtotal</span>
-            <span>{formatINR(subtotal)}</span>
-          </div>
+
+          {billType === 'gst' ? (
+            <div className="space-y-3 bg-blue-50/50 p-3 rounded-[12px] border border-blue-200/60">
+              {/* GST Rate Selection */}
+              <div>
+                <span className="text-xs font-semibold text-blue-900 uppercase tracking-wider block mb-1">
+                  GST Rate
+                </span>
+                <SegmentedControl<string>
+                  value={String(gstRate)}
+                  onChange={(v) => setGstRate(Number(v))}
+                  size="sm"
+                  options={[
+                    { value: '5', label: '5%' },
+                    { value: '12', label: '12%' },
+                    { value: '18', label: '18%' },
+                    { value: '28', label: '28%' },
+                  ]}
+                />
+              </div>
+
+              {/* Tax Mode */}
+              <label className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isTaxInclusive}
+                  onChange={(e) => setIsTaxInclusive(e.target.checked)}
+                  className="rounded text-iosBlue focus:ring-iosBlue/40 w-4 h-4"
+                />
+                <span className="text-xs font-medium text-black">
+                  Prices include GST (Retail MRP)
+                </span>
+              </label>
+
+              {/* Shop GSTIN */}
+              <input
+                className={inputCls}
+                maxLength={15}
+                placeholder="Shop GSTIN (e.g. 27AAPFU0939L1ZV)"
+                value={shopGstin}
+                onChange={(e) => setShopGstin(e.target.value.toUpperCase())}
+              />
+
+              {/* Customer GSTIN */}
+              <input
+                className={inputCls}
+                maxLength={15}
+                placeholder="Customer GSTIN (optional for B2B)"
+                value={customerGstin}
+                onChange={(e) => setCustomerGstin(e.target.value.toUpperCase())}
+              />
+
+              {/* Tax Breakdown */}
+              <div className="text-xs space-y-1 pt-1 border-t border-blue-200/80 text-blue-950">
+                <div className="flex justify-between">
+                  <span>Taxable Value:</span>
+                  <span className="font-semibold tabular-nums">{formatINR(taxableAmount)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>CGST ({gstRate / 2}%):</span>
+                  <span className="font-semibold tabular-nums">{formatINR(cgstAmount)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>SGST ({gstRate / 2}%):</span>
+                  <span className="font-semibold tabular-nums">{formatINR(sgstAmount)}</span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between text-sm text-[#8E8E93]">
+              <span>Subtotal</span>
+              <span>{formatINR(subtotal)}</span>
+            </div>
+          )}
+
           <div className="flex items-center justify-between text-lg font-bold">
             <span>Total</span>
-            <span>{formatINR(total)}</span>
+            <span className="text-iosBlue tabular-nums">{formatINR(total)}</span>
           </div>
 
           {/* Payment */}

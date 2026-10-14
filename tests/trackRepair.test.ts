@@ -112,5 +112,43 @@ describe('Repair Tracking Feature', () => {
     );
 
     expect(htmlReady).toContain('Ready for Pickup!');
+
+    // Test In Progress state
+    const htmlInProgress = renderToString(
+      React.createElement(TrackRepairView, {
+        repair: {
+          cloudId: 'job_456',
+          shopName: 'FastFix Mobiles',
+          model: 'Samsung S21',
+          complaint: 'Display flickering',
+          status: 'in_progress',
+          receivedAt: 1728234567000,
+          estimate: 6000,
+          advance: 2000,
+          balanceDue: 4000,
+          updatedAt: new Date().toISOString(),
+        },
+      })
+    );
+    expect(htmlInProgress).toContain('In Progress');
+
+    // Test Waiting for Parts state
+    const htmlWaiting = renderToString(
+      React.createElement(TrackRepairView, {
+        repair: {
+          cloudId: 'job_789',
+          shopName: 'FastFix Mobiles',
+          model: 'Pixel 7',
+          complaint: 'Motherboard IC repair',
+          status: 'waiting',
+          receivedAt: 1728234567000,
+          estimate: 4000,
+          advance: 1000,
+          balanceDue: 3000,
+          updatedAt: new Date().toISOString(),
+        },
+      })
+    );
+    expect(htmlWaiting).toContain('Waiting for Parts');
   });
 });

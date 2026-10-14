@@ -117,6 +117,15 @@ export const translations = {
   mark_paid_action: {
     en: 'Paid',
   },
+  mark_unpaid_action: {
+    en: 'Unpaid',
+  },
+  mark_unpaid_title: {
+    en: 'Mark as Unpaid',
+  },
+  confirm_action: {
+    en: 'Confirm',
+  },
 
   // Add / Edit Sheet
   new_entry_title: {
@@ -141,7 +150,7 @@ export const translations = {
     en: 'Item / Service',
   },
   item_placeholder: {
-    en: 'e.g. Screen Guard, Recharge, Back Cover',
+    en: 'Item / Service name',
   },
   customer_label: {
     en: 'Customer Name (Optional)',
@@ -392,6 +401,9 @@ export const translations = {
   status_received: {
     en: 'Received',
   },
+  status_in_progress: {
+    en: 'In Progress',
+  },
   status_waiting: {
     en: 'Waiting for Parts',
   },
@@ -508,6 +520,18 @@ export const translations = {
   },
   advance_status_action: {
     en: 'Advance to: {next}',
+  },
+  start_repair_action: {
+    en: 'Start Repair (In Progress)',
+  },
+  mark_ready_action: {
+    en: 'Mark as Ready',
+  },
+  waiting_parts_action: {
+    en: 'Waiting for Parts',
+  },
+  resume_repair_action: {
+    en: 'Resume Repair',
   },
   other_status_action: {
     en: 'Other Status',

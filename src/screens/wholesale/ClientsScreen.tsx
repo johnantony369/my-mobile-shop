@@ -136,7 +136,7 @@ export const ClientsScreen: React.FC<ClientsScreenProps> = ({
           className="flex items-center gap-1.5 px-4 py-2 bg-iosBlue hover:bg-blue-600 text-white text-xs font-bold rounded-full transition-all shadow-xs"
         >
           <Plus className="w-4 h-4" />
-          <span>+ Add Client</span>
+          <span>Add Client</span>
         </button>
       </div>
 
@@ -212,7 +212,7 @@ export const ClientsScreen: React.FC<ClientsScreenProps> = ({
             <Building2 className="w-8 h-8 text-slate-300 mx-auto" />
             <p className="font-semibold text-slate-600">No clients found</p>
             <p className="text-[11px]">
-              {searchQuery ? 'Try matching another shop name or phone number' : 'Click "+ Add Client" to add your first retail shop partner'}
+              {searchQuery ? 'Try matching another shop name or phone number' : 'Click "Add Client" to add your first retail shop partner'}
             </p>
           </div>
         ) : (

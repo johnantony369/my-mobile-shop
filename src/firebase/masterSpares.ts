@@ -31,25 +31,38 @@ export async function loadFullSpares(): Promise<MasterSparePart[]> {
   }
 }
 
+export function deduplicateById<T extends { id: string }>(items: T[]): T[] {
+  const seen = new Set<string>();
+  const result: T[] = [];
+  for (const item of items) {
+    if (item && item.id) {
+      if (seen.has(item.id)) continue;
+      seen.add(item.id);
+    }
+    result.push(item);
+  }
+  return result;
+}
+
 export async function fetchMasterDevices(): Promise<MasterDevice[]> {
   const baseDevices = await loadFullDevices();
   try {
     const uid = auth?.currentUser?.uid;
     if (!dbFirestore || !uid) {
-      return baseDevices;
+      return deduplicateById(baseDevices);
     }
 
     // Fetch ONLY this shop's private custom devices (never polluted by other users)
     const userDevicesCol = collection(dbFirestore, 'users', uid, 'custom_devices');
     const snap = await getDocs(userDevicesCol);
-    if (snap.empty) return baseDevices;
+    if (snap.empty) return deduplicateById(baseDevices);
 
     const privateList: MasterDevice[] = [];
     snap.forEach((d) => privateList.push({ ...(d.data() as MasterDevice), id: d.id }));
-    return [...privateList, ...baseDevices];
+    return deduplicateById([...privateList, ...baseDevices]);
   } catch (err) {
     console.warn('Could not fetch user custom devices:', err);
-    return baseDevices;
+    return deduplicateById(baseDevices);
   }
 }
 
@@ -60,21 +73,21 @@ export async function fetchMasterSpares(deviceId?: string): Promise<MasterSpareP
   try {
     const uid = auth?.currentUser?.uid;
     if (!dbFirestore || !uid) {
-      return baseSpares;
+      return deduplicateById(baseSpares);
     }
 
     // Fetch ONLY this shop's private custom spares (never polluted by other users)
     const userSparesCol = collection(dbFirestore, 'users', uid, 'custom_spares');
     const q = deviceId ? query(userSparesCol, where('deviceId', '==', deviceId)) : userSparesCol;
     const snap = await getDocs(q);
-    if (snap.empty) return baseSpares;
+    if (snap.empty) return deduplicateById(baseSpares);
 
     const privateList: MasterSparePart[] = [];
     snap.forEach((d) => privateList.push({ ...(d.data() as MasterSparePart), id: d.id }));
-    return [...privateList, ...baseSpares];
+    return deduplicateById([...privateList, ...baseSpares]);
   } catch (err) {
     console.warn('Could not fetch user custom spares:', err);
-    return baseSpares;
+    return deduplicateById(baseSpares);
   }
 }
 
@@ -87,20 +100,53 @@ export async function searchMasterSpares(searchQuery: string): Promise<MasterSpa
       return allSpares.slice(0, 50);
     }
 
-    return allSpares
-      .filter((part) => {
-        const matchModel = part.model.toLowerCase().includes(q);
-        const matchBrand = part.brand.toLowerCase().includes(q);
-        const matchName = part.partName.toLowerCase().includes(q);
-        const matchCode = part.partCode ? part.partCode.toLowerCase().includes(q) : false;
-        const matchCompat = part.compatibleModels?.some((m) => m.toLowerCase().includes(q));
+    const results: MasterSparePart[] = [];
+    for (let i = 0; i < allSpares.length; i++) {
+      const part = allSpares[i];
+      const matchModel = part.model.toLowerCase().includes(q);
+      const matchBrand = part.brand.toLowerCase().includes(q);
+      const matchName = part.partName.toLowerCase().includes(q);
+      const matchCode = part.partCode ? part.partCode.toLowerCase().includes(q) : false;
+      const matchCompat = part.compatibleModels?.some((m) => m.toLowerCase().includes(q));
 
-        return matchModel || matchBrand || matchName || matchCode || matchCompat;
-      })
-      .slice(0, 50);
+      if (matchModel || matchBrand || matchName || matchCode || matchCompat) {
+        results.push(part);
+        if (results.length >= 50) break;
+      }
+    }
+    return results;
   } catch (err) {
     console.warn('Error searching master spares:', err);
     return searchMasterSparesInMemory(searchQuery);
+  }
+}
+
+export async function searchMasterDevices(searchQuery: string): Promise<MasterDevice[]> {
+  try {
+    const q = searchQuery.trim().toLowerCase();
+    const allDevices = await fetchMasterDevices();
+    if (!q) {
+      return allDevices.slice(0, 20);
+    }
+
+    const results: MasterDevice[] = [];
+    for (let i = 0; i < allDevices.length; i++) {
+      const d = allDevices[i];
+      const fullName = `${d.brand} ${d.model}`.toLowerCase();
+      const matchModel = d.model.toLowerCase().includes(q);
+      const matchBrand = d.brand.toLowerCase().includes(q);
+      const matchFull = fullName.includes(q);
+      const matchCodes = d.modelCodes?.some((c) => c.toLowerCase().includes(q));
+
+      if (matchModel || matchBrand || matchFull || matchCodes) {
+        results.push(d);
+        if (results.length >= 25) break;
+      }
+    }
+    return results;
+  } catch (err) {
+    console.warn('Error searching master devices:', err);
+    return [];
   }
 }
 
@@ -118,11 +164,16 @@ export async function addCustomDevice(device: Omit<MasterDevice, 'id'>): Promise
     console.warn('Failed to save private custom device:', err);
   }
 
-  // Prepend to cached list & in-memory seed list for this shop session
+  // Update cached list & in-memory seed list without duplicates for this shop session
   if (cachedDevices) {
-    cachedDevices.unshift(newDevice);
+    cachedDevices = [newDevice, ...cachedDevices.filter((d) => d.id !== newDevice.id)];
   }
-  MASTER_DEVICES_SEED.unshift(newDevice);
+  const seedIdx = MASTER_DEVICES_SEED.findIndex((d) => d.id === newDevice.id);
+  if (seedIdx >= 0) {
+    MASTER_DEVICES_SEED[seedIdx] = newDevice;
+  } else {
+    MASTER_DEVICES_SEED.unshift(newDevice);
+  }
   return newDevice;
 }
 
@@ -141,9 +192,14 @@ export async function addCustomSparePart(spare: Omit<MasterSparePart, 'id'>): Pr
   }
 
   if (cachedSpares) {
-    cachedSpares.unshift(newPart);
+    cachedSpares = [newPart, ...cachedSpares.filter((s) => s.id !== newPart.id)];
   }
-  MASTER_SPARES_SEED.unshift(newPart);
+  const spareSeedIdx = MASTER_SPARES_SEED.findIndex((s) => s.id === newPart.id);
+  if (spareSeedIdx >= 0) {
+    MASTER_SPARES_SEED[spareSeedIdx] = newPart;
+  } else {
+    MASTER_SPARES_SEED.unshift(newPart);
+  }
   return newPart;
 }
 

@@ -1,18 +1,25 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { BottomSheet } from '../components/BottomSheet';
 import { SegmentedControl } from '../components/SegmentedControl';
-import { Entry, EntryType, PaymentMethod, Language, StockItem, Bill } from '../types';
-import { t } from '../i18n';
+import { Entry, EntryType, PaymentMethod, Language, StockItem, Bill, BillItem } from '../types';
+import { t, formatINR } from '../i18n';
 import { db, adjustStockQuantity, createBillForEntry, getBillForEntry } from '../db/db';
 import { getLocalDateString } from '../utils/date';
-import { buildBillText, buildWhatsAppUrl } from '../utils/billing';
-import { shareSummary } from '../utils/share';
+import { buildBillText, computeBillTotals } from '../utils/billing';
 import { StockPickerSheet } from '../components/StockPickerSheet';
 import { SparesAutoSuggest } from '../components/wholesale/SparesAutoSuggest';
-import { Package, X, Check, Trash2, Receipt, Share2, Download } from 'lucide-react';
-import { downloadBillPDF } from '../utils/pdf';
+import { Package, X, Check, Trash2, Receipt, Share2, Download, Plus, ArrowLeftRight, Wrench } from 'lucide-react';
+import { downloadBillPDF, shareBillPDF } from '../utils/pdf';
 import { syncDayBookCreditEntry, removeDayBookCreditSync, formatCurrencyINR } from '../utils/wholesaleCredit';
+
+export interface SaleItem {
+  id: string;
+  name: string;
+  price: number;
+  stockId?: number;
+  category?: 'product' | 'service';
+}
 
 interface AddEditSheetProps {
   isOpen: boolean;
@@ -69,11 +76,28 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
   const [activeBill, setActiveBill] = useState<Bill | null>(null);
   const [isGeneratingBill, setIsGeneratingBill] = useState(false);
   const [showBillPreview, setShowBillPreview] = useState(false);
+  const [showBillConfig, setShowBillConfig] = useState(false);
+  const [billType, setBillType] = useState<'nongst' | 'gst'>('nongst');
+  const [gstRate, setGstRate] = useState<number>(18);
+  const [shopGstin, setShopGstin] = useState<string>('');
+  const [customerGstin, setCustomerGstin] = useState<string>('');
+  const [isTaxInclusive, setIsTaxInclusive] = useState<boolean>(true);
 
-  // Stock selection state
+  // Stock selection & multi-item sale state
   const [isStockPickerOpen, setIsStockPickerOpen] = useState(false);
   const [selectedStockItem, setSelectedStockItem] = useState<StockItem | null>(null);
+  const [saleItems, setSaleItems] = useState<SaleItem[]>([]);
+  const [itemPriceStr, setItemPriceStr] = useState('');
   const [deductStock, setDeductStock] = useState(true);
+  const [showStockSuggestions, setShowStockSuggestions] = useState(false);
+  const itemInputRef = useRef<HTMLInputElement>(null);
+  const suggestionsContainerRef = useRef<HTMLDivElement>(null);
+
+  // Exchange / Trade-in state
+  const [isExchange, setIsExchange] = useState(false);
+  const [exchangeItemPriceStr, setExchangeItemPriceStr] = useState('');
+  const [exchangeTradeInModel, setExchangeTradeInModel] = useState('');
+  const [exchangeTradeInValueStr, setExchangeTradeInValueStr] = useState('');
 
   // Live query for active stock items
   const stockItems = useLiveQuery(
@@ -88,6 +112,35 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
     },
     []
   ) ?? [];
+
+  // Filtered product/service auto-suggestions
+  const stockSuggestions = useMemo(() => {
+    const q = item.trim().toLowerCase();
+    if (!q || q.length < 1) return [];
+    return stockItems
+      .filter(
+        (si) =>
+          si.name.toLowerCase().includes(q) ||
+          (si.category && si.category.toLowerCase().includes(q))
+      )
+      .slice(0, 6);
+  }, [item, stockItems]);
+
+  // Click outside to dismiss auto-suggestions dropdown
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (
+        suggestionsContainerRef.current &&
+        !suggestionsContainerRef.current.contains(e.target as Node)
+      ) {
+        setShowStockSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+    };
+  }, []);
 
   // Wholesale clients state & query
   const [selectedClientCloudId, setSelectedClientCloudId] = useState<string | undefined>(undefined);
@@ -117,15 +170,42 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
         setNote(entryToEdit.note || '');
         setDate(entryToEdit.date);
         setSelectedStockItem(null);
+        setSaleItems([]);
+        setItemPriceStr('');
         setDeductStock(false);
+
+        // Exchange state initialization
+        if (entryToEdit.isExchange) {
+          setIsExchange(true);
+          setExchangeItemPriceStr(entryToEdit.exchangeItemPrice ? entryToEdit.exchangeItemPrice.toString() : '');
+          setExchangeTradeInModel(entryToEdit.exchangeTradeInModel || '');
+          setExchangeTradeInValueStr(entryToEdit.exchangeTradeInValue ? entryToEdit.exchangeTradeInValue.toString() : '');
+        } else {
+          setIsExchange(false);
+          setExchangeItemPriceStr('');
+          setExchangeTradeInModel('');
+          setExchangeTradeInValueStr('');
+        }
 
         // Check if a bill already exists for this entry
         if (entryToEdit.id && entryToEdit.type === 'in') {
           getBillForEntry(entryToEdit.id)
-            .then((b) => setActiveBill(b || null))
+            .then((b) => {
+              setActiveBill(b || null);
+              if (b?.isGst) {
+                setBillType('gst');
+                if (b.gstRate) setGstRate(b.gstRate);
+                if (b.shopGstin) setShopGstin(b.shopGstin);
+                if (b.customerGstin) setCustomerGstin(b.customerGstin);
+                if (b.isTaxInclusive !== undefined) setIsTaxInclusive(b.isTaxInclusive);
+              } else {
+                setBillType('nongst');
+              }
+            })
             .catch(() => setActiveBill(null));
         } else {
           setActiveBill(null);
+          setBillType('nongst');
         }
 
         // Check if a client transaction is linked
@@ -153,15 +233,30 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
         setNote('');
         setDate(defaultDate || getLocalDateString());
         setSelectedStockItem(null);
+        setSaleItems([]);
+        setItemPriceStr('');
         setDeductStock(true);
         setActiveBill(null);
+        setBillType('nongst');
+        setGstRate(18);
+        setCustomerGstin('');
+        setIsTaxInclusive(true);
+        setIsExchange(false);
+        setExchangeItemPriceStr('');
+        setExchangeTradeInModel('');
+        setExchangeTradeInValueStr('');
       }
       setShowClientDropdown(false);
       setShowBillPreview(false);
+      setShowBillConfig(false);
       setIsGeneratingBill(false);
       setError(null);
       isSubmittingRef.current = false;
       setIsSubmitting(false);
+
+      if (settings?.shopGstin && !shopGstin) {
+        setShopGstin(settings.shopGstin);
+      }
 
       // Auto-focus amount field
       const timer = setTimeout(() => {
@@ -171,44 +266,207 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
     }
   }, [isOpen, entryToEdit, defaultDate]);
 
-  const handleGenerateBill = async () => {
-    if (!entryToEdit || !entryToEdit.id || isGeneratingBill) return;
+  useEffect(() => {
+    if (settings?.shopGstin && !shopGstin) {
+      setShopGstin(settings.shopGstin);
+    }
+  }, [settings?.shopGstin]);
+
+  const configSubtotal = useMemo(() => {
+    if (saleItems.length > 0) {
+      return saleItems.reduce((sum, it) => sum + it.price, 0);
+    }
+    const sanitized = amountStr.replace(/,/g, '').trim();
+    return parseFloat(sanitized) || 0;
+  }, [saleItems, amountStr]);
+
+  const configTotals = useMemo(() => {
+    const dummyItems = [{ name: 'item', qty: 1, price: configSubtotal }];
+    return computeBillTotals(dummyItems, 0, billType === 'gst', gstRate, isTaxInclusive);
+  }, [configSubtotal, billType, gstRate, isTaxInclusive]);
+
+  const handleGenerateBillClick = () => {
+    if (activeBill) {
+      setShowBillPreview(true);
+      return;
+    }
+
+    const sanitizedAmountStr = amountStr.replace(/,/g, '').trim();
+    const parsedAmount = parseFloat(sanitizedAmountStr);
+    if ((isNaN(parsedAmount) || parsedAmount <= 0) && saleItems.length === 0) {
+      setError('Enter an amount or add items to generate a bill');
+      amountInputRef.current?.focus();
+      return;
+    }
+
+    setError(null);
+    setShowBillConfig(true);
+  };
+
+  const handleGenerateBillConfirm = async () => {
+    if (isSubmittingRef.current || isGeneratingBill) return;
+    isSubmittingRef.current = true;
     setIsGeneratingBill(true);
+
+    const sanitizedAmountStr = amountStr.replace(/,/g, '').trim();
+    let parsedAmount = parseFloat(sanitizedAmountStr);
+    if (saleItems.length > 0) {
+      parsedAmount = saleItems.reduce((sum, it) => sum + it.price, 0);
+    }
+
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      setError('Please enter a valid amount');
+      isSubmittingRef.current = false;
+      setIsGeneratingBill(false);
+      return;
+    }
+
+    const creditError = validateCreditEntry(type, paymentMethod, customerName);
+    if (creditError) {
+      setError(creditError);
+      isSubmittingRef.current = false;
+      setIsGeneratingBill(false);
+      return;
+    }
+
+    if (billType === 'gst' && shopGstin.trim() && shopGstin.trim().length < 15) {
+      setError('Please enter a valid 15-character GSTIN');
+      isSubmittingRef.current = false;
+      setIsGeneratingBill(false);
+      return;
+    }
+
     try {
-      // If a bill already exists, just show its preview
-      if (activeBill) {
-        setShowBillPreview(true);
-        setIsGeneratingBill(false);
-        return;
+      const itemsForBill: BillItem[] =
+        saleItems.length > 0
+          ? saleItems.map((si) => ({
+              name: si.name,
+              qty: 1,
+              price: si.price,
+              stockId: si.stockId,
+            }))
+          : [
+              {
+                name: item.trim() || 'General Sale',
+                qty: 1,
+                price: parsedAmount,
+                stockId: selectedStockItem?.id,
+              },
+            ];
+
+      const isGst = billType === 'gst';
+      let targetEntry = entryToEdit;
+
+      // If entry not saved yet, save it first to Day Book
+      if (!targetEntry || !targetEntry.id) {
+        const finalItem =
+          saleItems.length > 0
+            ? saleItems.map((i) => i.name).join(', ')
+            : (item.trim() || undefined);
+
+        const parsedExchangeItemPrice = parseFloat(exchangeItemPriceStr.replace(/,/g, ''));
+        const parsedExchangeTradeInValue = parseFloat(exchangeTradeInValueStr.replace(/,/g, ''));
+
+        let finalNote = note.trim();
+        if (type === 'in' && isExchange && !finalNote) {
+          const parts: string[] = [];
+          if (exchangeTradeInModel.trim()) parts.push(exchangeTradeInModel.trim());
+          if (!isNaN(parsedExchangeTradeInValue) && parsedExchangeTradeInValue > 0) {
+            parts.push(`₹${parsedExchangeTradeInValue.toLocaleString('en-IN')} trade-in`);
+          }
+          if (!isNaN(parsedExchangeItemPrice) && parsedExchangeItemPrice > 0) {
+            parts.push(`off ₹${parsedExchangeItemPrice.toLocaleString('en-IN')}`);
+          }
+          if (parts.length > 0) {
+            finalNote = `Exchange: ${parts.join(' ')}`;
+          }
+        }
+
+        const savedId = (await db.entries.add({
+          type,
+          amount: parsedAmount,
+          item: finalItem,
+          customerName: customerName.trim() || undefined,
+          note: finalNote || undefined,
+          paymentMethod: type === 'in' ? paymentMethod : undefined,
+          date,
+          createdAt: Date.now(),
+          isExchange: type === 'in' ? isExchange : false,
+          exchangeItemPrice: type === 'in' && isExchange && !isNaN(parsedExchangeItemPrice) ? parsedExchangeItemPrice : undefined,
+          exchangeTradeInModel: type === 'in' && isExchange && exchangeTradeInModel.trim() ? exchangeTradeInModel.trim() : undefined,
+          exchangeTradeInValue: type === 'in' && isExchange && !isNaN(parsedExchangeTradeInValue) ? parsedExchangeTradeInValue : undefined,
+        })) as number;
+
+        if (type === 'in' && deductStock) {
+          if (saleItems.length > 0) {
+            for (const sItem of saleItems) {
+              if (sItem.stockId && sItem.category === 'product') {
+                await adjustStockQuantity(sItem.stockId, -1);
+              }
+            }
+          } else if (
+            selectedStockItem &&
+            selectedStockItem.category === 'product' &&
+            selectedStockItem.id
+          ) {
+            await adjustStockQuantity(selectedStockItem.id, -1);
+          }
+        }
+
+        targetEntry = {
+          id: savedId,
+          type,
+          amount: parsedAmount,
+          item: finalItem,
+          customerName: customerName.trim() || undefined,
+          note: finalNote || undefined,
+          paymentMethod: type === 'in' ? paymentMethod : undefined,
+          date,
+          createdAt: Date.now(),
+        };
+
+        if (
+          settings?.wholesaleMode ||
+          selectedClientCloudId ||
+          paymentMethod === 'credit'
+        ) {
+          await syncDayBookCreditEntry(selectedClientCloudId, targetEntry, undefined);
+        }
       }
 
-      // Generate new bill for current entry
-      const bill = await createBillForEntry(entryToEdit);
+      const bill = await createBillForEntry(targetEntry, {
+        items: itemsForBill,
+        isGst,
+        gstRate,
+        shopGstin: shopGstin.trim() || undefined,
+        customerGstin: customerGstin.trim() || undefined,
+        isTaxInclusive,
+        customerName: customerName.trim() || undefined,
+        paymentMethod,
+      });
+
       setActiveBill(bill);
+      setShowBillConfig(false);
       setShowBillPreview(true);
-      // Update note in current form to reflect invoice number
-      if (entryToEdit.note) {
-        setNote(`${entryToEdit.note} · ${bill.invoiceNo}`);
-      } else {
-        setNote(bill.invoiceNo);
-      }
       onSaved(date);
     } catch (err) {
       console.error('Failed to generate bill:', err);
       setError('Error generating bill');
     } finally {
+      isSubmittingRef.current = false;
       setIsGeneratingBill(false);
     }
   };
 
   const handleShareBill = async () => {
     if (!activeBill) return;
-    const text = buildBillText(activeBill, effectiveShopName, effectiveShopAddress);
-    if (activeBill.customerPhone) {
-      window.open(buildWhatsAppUrl(text, activeBill.customerPhone), '_blank');
-    } else {
-      await shareSummary(text, `Bill ${activeBill.invoiceNo}`);
-    }
+    await shareBillPDF({
+      bill: activeBill,
+      shopName: effectiveShopName,
+      shopAddress: effectiveShopAddress,
+      shopPhone: settings?.shopPhone,
+      shopLogo: settings?.shopLogo,
+    });
   };
 
   const handleDownloadPDF = () => {
@@ -232,13 +490,78 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
   };
 
   const handleSelectStockItem = (stockItem: StockItem) => {
-    setSelectedStockItem(stockItem);
-    setItem(stockItem.name);
-    setAmountStr(stockItem.sellingPrice.toString());
-    if (stockItem.notes && !note) {
-      setNote(stockItem.notes);
+    if (type === 'in') {
+      const newItem: SaleItem = {
+        id: `${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        name: stockItem.name,
+        price: stockItem.sellingPrice || 0,
+        stockId: stockItem.id,
+        category: stockItem.category,
+      };
+      const updated = [...saleItems, newItem];
+      setSaleItems(updated);
+      setSelectedStockItem(stockItem);
+      const total = updated.reduce((sum, it) => sum + it.price, 0);
+      setAmountStr(total > 0 ? total.toString() : '');
+      if (stockItem.notes && !note) {
+        setNote(stockItem.notes);
+      }
+      setItem('');
+      setItemPriceStr('');
+      setShowStockSuggestions(false);
+      setTimeout(() => itemInputRef.current?.focus(), 50);
+    } else {
+      setSelectedStockItem(stockItem);
+      setItem(stockItem.name);
+      setAmountStr(stockItem.sellingPrice.toString());
+      if (stockItem.notes && !note) {
+        setNote(stockItem.notes);
+      }
+      setShowStockSuggestions(false);
     }
     if (error) setError(null);
+  };
+
+  const handleAddCustomItem = () => {
+    const trimmedName = item.trim();
+    if (!trimmedName) return;
+
+    let parsedPrice = parseFloat(itemPriceStr.replace(/,/g, ''));
+    if (isNaN(parsedPrice) || parsedPrice < 0) {
+      if (saleItems.length === 0 && amountStr.trim()) {
+        const topAmount = parseFloat(amountStr.replace(/,/g, ''));
+        parsedPrice = !isNaN(topAmount) && topAmount > 0 ? topAmount : 0;
+      } else {
+        parsedPrice = 0;
+      }
+    }
+
+    const newItem: SaleItem = {
+      id: `${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      name: trimmedName,
+      price: parsedPrice,
+    };
+
+    const updated = [...saleItems, newItem];
+    setSaleItems(updated);
+    const total = updated.reduce((sum, it) => sum + it.price, 0);
+    setAmountStr(total > 0 ? total.toString() : amountStr);
+    setItem('');
+    setItemPriceStr('');
+    setShowStockSuggestions(false);
+    setTimeout(() => itemInputRef.current?.focus(), 50);
+    if (error) setError(null);
+  };
+
+  const handleRemoveSaleItem = (id: string) => {
+    const updated = saleItems.filter((i) => i.id !== id);
+    setSaleItems(updated);
+    if (updated.length > 0) {
+      const total = updated.reduce((sum, it) => sum + it.price, 0);
+      setAmountStr(total.toString());
+    } else {
+      setSelectedStockItem(null);
+    }
   };
 
   const handleSave = async (e?: React.FormEvent) => {
@@ -274,39 +597,76 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
       return;
     }
 
+    const finalItem =
+      saleItems.length > 0
+        ? saleItems.map((i) => i.name).join(', ')
+        : (item.trim() || undefined);
+
+    const parsedExchangeItemPrice = parseFloat(exchangeItemPriceStr.replace(/,/g, ''));
+    const parsedExchangeTradeInValue = parseFloat(exchangeTradeInValueStr.replace(/,/g, ''));
+
+    let finalNote = note.trim();
+    if (type === 'in' && isExchange && !finalNote) {
+      const parts: string[] = [];
+      if (exchangeTradeInModel.trim()) parts.push(exchangeTradeInModel.trim());
+      if (!isNaN(parsedExchangeTradeInValue) && parsedExchangeTradeInValue > 0) {
+        parts.push(`₹${parsedExchangeTradeInValue.toLocaleString('en-IN')} trade-in`);
+      }
+      if (!isNaN(parsedExchangeItemPrice) && parsedExchangeItemPrice > 0) {
+        parts.push(`off ₹${parsedExchangeItemPrice.toLocaleString('en-IN')}`);
+      }
+      if (parts.length > 0) {
+        finalNote = `Exchange: ${parts.join(' ')}`;
+      }
+    }
+
     try {
       let savedId = entryToEdit?.id;
       if (entryToEdit && entryToEdit.id) {
         await db.entries.update(entryToEdit.id, {
           type,
           amount: parsedAmount,
-          item: item.trim() || undefined,
+          item: finalItem,
           customerName: customerName.trim() || undefined,
-          note: note.trim() || undefined,
+          note: finalNote || undefined,
           paymentMethod: type === 'in' ? paymentMethod : undefined,
           date,
+          isExchange: type === 'in' ? isExchange : false,
+          exchangeItemPrice: type === 'in' && isExchange && !isNaN(parsedExchangeItemPrice) ? parsedExchangeItemPrice : undefined,
+          exchangeTradeInModel: type === 'in' && isExchange && exchangeTradeInModel.trim() ? exchangeTradeInModel.trim() : undefined,
+          exchangeTradeInValue: type === 'in' && isExchange && !isNaN(parsedExchangeTradeInValue) ? parsedExchangeTradeInValue : undefined,
         });
       } else {
         savedId = (await db.entries.add({
           type,
           amount: parsedAmount,
-          item: item.trim() || undefined,
+          item: finalItem,
           customerName: customerName.trim() || undefined,
-          note: note.trim() || undefined,
+          note: finalNote || undefined,
           paymentMethod: type === 'in' ? paymentMethod : undefined,
           date,
           createdAt: Date.now(),
+          isExchange: type === 'in' ? isExchange : false,
+          exchangeItemPrice: type === 'in' && isExchange && !isNaN(parsedExchangeItemPrice) ? parsedExchangeItemPrice : undefined,
+          exchangeTradeInModel: type === 'in' && isExchange && exchangeTradeInModel.trim() ? exchangeTradeInModel.trim() : undefined,
+          exchangeTradeInValue: type === 'in' && isExchange && !isNaN(parsedExchangeTradeInValue) ? parsedExchangeTradeInValue : undefined,
         })) as number;
 
         // Deduct inventory quantity if product and option checked
-        if (
-          type === 'in' &&
-          selectedStockItem &&
-          selectedStockItem.category === 'product' &&
-          deductStock &&
-          selectedStockItem.id
-        ) {
-          await adjustStockQuantity(selectedStockItem.id, -1);
+        if (type === 'in' && deductStock) {
+          if (saleItems.length > 0) {
+            for (const sItem of saleItems) {
+              if (sItem.stockId && sItem.category === 'product') {
+                await adjustStockQuantity(sItem.stockId, -1);
+              }
+            }
+          } else if (
+            selectedStockItem &&
+            selectedStockItem.category === 'product' &&
+            selectedStockItem.id
+          ) {
+            await adjustStockQuantity(selectedStockItem.id, -1);
+          }
         }
       }
 
@@ -345,12 +705,17 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
     <BottomSheet
       isOpen={isOpen}
       onClose={() => {
+        setShowBillConfig(false);
         setShowBillPreview(false);
         onClose();
       }}
       title={
         showBillPreview && activeBill
-          ? `Bill ${activeBill.invoiceNo}`
+          ? activeBill.isGst
+            ? `Tax Invoice ${activeBill.invoiceNo}`
+            : `Bill ${activeBill.invoiceNo}`
+          : showBillConfig
+          ? 'Generate Bill'
           : entryToEdit
           ? t('edit_entry_title', language)
           : t('new_entry_title', language)
@@ -377,6 +742,7 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
             <button
               type="button"
               onClick={() => {
+                setShowBillConfig(false);
                 setShowBillPreview(false);
                 onClose();
               }}
@@ -385,13 +751,38 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
               Done
             </button>
           </div>
+        ) : showBillConfig ? (
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setShowBillConfig(false)}
+              className="px-4 h-12 rounded-[12px] font-semibold text-[15px] bg-[#E5E5EA] text-black active:opacity-85 transition-all"
+            >
+              Back
+            </button>
+            <button
+              type="button"
+              onClick={handleGenerateBillConfirm}
+              disabled={isSubmitting || isGeneratingBill}
+              className={`flex-1 h-12 rounded-[12px] font-semibold text-[15px] text-white bg-emerald-600 hover:bg-emerald-700 active:opacity-85 shadow-md shadow-emerald-600/20 transition-all flex items-center justify-center space-x-2 ${
+                isSubmitting || isGeneratingBill ? 'opacity-70 cursor-not-allowed' : ''
+              }`}
+            >
+              <Receipt className="w-4 h-4" />
+              <span>
+                {isGeneratingBill
+                  ? 'Generating Bill...'
+                  : `Confirm & Generate Bill · ${formatINR(configTotals.total)}`}
+              </span>
+            </button>
+          </div>
         ) : (
           <div className="space-y-2">
-            {/* Generate Bill / View Bill Button for In Entries */}
-            {entryToEdit && type === 'in' && (
+            {/* Generate Bill / View Bill Button for In Entries (Both New Entry & Edit) */}
+            {type === 'in' && (
               <button
                 type="button"
-                onClick={handleGenerateBill}
+                onClick={handleGenerateBillClick}
                 disabled={isReadOnly || isGeneratingBill}
                 className="w-full h-11 rounded-[12px] font-semibold text-[15px] bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-800 border border-emerald-300 hover:from-emerald-100 hover:to-teal-100 active:scale-98 transition-all flex items-center justify-center space-x-2"
               >
@@ -428,7 +819,9 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
       {showBillPreview && activeBill ? (
         <div className="space-y-3 pt-1 pb-2 animate-fade-in">
           <div className="bg-emerald-50 text-emerald-800 rounded-[10px] p-3 text-xs sm:text-sm font-medium border border-emerald-200/80 flex items-center justify-between">
-            <span>Bill generated & linked to this entry.</span>
+            <div className="flex items-center space-x-1.5">
+              <span>{activeBill.isGst ? 'GST Tax Invoice' : 'Non-GST Bill'} generated.</span>
+            </div>
             <span className="font-bold text-emerald-900">{activeBill.invoiceNo}</span>
           </div>
           <pre className="whitespace-pre-wrap text-[13px] sm:text-[14px] text-black bg-[#F2F2F7] rounded-[12px] p-3.5 font-sans border border-black/[0.04] leading-relaxed">
@@ -443,6 +836,122 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
               ← Back to Entry Details
             </button>
           </div>
+        </div>
+      ) : showBillConfig ? (
+        <div className="space-y-4 pt-1 pb-2 animate-fade-in">
+          {/* Invoice Type Switcher */}
+          <div>
+            <span className="text-xs font-semibold text-[#8E8E93] uppercase tracking-wider block mb-1.5">
+              Invoice Type
+            </span>
+            <SegmentedControl<'nongst' | 'gst'>
+              value={billType}
+              onChange={(v) => setBillType(v)}
+              options={[
+                { value: 'nongst', label: 'Non-GST (Regular)' },
+                { value: 'gst', label: 'GST (Tax Invoice)' },
+              ]}
+            />
+          </div>
+
+          {billType === 'nongst' ? (
+            <div className="bg-gray-50 rounded-[12px] p-3.5 border border-gray-200/80 space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-[#8E8E93]">Billing Amount</span>
+                <span className="text-base font-bold text-black tabular-nums">
+                  {formatINR(configTotals.total)}
+                </span>
+              </div>
+              <p className="text-xs text-[#8E8E93]">
+                Creates a standard retail invoice / cash memo with invoice number without tax breakdown.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3.5">
+              {/* GST Rate Selection */}
+              <div>
+                <span className="text-xs font-semibold text-[#8E8E93] uppercase tracking-wider block mb-1.5">
+                  GST Rate
+                </span>
+                <SegmentedControl<string>
+                  value={String(gstRate)}
+                  onChange={(v) => setGstRate(Number(v))}
+                  size="sm"
+                  options={[
+                    { value: '5', label: '5%' },
+                    { value: '12', label: '12%' },
+                    { value: '18', label: '18%' },
+                    { value: '28', label: '28%' },
+                  ]}
+                />
+              </div>
+
+              {/* Tax Mode: Inclusive vs Exclusive */}
+              <label className="flex items-center space-x-2.5 cursor-pointer bg-gray-50 p-2.5 rounded-[10px] border border-gray-200/70">
+                <input
+                  type="checkbox"
+                  checked={isTaxInclusive}
+                  onChange={(e) => setIsTaxInclusive(e.target.checked)}
+                  className="rounded text-iosBlue focus:ring-iosBlue/40 w-4 h-4"
+                />
+                <span className="text-xs font-medium text-black">
+                  Amount already includes GST (Retail MRP)
+                </span>
+              </label>
+
+              {/* Shop GSTIN */}
+              <div>
+                <label className="text-xs font-semibold text-[#8E8E93] uppercase tracking-wider block mb-1">
+                  Shop GSTIN
+                </label>
+                <input
+                  type="text"
+                  maxLength={15}
+                  value={shopGstin}
+                  onChange={(e) => setShopGstin(e.target.value.toUpperCase())}
+                  placeholder="e.g. 27AAPFU0939L1ZV"
+                  className="w-full bg-[#F2F2F7] rounded-[10px] px-3.5 py-2.5 text-[14px] text-black font-mono tracking-wider focus:outline-none focus:ring-2 focus:ring-iosBlue/40 border border-black/[0.04]"
+                />
+              </div>
+
+              {/* Customer GSTIN (optional) */}
+              <div>
+                <label className="text-xs font-semibold text-[#8E8E93] uppercase tracking-wider block mb-1">
+                  Customer GSTIN (Optional)
+                </label>
+                <input
+                  type="text"
+                  maxLength={15}
+                  value={customerGstin}
+                  onChange={(e) => setCustomerGstin(e.target.value.toUpperCase())}
+                  placeholder="Customer GSTIN for B2B billing"
+                  className="w-full bg-[#F2F2F7] rounded-[10px] px-3.5 py-2.5 text-[14px] text-black font-mono tracking-wider focus:outline-none focus:ring-2 focus:ring-iosBlue/40 border border-black/[0.04]"
+                />
+              </div>
+
+              {/* Live Tax Calculation Card */}
+              <div className="bg-blue-50/70 border border-blue-200/70 rounded-[12px] p-3 text-xs space-y-1.5 text-blue-950">
+                <div className="flex justify-between">
+                  <span className="text-blue-800">Taxable Value:</span>
+                  <span className="font-semibold tabular-nums">{formatINR(configTotals.taxableAmount)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-blue-800">CGST ({gstRate / 2}%):</span>
+                  <span className="font-semibold tabular-nums">{formatINR(configTotals.cgstAmount)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-blue-800">SGST ({gstRate / 2}%):</span>
+                  <span className="font-semibold tabular-nums">{formatINR(configTotals.sgstAmount)}</span>
+                </div>
+                <div className="flex justify-between pt-1.5 border-t border-blue-200 font-bold text-sm text-black">
+                  <span>Total Invoice Amount:</span>
+                  <span className="tabular-nums text-iosBlue">{formatINR(configTotals.total)}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {error && <p className="text-xs text-iosRed font-medium">{error}</p>}
         </div>
       ) : (
       <form id="add-entry-form" onSubmit={(e) => { e.preventDefault(); handleSave(e); }} className="space-y-4 pt-1">
@@ -506,6 +1015,119 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
           </div>
         )}
 
+        {/* Exchange / Trade-in Toggle & Form (Only for IN) */}
+        {type === 'in' && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => {
+                  const nextVal = !isExchange;
+                  setIsExchange(nextVal);
+                  if (nextVal) {
+                    // Pre-fill item price with current amount if empty
+                    if (!exchangeItemPriceStr && amountStr) {
+                      setExchangeItemPriceStr(amountStr);
+                    }
+                  }
+                }}
+                className={`text-xs font-semibold px-2.5 py-1.5 rounded-[8px] transition-all flex items-center space-x-1.5 border active:scale-95 ${
+                  isExchange
+                    ? 'bg-teal-50 text-teal-800 border-teal-300 shadow-2xs'
+                    : 'bg-[#F2F2F7] text-gray-600 border-black/[0.06] hover:bg-gray-200/70'
+                }`}
+              >
+                <ArrowLeftRight className="w-3.5 h-3.5 text-teal-600" />
+                <span>{isExchange ? 'Exchange / Trade-in Active' : '⇄ Exchange / Trade-in'}</span>
+              </button>
+              {isExchange && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsExchange(false);
+                    setExchangeItemPriceStr('');
+                    setExchangeTradeInModel('');
+                    setExchangeTradeInValueStr('');
+                  }}
+                  className="text-[11px] text-gray-400 hover:text-iosRed font-medium"
+                >
+                  Cancel Exchange
+                </button>
+              )}
+            </div>
+
+            {isExchange && (
+              <div className="bg-teal-50/60 border border-teal-200/80 rounded-[12px] p-3 space-y-2.5 animate-fade-in">
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-teal-900 ml-0.5">
+                      Selling Item Price (₹)
+                    </label>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={exchangeItemPriceStr}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (/^[0-9,.]*$/.test(val)) {
+                          setExchangeItemPriceStr(val);
+                          const pItem = parseFloat(val.replace(/,/g, '')) || 0;
+                          const pTrade = parseFloat(exchangeTradeInValueStr.replace(/,/g, '')) || 0;
+                          const diff = Math.max(0, pItem - pTrade);
+                          setAmountStr(diff > 0 ? diff.toString() : '');
+                        }
+                      }}
+                      placeholder="e.g. 18000"
+                      className="w-full bg-white rounded-[8px] px-2.5 py-1.5 text-xs text-black font-semibold border border-teal-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-teal-900 ml-0.5">
+                      Old Phone Value (₹)
+                    </label>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={exchangeTradeInValueStr}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (/^[0-9,.]*$/.test(val)) {
+                          setExchangeTradeInValueStr(val);
+                          const pItem = parseFloat(exchangeItemPriceStr.replace(/,/g, '')) || 0;
+                          const pTrade = parseFloat(val.replace(/,/g, '')) || 0;
+                          const diff = Math.max(0, pItem - pTrade);
+                          setAmountStr(diff > 0 ? diff.toString() : '');
+                        }
+                      }}
+                      placeholder="e.g. 4000"
+                      className="w-full bg-white rounded-[8px] px-2.5 py-1.5 text-xs text-black font-semibold border border-teal-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-teal-900 ml-0.5">
+                    Old Phone / Device Received
+                  </label>
+                  <input
+                    type="text"
+                    value={exchangeTradeInModel}
+                    onChange={(e) => setExchangeTradeInModel(e.target.value)}
+                    placeholder="e.g. Redmi Note 9 Pro / Vivo Y20"
+                    className="w-full bg-white rounded-[8px] px-2.5 py-1.5 text-xs text-black border border-teal-200 focus:outline-none focus:ring-1 focus:ring-teal-500 placeholder:text-gray-400"
+                  />
+                </div>
+
+                {/* Live math helper summary */}
+                <div className="text-[11px] text-teal-800 font-medium bg-teal-100/60 rounded-[6px] px-2 py-1 flex items-center justify-between">
+                  <span>Customer pays (Cash in Drawer):</span>
+                  <span className="font-bold text-teal-950">₹{amountStr || '0'}</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* 4. Item / Service with Quick Stock Picker */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between ml-1">
@@ -526,7 +1148,9 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
           {stockItems.length > 0 && (
             <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar momentum-scroll overscroll-x-contain touch-pan-x text-xs">
               {stockItems.slice(0, 8).map((si) => {
-                const isSelected = selectedStockItem?.id === si.id;
+                const isSelected =
+                  selectedStockItem?.id === si.id ||
+                  saleItems.some((it) => it.stockId === si.id);
                 return (
                   <button
                     key={si.id}
@@ -538,7 +1162,6 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
                         : 'bg-white text-gray-700 border-gray-200/80 hover:border-iosBlue'
                     }`}
                   >
-
                     <span className="font-semibold">{si.name}</span>
                     <span className={isSelected ? 'text-blue-100' : 'text-gray-400'}>
                       (₹{si.sellingPrice})
@@ -566,15 +1189,211 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
               placeholder="Enter item or select spare part..."
               disabled={isReadOnly}
             />
+          ) : type === 'in' ? (
+            <div className="space-y-2">
+              <div className="flex gap-2 items-center">
+                <div className="relative flex-1">
+                  <input
+                    ref={itemInputRef}
+                    type="text"
+                    value={item}
+                    onChange={(e) => {
+                      setItem(e.target.value);
+                      setShowStockSuggestions(true);
+                      if (selectedStockItem && selectedStockItem.name !== e.target.value) {
+                        setSelectedStockItem(null);
+                      }
+                    }}
+                    onFocus={() => {
+                      if (item.trim().length >= 1) setShowStockSuggestions(true);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape') {
+                        setShowStockSuggestions(false);
+                      } else if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (
+                          showStockSuggestions &&
+                          stockSuggestions.length > 0 &&
+                          stockSuggestions[0].name.toLowerCase() === item.trim().toLowerCase()
+                        ) {
+                          handleSelectStockItem(stockSuggestions[0]);
+                        } else if (item.trim()) {
+                          handleAddCustomItem();
+                        }
+                      }
+                    }}
+                    placeholder={t('item_placeholder', language)}
+                    disabled={isReadOnly}
+                    className="w-full bg-[#F2F2F7] rounded-[10px] px-3.5 py-2.5 text-[15px] text-black focus:outline-none focus:ring-2 focus:ring-iosBlue/40 border border-black/[0.04]"
+                  />
+                  {item && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setItem('');
+                        setSelectedStockItem(null);
+                        setShowStockSuggestions(false);
+                      }}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 rounded-full"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+
+                  {/* Stock search auto-suggestions dropdown */}
+                  {showStockSuggestions && stockSuggestions.length > 0 && (
+                    <div
+                      ref={suggestionsContainerRef}
+                      className="absolute left-0 right-0 top-full mt-1 bg-white rounded-[12px] shadow-xl border border-black/10 z-30 max-h-56 overflow-y-auto divide-y divide-black/[0.04] animate-fade-in"
+                    >
+                      <div className="px-3 py-1.5 bg-slate-50 text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
+                        <span>Matching Products &amp; Services</span>
+                        <span>Tap to add</span>
+                      </div>
+                      {stockSuggestions.map((si) => (
+                        <button
+                          key={si.id}
+                          type="button"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            handleSelectStockItem(si);
+                          }}
+                          className="w-full px-3 py-2 text-left hover:bg-slate-50 active:bg-slate-100 flex items-center justify-between transition-colors text-xs"
+                        >
+                          <div className="flex items-center space-x-2 min-w-0 pr-2">
+                            <div className="w-6 h-6 rounded-md bg-slate-100 flex items-center justify-center shrink-0 text-slate-600">
+                              {si.category === 'service' ? (
+                                <Wrench className="w-3.5 h-3.5 text-amber-600" />
+                              ) : (
+                                <Package className="w-3.5 h-3.5 text-iosBlue" />
+                              )}
+                            </div>
+                            <div className="truncate">
+                              <p className="font-semibold text-black truncate">{si.name}</p>
+                              <p className="text-[10px] text-gray-500">
+                                {si.category === 'service'
+                                  ? 'Service'
+                                  : typeof si.quantity === 'number'
+                                  ? `${si.quantity} in stock`
+                                  : 'Product'}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <span className="font-bold text-black text-sm">₹{si.sellingPrice}</span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Optional price field and Add button for adding to multi-item sale */}
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <div className="w-20 relative">
+                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 select-none font-semibold">
+                      ₹
+                    </span>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={itemPriceStr}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (/^[0-9,.]*$/.test(val)) setItemPriceStr(val);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          if (item.trim()) handleAddCustomItem();
+                        }
+                      }}
+                      placeholder="Price"
+                      disabled={isReadOnly}
+                      className="w-full bg-[#F2F2F7] rounded-[10px] pl-5 pr-2 py-2.5 text-[14px] text-black font-semibold text-right focus:outline-none focus:ring-2 focus:ring-iosBlue/40 border border-black/[0.04] placeholder:text-gray-400 placeholder:font-normal"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAddCustomItem}
+                    disabled={isReadOnly || !item.trim()}
+                    className="h-10 px-3 rounded-[10px] bg-slate-900 text-white text-xs font-semibold hover:bg-black active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center space-x-1 shrink-0"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Multi-Item Sale List */}
+              {saleItems.length > 0 && (
+                <div className="bg-[#F2F2F7]/70 border border-black/[0.06] rounded-[12px] p-2.5 space-y-2 animate-fade-in">
+                  <div className="flex items-center justify-between text-[11px] font-bold text-[#8E8E93] uppercase tracking-wider px-1">
+                    <span>Products &amp; Services ({saleItems.length})</span>
+                    <span className="text-black font-extrabold">
+                      Total: ₹{saleItems.reduce((acc, i) => acc + i.price, 0).toLocaleString('en-IN')}
+                    </span>
+                  </div>
+                  <div className="divide-y divide-black/[0.05] bg-white rounded-[10px] overflow-hidden border border-black/[0.04]">
+                    {saleItems.map((si, idx) => (
+                      <div key={si.id} className="px-3 py-2 flex items-center justify-between text-xs">
+                        <div className="flex items-center space-x-2 min-w-0 pr-2">
+                          <span className="w-4 h-4 rounded-full bg-slate-100 text-slate-500 text-[10px] font-bold flex items-center justify-center shrink-0">
+                            {idx + 1}
+                          </span>
+                          <span className="font-semibold text-black truncate">{si.name}</span>
+                          {si.stockId && (
+                            <span className="text-[10px] font-semibold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200/80 shrink-0">
+                              Stock
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center space-x-2 shrink-0">
+                          <span className="font-bold text-black">₹{si.price.toLocaleString('en-IN')}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveSaleItem(si.id)}
+                            className="p-1 text-gray-400 hover:text-iosRed rounded-full active:scale-90 transition-colors"
+                            title="Remove item"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           ) : (
             <div className="relative">
               <input
+                ref={itemInputRef}
                 type="text"
                 value={item}
                 onChange={(e) => {
                   setItem(e.target.value);
+                  setShowStockSuggestions(true);
                   if (selectedStockItem && selectedStockItem.name !== e.target.value) {
                     setSelectedStockItem(null);
+                  }
+                }}
+                onFocus={() => {
+                  if (item.trim().length >= 1) setShowStockSuggestions(true);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') {
+                    setShowStockSuggestions(false);
+                  } else if (e.key === 'Enter') {
+                    if (
+                      showStockSuggestions &&
+                      stockSuggestions.length > 0 &&
+                      stockSuggestions[0].name.toLowerCase() === item.trim().toLowerCase()
+                    ) {
+                      e.preventDefault();
+                      handleSelectStockItem(stockSuggestions[0]);
+                    }
                   }
                 }}
                 placeholder={t('item_placeholder', language)}
@@ -587,17 +1406,87 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
                   onClick={() => {
                     setItem('');
                     setSelectedStockItem(null);
+                    setShowStockSuggestions(false);
                   }}
                   className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 rounded-full"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
               )}
+
+              {/* Stock search auto-suggestions dropdown for type === 'out' */}
+              {showStockSuggestions && stockSuggestions.length > 0 && (
+                <div
+                  ref={suggestionsContainerRef}
+                  className="absolute left-0 right-0 top-full mt-1 bg-white rounded-[12px] shadow-xl border border-black/10 z-30 max-h-56 overflow-y-auto divide-y divide-black/[0.04] animate-fade-in"
+                >
+                  <div className="px-3 py-1.5 bg-slate-50 text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
+                    <span>Matching Products &amp; Services</span>
+                    <span>Tap to select</span>
+                  </div>
+                  {stockSuggestions.map((si) => (
+                    <button
+                      key={si.id}
+                      type="button"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        handleSelectStockItem(si);
+                      }}
+                      className="w-full px-3 py-2 text-left hover:bg-slate-50 active:bg-slate-100 flex items-center justify-between transition-colors text-xs"
+                    >
+                      <div className="flex items-center space-x-2 min-w-0 pr-2">
+                        <div className="w-6 h-6 rounded-md bg-slate-100 flex items-center justify-center shrink-0 text-slate-600">
+                          {si.category === 'service' ? (
+                            <Wrench className="w-3.5 h-3.5 text-amber-600" />
+                          ) : (
+                            <Package className="w-3.5 h-3.5 text-iosBlue" />
+                          )}
+                        </div>
+                        <div className="truncate">
+                          <p className="font-semibold text-black truncate">{si.name}</p>
+                          <p className="text-[10px] text-gray-500">
+                            {si.category === 'service'
+                              ? 'Service'
+                              : typeof si.quantity === 'number'
+                              ? `${si.quantity} in stock`
+                              : 'Product'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <span className="font-bold text-black text-sm">₹{si.sellingPrice}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
           {/* Selected Stock Item details & Stock deduction toggle */}
-          {selectedStockItem && (
+          {type === 'in' && (
+            saleItems.some((si) => si.stockId && si.category === 'product') ||
+            (selectedStockItem && selectedStockItem.category === 'product' && typeof selectedStockItem.quantity === 'number')
+          ) && (
+            <div className="bg-blue-50/80 border border-blue-200 rounded-[10px] p-2.5 flex items-center justify-between text-xs animate-fade-in">
+              <div className="flex items-center space-x-2 text-blue-900 min-w-0 pr-1">
+                <Check className="w-4 h-4 text-iosBlue shrink-0" />
+                <span className="font-semibold truncate">
+                  Auto-deduct inventory quantities for stock items
+                </span>
+              </div>
+              <label className="flex items-center space-x-1.5 text-[11px] text-gray-700 cursor-pointer font-medium shrink-0">
+                <input
+                  type="checkbox"
+                  checked={deductStock}
+                  onChange={(e) => setDeductStock(e.target.checked)}
+                  className="rounded text-iosBlue focus:ring-iosBlue"
+                />
+                <span>Deduct</span>
+              </label>
+            </div>
+          )}
+          {type !== 'in' && selectedStockItem && (
             <div className="bg-blue-50/80 border border-blue-200 rounded-[10px] p-2.5 flex items-center justify-between text-xs animate-fade-in">
               <div className="flex items-center space-x-2 text-blue-900 min-w-0 pr-1">
                 <Check className="w-4 h-4 text-iosBlue shrink-0" />
@@ -609,24 +1498,7 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
                     (₹{selectedStockItem.sellingPrice})
                   </span>
                 </div>
-                {selectedStockItem.category === 'product' && typeof selectedStockItem.quantity === 'number' && (
-                  <span className="text-[10px] font-semibold text-blue-700 bg-white px-1.5 py-0.5 rounded border border-blue-200 shrink-0">
-                    {selectedStockItem.quantity} left
-                  </span>
-                )}
               </div>
-
-              {type === 'in' && selectedStockItem.category === 'product' && typeof selectedStockItem.quantity === 'number' && (
-                <label className="flex items-center space-x-1.5 text-[11px] text-gray-700 cursor-pointer font-medium shrink-0">
-                  <input
-                    type="checkbox"
-                    checked={deductStock}
-                    onChange={(e) => setDeductStock(e.target.checked)}
-                    className="rounded text-iosBlue focus:ring-iosBlue"
-                  />
-                  <span>Deduct 1</span>
-                </label>
-              )}
             </div>
           )}
         </div>

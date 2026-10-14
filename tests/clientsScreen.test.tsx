@@ -24,8 +24,8 @@ describe('ClientsScreen UI & Modals', () => {
     const html = renderToString(<ClientsScreen language="en" shopName="Test Spares" />);
     expect(html).toContain('Total Credit Due');
     expect(html).toContain('Active Clients');
-    expect(html).toContain('Search client shop, technician, or phone...');
-    expect(html).toContain('+ Add Client');
+    expect(html).toContain('Add Client');
+    expect(html).not.toContain('+ Add Client');
     expect(html.toLowerCase()).not.toContain('udhar');
     expect(html.toLowerCase()).not.toContain('khata');
   });

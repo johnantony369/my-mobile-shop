@@ -13,3 +13,9 @@
 - **Dexie.js Mutations & SyncMetadata**:
   - Collection modifications must use callback-style mutations `(record) => { ... }`.
   - For models with `SyncMetadata`, always supply ISO 8601 strings (`new Date().toISOString()`) for `updatedAt`.
+- **Deduplication & Double-Submit Protection**:
+  - All modal/sheet submission forms (including `AddItemBottomSheet`, `AddEditSheet`, `AddEditStockSheet`, `AddEditJobSheet`, `DeliverySheet`, `BillSheet`) must enforce a synchronous `isSubmittingRef = useRef(false)` mutex (`if (isSubmittingRef.current || loading) return; isSubmittingRef.current = true;`) to prevent dual entries caused by rapid double-taps or duplicate enter/click submissions.
+  - In master spares & devices catalog (`masterSpares.ts`, `SparesScreen.tsx`), never blindly concatenate or unshift items into arrays without ID-based deduplication (`deduplicateById` / `filter((item) => item.id !== newId)`). All fetches combining private Firestore records with base catalog seeds must pass through `deduplicateById` so identical IDs can never visually or logically duplicate.
+- **Single Plus Icon / Clean Button Labels**:
+  - Action buttons that contain a plus icon (`<Plus ... />`) must NEVER include a literal `+` in their text label (e.g. use `<span>Add Item</span>`, `<span>Add Client</span>`, NEVER `<span>+ Add Item</span>` or `<span>+ Add Client</span>`). Buttons must never display duplicate pluses (`+ +`).
+

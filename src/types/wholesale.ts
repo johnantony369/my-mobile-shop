@@ -10,7 +10,8 @@ export type SpareCategory =
   | 'speaker'
   | 'glass_oca'
   | 'sim_tray'
-  | 'other';
+  | 'other'
+  | (string & {});
 
 export interface MasterDevice {
   id: string; // e.g. "xiaomi_redmi_note_10"
@@ -18,6 +19,7 @@ export interface MasterDevice {
   model: string;
   photoUrl?: string;
   releaseYear?: number;
+  modelCodes?: string[];
 }
 
 export interface MasterSparePart {

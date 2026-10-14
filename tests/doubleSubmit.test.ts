@@ -66,6 +66,16 @@ describe('Dual Entry & Double Submission Prevention', () => {
     expect(content).toContain('isConfirmingRef.current = true;');
   });
 
+  it('AddItemBottomSheet has synchronous isSubmittingRef mutex to prevent dual entries', () => {
+    const file = path.resolve(__dirname, '../src/components/wholesale/AddItemBottomSheet.tsx');
+    const content = fs.readFileSync(file, 'utf-8');
+
+    expect(content).toContain('isSubmittingRef = useRef(false)');
+    expect(content).toContain('if (isSubmittingRef.current || loading) return;');
+    expect(content).toContain('isSubmittingRef.current = true;');
+    expect(content).toContain('isSubmittingRef.current = false;');
+  });
+
   it('BookScreen and RepairsScreen use softDelete to prevent resurrection across refresh and sync', () => {
     const bookFile = path.resolve(__dirname, '../src/screens/BookScreen.tsx');
     const bookContent = fs.readFileSync(bookFile, 'utf-8');

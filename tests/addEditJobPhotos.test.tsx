@@ -175,6 +175,7 @@ function mountJobSheet(props: any) {
         return;
       }
       if (predicate(n)) results.push(n);
+
       if (n.props) {
         if (n.props.children) {
           const children = Array.isArray(n.props.children) ? n.props.children : [n.props.children];
@@ -199,8 +200,17 @@ function mountJobSheet(props: any) {
     changeInput: (placeholderMatcher: string, value: string) => {
       const inputs = findNodes((n) => n.type === 'input');
       const input = inputs.find((n) => n.props?.placeholder?.includes?.(placeholderMatcher));
-      if (!input) throw new Error(`Could not find input with placeholder matching ${placeholderMatcher}`);
-      input.props.onChange({ target: { value } });
+      if (input) {
+        input.props.onChange({ target: { value } });
+        return;
+      }
+      // Also check custom input components like DeviceAutoSuggest
+      const customInputs = findNodes((n) => n.props?.placeholder?.includes?.(placeholderMatcher) && typeof n.props?.onChange === 'function');
+      if (customInputs[0]) {
+        customInputs[0].props.onChange(value);
+        return;
+      }
+      throw new Error(`Could not find input with placeholder matching ${placeholderMatcher}`);
     },
     submit: async () => {
       const form = findNodes((n) => n.type === 'form')[0];
@@ -357,10 +367,10 @@ describe('Intake Photos in AddEditJobSheet', () => {
     });
 
     // Populate required inputs
-    mounted.changeInput('Rajesh', 'Deepak');
-    mounted.changeInput('9876543210', '9876543210');
-    mounted.changeInput('Redmi Note', 'OnePlus 9R');
-    mounted.changeInput('Screen broken', 'Broken AMOLED display');
+    mounted.changeInput('Customer Name', 'Deepak');
+    mounted.changeInput('Mobile Number', '9876543210');
+    mounted.changeInput('Device Name', 'OnePlus 9R');
+    mounted.changeInput('Fault / Issue', 'Broken AMOLED display');
 
     // Attach 2 intake photos
     const fileInput = mounted.findNode((n) => n.type === 'input' && n.props?.type === 'file');
@@ -495,10 +505,10 @@ describe('Intake Photos in AddEditJobSheet', () => {
     });
 
     // Fill fields
-    mounted.changeInput('Rajesh', 'Sujith');
-    mounted.changeInput('9876543210', '9876543210');
-    mounted.changeInput('Redmi Note', 'Realme 8');
-    mounted.changeInput('Screen broken', 'Speaker not working');
+    mounted.changeInput('Customer Name', 'Sujith');
+    mounted.changeInput('Mobile Number', '9876543210');
+    mounted.changeInput('Device Name', 'Realme 8');
+    mounted.changeInput('Fault / Issue', 'Speaker not working');
 
     // Add 3 intake photos
     const fileInput = mounted.findNode((n) => n.type === 'input' && n.props?.type === 'file');

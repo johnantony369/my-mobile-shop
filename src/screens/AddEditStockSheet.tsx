@@ -3,24 +3,29 @@ import { BottomSheet } from '../components/BottomSheet';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { StockItem, StockCategory, Language } from '../types';
 import { db } from '../db/db';
-import { Package, Wrench, Plus, Minus } from 'lucide-react';
+import { Package, Wrench, Plus, Minus, ScanBarcode, Trash2 } from 'lucide-react';
+import { BarcodeScannerModal } from '../components/BarcodeScannerModal';
 
 interface AddEditStockSheetProps {
   isOpen: boolean;
   onClose: () => void;
   onSaved: (item: StockItem) => void;
+  onDelete?: (item: StockItem) => void;
   itemToEdit: StockItem | null;
   language: Language;
   defaultCategory?: StockCategory;
+  initialSku?: string;
 }
 
 export const AddEditStockSheet: React.FC<AddEditStockSheetProps> = ({
   isOpen,
   onClose,
   onSaved,
+  onDelete,
   itemToEdit,
   language: _language,
   defaultCategory = 'product',
+  initialSku = '',
 }) => {
   const [category, setCategory] = useState<StockCategory>(defaultCategory);
   const [name, setName] = useState('');
@@ -29,10 +34,11 @@ export const AddEditStockSheet: React.FC<AddEditStockSheetProps> = ({
   const [quantity, setQuantity] = useState<number>(10);
   const [unit, setUnit] = useState('pcs');
   const [lowStockThreshold, setLowStockThreshold] = useState<number>(5);
-  const [sku, setSku] = useState('');
+  const [sku, setSku] = useState(initialSku);
   const [notes, setNotes] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
   const isSubmittingRef = useRef(false);
 
   const nameInputRef = useRef<HTMLInputElement>(null);
@@ -57,7 +63,7 @@ export const AddEditStockSheet: React.FC<AddEditStockSheetProps> = ({
         setQuantity(10);
         setUnit(defaultCategory === 'product' ? 'pcs' : 'service');
         setLowStockThreshold(5);
-        setSku('');
+        setSku(initialSku || '');
         setNotes('');
       }
       setError(null);
@@ -69,7 +75,7 @@ export const AddEditStockSheet: React.FC<AddEditStockSheetProps> = ({
       }, 100);
       return () => clearTimeout(timer);
     }
-  }, [isOpen, itemToEdit, defaultCategory]);
+  }, [isOpen, itemToEdit, defaultCategory, initialSku]);
 
 
   const handleSave = async (e?: React.FormEvent) => {
@@ -323,16 +329,36 @@ export const AddEditStockSheet: React.FC<AddEditStockSheetProps> = ({
               </div>
 
               <div className="space-y-1">
-                <label className="text-[11px] font-semibold text-[#8E8E93]">
-                  Barcode / SKU
-                </label>
-                <input
-                  type="text"
-                  value={sku}
-                  onChange={(e) => setSku(e.target.value)}
-                  placeholder="Optional code"
-                  className="w-full bg-[#F2F2F7] rounded-[8px] px-2.5 py-1.5 text-xs font-mono text-black focus:outline-none"
-                />
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-semibold text-[#8E8E93]">
+                    Barcode / SKU
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setIsScannerOpen(true)}
+                    className="text-[11px] font-semibold text-iosBlue hover:underline flex items-center space-x-0.5"
+                  >
+                    <ScanBarcode className="w-3 h-3" />
+                    <span>Scan</span>
+                  </button>
+                </div>
+                <div className="relative flex items-center">
+                  <input
+                    type="text"
+                    value={sku}
+                    onChange={(e) => setSku(e.target.value)}
+                    placeholder="Optional code"
+                    className="w-full bg-[#F2F2F7] rounded-[8px] pl-2.5 pr-8 py-1.5 text-xs font-mono text-black focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setIsScannerOpen(true)}
+                    className="absolute right-1 text-gray-400 hover:text-iosBlue p-1 transition-colors"
+                    title="Scan Barcode"
+                  >
+                    <ScanBarcode className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -351,7 +377,38 @@ export const AddEditStockSheet: React.FC<AddEditStockSheetProps> = ({
             className="w-full bg-[#F2F2F7] rounded-[10px] px-3.5 py-2 text-[14px] text-black focus:outline-none focus:ring-2 focus:ring-iosBlue/40 border border-black/[0.04]"
           />
         </div>
+
+        {/* 6. Delete Item Option (Only visible when editing an existing item) */}
+        {itemToEdit && onDelete && (
+          <div className="pt-3 border-t border-gray-100">
+            <button
+              type="button"
+              onClick={() => {
+                const target = itemToEdit;
+                onClose();
+                onDelete(target);
+              }}
+              className="w-full py-3 rounded-[12px] bg-red-50 text-iosRed font-semibold text-[14px] border border-red-200/80 hover:bg-red-100 flex items-center justify-center space-x-2 active:scale-98 transition-all"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span>Delete {category === 'product' ? 'Product' : 'Service'}</span>
+            </button>
+          </div>
+        )}
       </form>
+
+      {/* Barcode Scanner Modal */}
+      {isScannerOpen && (
+        <BarcodeScannerModal
+          isOpen={isScannerOpen}
+          onClose={() => setIsScannerOpen(false)}
+          onScan={(code) => {
+            setSku(code);
+            setIsScannerOpen(false);
+          }}
+          title="Scan Product Barcode"
+        />
+      )}
     </BottomSheet>
   );
 };

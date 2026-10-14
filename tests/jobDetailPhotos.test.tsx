@@ -405,4 +405,98 @@ describe('Condition photos in JobDetailSheet', () => {
     expect(screen.queryByText(/synced/i)).toBeNull();
     expect(screen.queryByText(/uploading/i)).toBeNull();
   });
+
+  it('renders "Reopen / Update Back" button for delivered jobs and allows reverting status', async () => {
+    const deliveredJob: Job = {
+      ...sampleJob,
+      id: 99,
+      status: 'delivered',
+      deliveredAt: Date.now(),
+      finalAmount: 1800,
+      bookEntryId: 44,
+    };
+
+    await db.jobs.put(deliveredJob);
+    await db.entries.put({
+      id: 44,
+      type: 'in',
+      amount: 1500,
+      paymentMethod: 'cash',
+      item: 'Repair Balance — iPhone 13',
+      date: '2026-10-13',
+      createdAt: Date.now(),
+    });
+
+    render(
+      <JobDetailSheet
+        isOpen={true}
+        onClose={vi.fn()}
+        job={deliveredJob}
+        shopName="Test Shop"
+        language="en"
+        onEdit={vi.fn()}
+        onDelete={vi.fn()}
+        onOpenDelivery={vi.fn()}
+        onJobUpdated={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText(/Reopen \/ Update Back/i)).toBeInTheDocument();
+  });
+
+  it('renders "Reopen / Update Back" button for returned jobs', async () => {
+    const returnedJob: Job = {
+      ...sampleJob,
+      id: 100,
+      status: 'returned',
+      deliveredAt: Date.now(),
+    };
+
+    render(
+      <JobDetailSheet
+        isOpen={true}
+        onClose={vi.fn()}
+        job={returnedJob}
+        shopName="Test Shop"
+        language="en"
+        onEdit={vi.fn()}
+        onDelete={vi.fn()}
+        onOpenDelivery={vi.fn()}
+        onJobUpdated={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText(/Reopen \/ Update Back/i)).toBeInTheDocument();
+  });
+
+  it('renders "Generate Bill / Receipt" button when job status is ready and onOpenBilling is provided', async () => {
+    const readyJob: Job = {
+      ...sampleJob,
+      id: 101,
+      status: 'ready',
+      readyAt: Date.now(),
+      estimate: 2500,
+      advance: 500,
+    };
+
+    const handleBilling = vi.fn();
+
+    render(
+      <JobDetailSheet
+        isOpen={true}
+        onClose={vi.fn()}
+        job={readyJob}
+        shopName="Test Shop"
+        language="en"
+        onEdit={vi.fn()}
+        onDelete={vi.fn()}
+        onOpenDelivery={vi.fn()}
+        onOpenBilling={handleBilling}
+        onJobUpdated={vi.fn()}
+      />
+    );
+
+    const billBtn = screen.getByText(/Generate Bill \/ Receipt/i);
+    expect(billBtn).toBeInTheDocument();
+  });
 });

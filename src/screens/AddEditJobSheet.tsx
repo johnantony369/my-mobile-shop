@@ -9,6 +9,7 @@ import { openWhatsAppNotification, buildIntakeSlipMessage, buildTrackingUrl } fr
 import { compressImageFile } from '../utils/image';
 import { pushSinglePublicRepair } from '../firebase/sync';
 import { StockPickerSheet } from '../components/StockPickerSheet';
+import { DeviceAutoSuggest } from '../components/DeviceAutoSuggest';
 import { Wrench, X, Check, MessageSquare, Camera } from 'lucide-react';
 
 interface PendingPhoto {
@@ -53,9 +54,9 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isSubmittingRef = useRef(false);
 
-  // Stock picker state
+  // Stock / Services picker state
   const [isStockPickerOpen, setIsStockPickerOpen] = useState(false);
-  const [selectedStockItem, setSelectedStockItem] = useState<StockItem | null>(null);
+  const [selectedServices, setSelectedServices] = useState<StockItem[]>([]);
 
   // Live query for active service items (only services for job complaints)
   const serviceItems = useLiveQuery(
@@ -115,7 +116,7 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
         setPhotos([]);
       }
       setDeletedPhotoIds([]);
-      setSelectedStockItem(null);
+      setSelectedServices([]);
       setPhoneError(null);
       setFormError(null);
       isSubmittingRef.current = false;
@@ -184,17 +185,30 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
     if (phoneError) setPhoneError(null);
   };
 
-  const handleSelectStockItem = (item: StockItem) => {
-    setSelectedStockItem(item);
-    // If complaint is empty, set it directly, otherwise if not already present, append
-    if (!complaint.trim()) {
-      setComplaint(item.name);
-    } else if (!complaint.includes(item.name)) {
-      setComplaint(`${complaint}, ${item.name}`);
+  const handleToggleService = (item: StockItem) => {
+    const exists = selectedServices.some((s) => s.id === item.id);
+    let updated: StockItem[];
+    if (exists) {
+      updated = selectedServices.filter((s) => s.id !== item.id);
+    } else {
+      updated = [...selectedServices, item];
     }
-    // Set estimate price if not entered or if user wants default
-    setEstimateStr(item.sellingPrice.toString());
+    applySelectedServices(updated);
+  };
+
+  const applySelectedServices = (services: StockItem[]) => {
+    setSelectedServices(services);
+    if (services.length > 0) {
+      const names = services.map((s) => s.name).join(', ');
+      setComplaint(names);
+      const totalEst = services.reduce((sum, s) => sum + (s.sellingPrice || 0), 0);
+      setEstimateStr(totalEst > 0 ? totalEst.toString() : '');
+    }
     if (formError) setFormError(null);
+  };
+
+  const handleSelectMultipleFromSheet = (services: StockItem[]) => {
+    applySelectedServices(services);
   };
 
   const handleSave = async (e?: React.FormEvent) => {
@@ -372,7 +386,7 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
             required
             value={customerName}
             onChange={(e) => setCustomerName(e.target.value)}
-            placeholder="e.g. Rajesh"
+            placeholder="Customer Name"
             className="w-full bg-[#F2F2F7] rounded-[10px] px-3.5 py-2.5 text-[15px] text-black focus:outline-none focus:ring-2 focus:ring-iosBlue/40 border border-black/[0.04]"
           />
         </div>
@@ -392,7 +406,7 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
               required
               value={phone}
               onChange={handlePhoneChange}
-              placeholder="9876543210"
+              placeholder="Mobile Number"
               className={`w-full bg-[#F2F2F7] rounded-[10px] px-3.5 py-2.5 text-[15px] font-mono text-black focus:outline-none focus:ring-2 focus:ring-iosBlue/40 border ${
                 phoneError ? 'border-iosRed ring-1 ring-iosRed' : 'border-black/[0.04]'
               }`}
@@ -403,22 +417,20 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
           )}
         </div>
 
-        {/* Model */}
+        {/* Model with Database Search */}
         <div className="space-y-1">
           <label className="text-xs font-semibold text-[#8E8E93] ml-1">
             {t('field_model', language)} *
           </label>
-          <input
-            type="text"
-            required
+          <DeviceAutoSuggest
             value={model}
-            onChange={(e) => setModel(e.target.value)}
-            placeholder="e.g. Redmi Note 10 Pro / iPhone 11"
-            className="w-full bg-[#F2F2F7] rounded-[10px] px-3.5 py-2.5 text-[15px] text-black focus:outline-none focus:ring-2 focus:ring-iosBlue/40 border border-black/[0.04]"
+            onChange={(val) => setModel(val)}
+            required
+            placeholder="Device Name (e.g. Redmi Note 10 Pro, iPhone 13)"
           />
         </div>
 
-        {/* Complaint with Stock Quick-Picker */}
+        {/* Complaint with Multiple Services Selection */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between ml-1">
             <label className="text-xs font-semibold text-[#8E8E93]">
@@ -430,27 +442,27 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
               className="text-xs font-semibold text-iosBlue hover:underline flex items-center space-x-1 active:opacity-75"
             >
               <Wrench className="w-3.5 h-3.5" />
-              <span>Pick from Services ({serviceItems.length})</span>
+              <span>Pick Services ({serviceItems.length})</span>
             </button>
           </div>
 
-          {/* Quick chips of services & repair labour */}
+          {/* Quick chips of services with multi-select toggle */}
           {serviceItems.length > 0 && (
             <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar momentum-scroll overscroll-x-contain touch-pan-x text-xs">
-              {serviceItems.slice(0, 8).map((si) => {
-                const isSelected = selectedStockItem?.id === si.id;
+              {serviceItems.slice(0, 10).map((si) => {
+                const isSelected = selectedServices.some((s) => s.id === si.id);
                 return (
                   <button
                     key={si.id}
                     type="button"
-                    onClick={() => handleSelectStockItem(si)}
+                    onClick={() => handleToggleService(si)}
                     className={`shrink-0 px-2.5 py-1 rounded-full text-[11px] font-medium transition-all active:scale-95 flex items-center space-x-1 border ${
                       isSelected
                         ? 'bg-purple-600 text-white border-purple-600 shadow-xs'
                         : 'bg-white text-gray-700 border-gray-200/80 hover:border-purple-500'
                     }`}
                   >
-
+                    {isSelected && <Check className="w-3 h-3 text-white" />}
                     <span className="font-semibold">{si.name}</span>
                     <span className={isSelected ? 'text-purple-100' : 'text-gray-400'}>
                       (₹{si.sellingPrice})
@@ -468,11 +480,12 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
               value={complaint}
               onChange={(e) => {
                 setComplaint(e.target.value);
-                if (selectedStockItem && selectedStockItem.name !== e.target.value) {
-                  setSelectedStockItem(null);
+                // If user cleared text, clear selected service badges
+                if (!e.target.value.trim()) {
+                  setSelectedServices([]);
                 }
               }}
-              placeholder="e.g. Screen broken, not charging"
+              placeholder="Fault / Issue (e.g. Screen broken, not charging)"
               className="w-full bg-[#F2F2F7] rounded-[10px] px-3.5 py-2.5 text-[15px] text-black focus:outline-none focus:ring-2 focus:ring-iosBlue/40 border border-black/[0.04]"
             />
             {complaint && (
@@ -480,29 +493,27 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
                 type="button"
                 onClick={() => {
                   setComplaint('');
-                  setSelectedStockItem(null);
+                  setSelectedServices([]);
                 }}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 rounded-full"
+                aria-label="Clear complaint"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
 
-          {/* Selected Stock / Service Indicator */}
-          {selectedStockItem && (
+          {/* Selected Services Indicator */}
+          {selectedServices.length > 0 && (
             <div className="bg-purple-50/80 border border-purple-200 rounded-[10px] p-2 flex items-center justify-between text-xs animate-fade-in text-purple-900">
               <div className="flex items-center space-x-1.5 truncate">
                 <Check className="w-3.5 h-3.5 text-purple-600 shrink-0" />
                 <span className="font-semibold truncate">
-                  Linked: {selectedStockItem.name}
-                </span>
-                <span className="text-gray-500 shrink-0">
-                  (₹{selectedStockItem.sellingPrice})
+                  {selectedServices.length} {selectedServices.length === 1 ? 'service' : 'services'} selected: {selectedServices.map((s) => s.name).join(', ')}
                 </span>
               </div>
-              <span className="text-[10px] text-purple-700 bg-white px-1.5 py-0.5 rounded border border-purple-200 shrink-0">
-                Estimate auto-filled
+              <span className="text-[10px] text-purple-700 bg-white px-1.5 py-0.5 rounded border border-purple-200 shrink-0 ml-2">
+                Estimate: ₹{selectedServices.reduce((sum, s) => sum + (s.sellingPrice || 0), 0)}
               </span>
             </div>
           )}
@@ -651,9 +662,12 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
       <StockPickerSheet
         isOpen={isStockPickerOpen}
         onClose={() => setIsStockPickerOpen(false)}
-        onSelect={handleSelectStockItem}
+        onSelect={(item) => handleToggleService(item)}
+        multiple={true}
+        selectedItems={selectedServices}
+        onSelectMultiple={handleSelectMultipleFromSheet}
         language={language}
-        title="Select Service"
+        title="Select Services"
         defaultFilter="service"
       />
     </BottomSheet>

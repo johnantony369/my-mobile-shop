@@ -22,9 +22,13 @@ export interface Entry extends SyncMetadata {
   date: string; // 'YYYY-MM-DD'
   createdAt: number; // timestamp ms
   repairId?: number; // link to job if created from repair delivery
+  isExchange?: boolean;
+  exchangeItemPrice?: number; // full selling price before trade-in
+  exchangeTradeInModel?: string; // old phone / device model given in exchange
+  exchangeTradeInValue?: number; // credit given for the old phone
 }
 
-export type JobStatus = 'received' | 'waiting' | 'ready' | 'delivered' | 'returned';
+export type JobStatus = 'received' | 'in_progress' | 'waiting' | 'ready' | 'delivered' | 'returned';
 
 export interface Job extends SyncMetadata {
   id?: number;
@@ -79,6 +83,7 @@ export interface AppSettings extends SyncMetadata {
   shopAddress?: string;
   shopPhone?: string; // 10-digit WhatsApp/call contact number
   shopLogo?: string; // compressed dataUrl avatar
+  shopGstin?: string; // 15-character Indian GSTIN
   language: Language;
   firstLaunchDate: string; // 'YYYY-MM-DD' or ISO
   activated: boolean;
@@ -135,11 +140,12 @@ export interface BillItem {
   qty: number;
   price: number;
   stockId?: number;
+  hsn?: string;
 }
 
 export interface Bill extends SyncMetadata {
   id?: number;
-  invoiceNo: string; // e.g. INV-0001
+  invoiceNo: string; // e.g. INV-0001 or GST-0001
   date: string; // 'YYYY-MM-DD'
   customerName?: string;
   customerPhone?: string;
@@ -150,6 +156,16 @@ export interface Bill extends SyncMetadata {
   paymentMethod: PaymentMethod;
   entryId?: number; // linked Day Book entry
   createdAt: number;
+  // GST fields
+  isGst?: boolean;
+  gstRate?: number; // e.g. 5, 12, 18, 28
+  shopGstin?: string;
+  customerGstin?: string;
+  taxableAmount?: number;
+  cgstAmount?: number;
+  sgstAmount?: number;
+  igstAmount?: number;
+  isTaxInclusive?: boolean;
 }
 
 export interface JobPhoto extends SyncMetadata {

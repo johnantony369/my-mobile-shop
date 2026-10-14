@@ -21,7 +21,7 @@ export const TabBar: React.FC<TabBarProps> = ({
   currentTab,
   onTabChange,
   language,
-  showRepairs = false,
+  showRepairs = true,
   showStock = true,
   isWholesale = false,
   readyCount = 0,

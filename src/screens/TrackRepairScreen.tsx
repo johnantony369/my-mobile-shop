@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { dbFirestore, isFirebaseConfigured } from '../firebase/config';
 import { db, getJobPhotos } from '../db/db';
@@ -20,6 +20,7 @@ import {
   RefreshCw,
   ShieldCheck,
   Camera,
+  ArrowLeft,
 } from 'lucide-react';
 
 function formatDateTime(ms?: number | null): string {
@@ -39,17 +40,22 @@ interface TrackRepairViewProps {
   repair: PublicRepairTrack;
   onRefresh?: () => void;
   isRefreshing?: boolean;
+  onBack?: () => void;
+  isFromApp?: boolean;
 }
 
 export const TrackRepairView: React.FC<TrackRepairViewProps> = ({
   repair,
   onRefresh,
   isRefreshing,
+  onBack,
+  isFromApp,
 }) => {
   const isReturned = repair.status === 'returned';
   const isDelivered = repair.status === 'delivered';
   const isReady = repair.status === 'ready';
-  const isInProgress = repair.status === 'waiting' || repair.status === 'received';
+  const isWaiting = repair.status === 'waiting';
+  const isInProgress = repair.status === 'in_progress';
 
   const [selectedPhoto, setSelectedPhoto] = useState<PhotoItem | null>(null);
 
@@ -59,12 +65,12 @@ export const TrackRepairView: React.FC<TrackRepairViewProps> = ({
 
   // Step active checks:
   // 1: Received is always done
-  // 2: In Progress is done if ready or delivered; active if received or waiting
-  // 3: Ready is done if delivered; active if ready; upcoming if received or waiting
+  // 2: In Progress is done if ready or delivered; active if in_progress or waiting
+  // 3: Ready is done if delivered; active if ready
   // 4: Delivered is done if delivered; upcoming otherwise
   const step1Done = true;
   const step2Done = isReady || isDelivered;
-  const step2Active = isInProgress;
+  const step2Active = isInProgress || isWaiting;
   const step3Done = isDelivered;
   const step3Active = isReady;
   const step4Done = isDelivered;
@@ -79,6 +85,17 @@ export const TrackRepairView: React.FC<TrackRepairViewProps> = ({
       <header className="sticky top-0 z-20 bg-white/90 backdrop-blur-md border-b border-black/[0.06] py-3.5 px-4 shadow-2xs">
         <div className="max-w-md mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-2">
+            {(isFromApp || onBack) && (
+              <button
+                type="button"
+                onClick={onBack}
+                className="p-1.5 -ml-1 mr-1 rounded-full text-slate-600 hover:text-black hover:bg-black/[0.05] active:scale-95 transition-all"
+                aria-label="Back to App"
+                title="Back to App"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+            )}
             {repair.shopLogo ? (
               <img
                 src={repair.shopLogo}
@@ -234,8 +251,10 @@ export const TrackRepairView: React.FC<TrackRepairViewProps> = ({
                     Under Service &amp; Diagnosis
                   </h3>
                   {step2Active && (
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
-                      In Progress
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                      isWaiting ? 'bg-amber-100 text-amber-800' : 'bg-indigo-100 text-indigo-800'
+                    }`}>
+                      {isWaiting ? 'Waiting for Parts' : 'In Progress'}
                     </span>
                   )}
                 </div>
@@ -497,6 +516,23 @@ export const TrackRepairView: React.FC<TrackRepairViewProps> = ({
 
 export const TrackRepairScreen: React.FC = () => {
   const { trackingId } = useParams<{ trackingId: string }>();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+
+  const isFromApp =
+    searchParams.get('from') === 'app' ||
+    Boolean((location.state as any)?.fromApp) ||
+    (typeof window !== 'undefined' && window.history.length > 1);
+
+  const handleBack = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate('/');
+    }
+  };
+
   const [repair, setRepair] = useState<PublicRepairTrack | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -581,7 +617,18 @@ export const TrackRepairScreen: React.FC = () => {
 
   if (error || !repair) {
     return (
-      <div className="min-h-screen bg-[#F2F2F7] flex flex-col items-center justify-center p-6 text-center">
+      <div className="min-h-screen bg-[#F2F2F7] flex flex-col items-center justify-center p-6 text-center relative">
+        {isFromApp && (
+          <button
+            type="button"
+            onClick={handleBack}
+            className="absolute top-4 left-4 p-2 rounded-full bg-white shadow-2xs border border-black/[0.06] text-slate-600 hover:text-black active:scale-95 transition-all flex items-center space-x-1"
+            title="Back to App"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span className="text-xs font-semibold pr-1">Back</span>
+          </button>
+        )}
         <div className="w-14 h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center text-amber-600 mb-3 border border-black/[0.04]">
           <AlertTriangle className="w-7 h-7" />
         </div>
@@ -605,6 +652,8 @@ export const TrackRepairScreen: React.FC = () => {
       repair={repair}
       onRefresh={handleRefresh}
       isRefreshing={isRefreshing}
+      onBack={isFromApp ? handleBack : undefined}
+      isFromApp={isFromApp}
     />
   );
 };

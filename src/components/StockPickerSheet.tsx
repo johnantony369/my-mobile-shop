@@ -14,6 +14,9 @@ interface StockPickerSheetProps {
   title?: string;
   defaultFilter?: 'all' | 'product' | 'service';
   language: Language;
+  multiple?: boolean;
+  selectedItems?: StockItem[];
+  onSelectMultiple?: (items: StockItem[]) => void;
 }
 
 export const StockPickerSheet: React.FC<StockPickerSheetProps> = ({
@@ -23,6 +26,9 @@ export const StockPickerSheet: React.FC<StockPickerSheetProps> = ({
   title = 'Select Product or Service',
   defaultFilter = 'all',
   language,
+  multiple = false,
+  selectedItems = [],
+  onSelectMultiple,
 }) => {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | 'product' | 'service'>(defaultFilter);
@@ -44,16 +50,19 @@ export const StockPickerSheet: React.FC<StockPickerSheetProps> = ({
     []
   ) ?? [];
 
+  const [internalSelectedItems, setInternalSelectedItems] = useState<StockItem[]>(selectedItems);
+
   useEffect(() => {
     if (isOpen) {
       setSearch('');
       setFilter(defaultFilter);
+      setInternalSelectedItems(selectedItems);
       const timer = setTimeout(() => {
         searchInputRef.current?.focus();
       }, 150);
       return () => clearTimeout(timer);
     }
-  }, [isOpen, defaultFilter]);
+  }, [isOpen, defaultFilter, selectedItems]);
 
   // Filtered and searched stock items
   const filteredItems = useMemo(() => {
@@ -75,19 +84,68 @@ export const StockPickerSheet: React.FC<StockPickerSheetProps> = ({
   const serviceCount = allStock.filter((i) => i.category === 'service').length;
 
   const handleItemClick = (item: StockItem) => {
-    onSelect(item);
-    onClose();
+    if (multiple) {
+      const exists = internalSelectedItems.some((i) => i.id === item.id);
+      let updated: StockItem[];
+      if (exists) {
+        updated = internalSelectedItems.filter((i) => i.id !== item.id);
+      } else {
+        updated = [...internalSelectedItems, item];
+      }
+      setInternalSelectedItems(updated);
+      if (onSelectMultiple) {
+        onSelectMultiple(updated);
+      }
+    } else {
+      onSelect(item);
+      onClose();
+    }
   };
 
   const handleStockCreated = (newItem: StockItem) => {
     setIsAddStockOpen(false);
-    onSelect(newItem);
+    if (multiple) {
+      const updated = [...internalSelectedItems, newItem];
+      setInternalSelectedItems(updated);
+      if (onSelectMultiple) onSelectMultiple(updated);
+    } else {
+      onSelect(newItem);
+      onClose();
+    }
+  };
+
+  const handleDoneMultiple = () => {
+    if (onSelectMultiple) {
+      onSelectMultiple(internalSelectedItems);
+    }
     onClose();
   };
 
   return (
     <>
-      <BottomSheet isOpen={isOpen} onClose={onClose} title={title}>
+      <BottomSheet
+        isOpen={isOpen}
+        onClose={onClose}
+        title={title}
+        footer={
+          multiple ? (
+            <div className="flex items-center justify-between gap-3 pt-1">
+              <div className="text-xs text-slate-500 font-medium">
+                {internalSelectedItems.length > 0
+                  ? `${internalSelectedItems.length} selected`
+                  : 'Tap services to select'}
+              </div>
+              <button
+                type="button"
+                onClick={handleDoneMultiple}
+                className="px-6 py-2.5 bg-iosBlue text-white rounded-[12px] font-semibold text-sm active:scale-95 shadow-md shadow-iosBlue/20 transition-all"
+              >
+                Done ({internalSelectedItems.length})
+              </button>
+            </div>
+          ) : undefined
+        }
+      >
         <div className="space-y-3 pt-1">
           {/* Search bar */}
           <div className="relative">
@@ -158,7 +216,7 @@ export const StockPickerSheet: React.FC<StockPickerSheetProps> = ({
               className="flex items-center space-x-1 text-iosBlue text-xs font-semibold active:opacity-75 py-1 px-2 shrink-0"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>+ Add New</span>
+              <span>Add New</span>
             </button>
           </div>
 
@@ -189,14 +247,33 @@ export const StockPickerSheet: React.FC<StockPickerSheetProps> = ({
                 const isOutOfStock = isProduct && qty <= 0;
                 const isLowStock = isProduct && qty > 0 && qty <= threshold;
 
+                const isItemChosen = multiple && internalSelectedItems.some((i) => i.id === item.id);
+
                 return (
                   <button
                     key={item.id}
                     type="button"
                     onClick={() => handleItemClick(item)}
-                    className="w-full text-left py-2.5 px-2 rounded-[10px] hover:bg-gray-50 active:bg-[#F2F2F7] transition-colors flex items-center justify-between group"
+                    className={`w-full text-left py-2.5 px-2 rounded-[10px] transition-colors flex items-center justify-between group ${
+                      isItemChosen
+                        ? 'bg-purple-50/80 border border-purple-200'
+                        : 'hover:bg-gray-50 active:bg-[#F2F2F7]'
+                    }`}
                   >
                     <div className="flex items-center space-x-3 min-w-0 pr-2">
+                      {multiple && (
+                        <div
+                          className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 border transition-all ${
+                            isItemChosen
+                              ? 'bg-purple-600 border-purple-600 text-white'
+                              : 'bg-white border-slate-300 text-transparent'
+                          }`}
+                        >
+                          <svg className="w-3.5 h-3.5 stroke-current stroke-2 fill-none" viewBox="0 0 24 24">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        </div>
+                      )}
                       <div
                         className={`w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0 ${
                           isProduct
@@ -245,9 +322,11 @@ export const StockPickerSheet: React.FC<StockPickerSheetProps> = ({
                       <span className="text-[15px] font-bold text-black block">
                         {formatINR(item.sellingPrice)}
                       </span>
-                      <span className="text-[10px] text-iosBlue font-medium opacity-0 group-hover:opacity-100 transition-opacity">
-                        Tap to select →
-                      </span>
+                      {!multiple && (
+                        <span className="text-[10px] text-iosBlue font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                          Tap to select →
+                        </span>
+                      )}
                     </div>
                   </button>
                 );

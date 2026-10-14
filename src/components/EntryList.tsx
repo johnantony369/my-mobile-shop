@@ -3,8 +3,9 @@ import { Entry, Language } from '../types';
 import { formatINR, t } from '../i18n';
 import { formatTime } from '../utils/date';
 import { SwipeableRow } from './SwipeableRow';
-import { PlusCircle, ShoppingBag, ArrowUpRight } from 'lucide-react';
+import { PlusCircle, ShoppingBag, ArrowUpRight, Clock } from 'lucide-react';
 import { db } from '../db/db';
+import { syncDayBookCreditEntry } from '../utils/wholesaleCredit';
 
 interface EntryListProps {
   entries: Entry[];
@@ -24,6 +25,9 @@ export const EntryList: React.FC<EntryListProps> = ({
   onAddClick,
 }) => {
   const [settleEntry, setSettleEntry] = useState<Entry | null>(null);
+  const [unpaidEntry, setUnpaidEntry] = useState<Entry | null>(null);
+  const [unpaidCustomerName, setUnpaidCustomerName] = useState('');
+  const [unpaidError, setUnpaidError] = useState<string | null>(null);
 
   const handleSettle = async (method: 'cash' | 'upi') => {
     if (settleEntry && settleEntry.id) {
@@ -33,8 +37,49 @@ export const EntryList: React.FC<EntryListProps> = ({
         updatedAt: now,
         syncStatus: 'pending',
       });
+
+      const updatedEntry: Entry = {
+        ...settleEntry,
+        paymentMethod: method,
+      };
+      await syncDayBookCreditEntry(undefined, updatedEntry, settleEntry);
+
       setSettleEntry(null);
     }
+  };
+
+  const handleOpenMarkUnpaid = (entry: Entry) => {
+    setUnpaidEntry(entry);
+    setUnpaidCustomerName(entry.customerName || '');
+    setUnpaidError(null);
+  };
+
+  const handleConfirmMarkUnpaid = async () => {
+    if (!unpaidEntry || !unpaidEntry.id) return;
+    const trimmedCustomer = unpaidCustomerName.trim();
+    if (!trimmedCustomer) {
+      setUnpaidError('Customer name is required for credit entries');
+      return;
+    }
+
+    const now = new Date().toISOString();
+    await db.entries.update(unpaidEntry.id, {
+      paymentMethod: 'credit',
+      customerName: trimmedCustomer,
+      updatedAt: now,
+      syncStatus: 'pending',
+    });
+
+    const updatedEntry: Entry = {
+      ...unpaidEntry,
+      paymentMethod: 'credit',
+      customerName: trimmedCustomer,
+    };
+    await syncDayBookCreditEntry(undefined, updatedEntry, unpaidEntry);
+
+    setUnpaidEntry(null);
+    setUnpaidCustomerName('');
+    setUnpaidError(null);
   };
   if (entries.length === 0) {
     return (
@@ -86,28 +131,44 @@ export const EntryList: React.FC<EntryListProps> = ({
               onEdit={() => onEdit(entry)}
               onDelete={() => onDelete(entry)}
               onTap={() => onEdit(entry)}
-              onMarkPaid={entry.paymentMethod === 'credit' ? () => setSettleEntry(entry) : undefined}
+              onMarkPaid={
+                !isExpense && entry.paymentMethod === 'credit'
+                  ? () => setSettleEntry(entry)
+                  : undefined
+              }
+              onMarkUnpaid={
+                !isExpense && entry.paymentMethod !== 'credit'
+                  ? () => handleOpenMarkUnpaid(entry)
+                  : undefined
+              }
               editLabel={t('edit_action', language)}
               deleteLabel={t('delete_action', language)}
               markPaidLabel={t('mark_paid_action', language)}
+              markUnpaidLabel={t('mark_unpaid_action', language)}
             >
               <div className="px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-black/[0.015] active:bg-black/[0.04] transition-colors">
                 {/* Left side details */}
-                <div className="flex-1 min-w-0 pr-3">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-[15px] font-medium text-black truncate">
+                <div className="flex-1 min-w-0 pr-2 sm:pr-3">
+                  <div className="flex items-center space-x-1.5 min-w-0">
+                    <span className="text-[15px] font-medium text-black truncate min-w-0">
                       {title}
                     </span>
                     {/* Method Badge & Repair Badge */}
                     {!isExpense ? (
-                      <div className="flex items-center space-x-1">
+                      <div className="flex items-center space-x-1 shrink-0 whitespace-nowrap">
                         {entry.repairId && (
-                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-600">
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-600 whitespace-nowrap shrink-0">
                             {t('repair_badge', language)}
                           </span>
                         )}
+                        {entry.isExchange && (
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-teal-50 text-teal-700 border border-teal-200/80 whitespace-nowrap shrink-0 flex items-center gap-0.5">
+                            <span>⇄</span>
+                            <span>EXCH</span>
+                          </span>
+                        )}
                         <span
-                          className={`text-[10px] font-semibold px-1.5 py-0.5 rounded uppercase tracking-wider ${
+                          className={`text-[10px] font-semibold px-1.5 py-0.5 rounded uppercase tracking-wider whitespace-nowrap shrink-0 ${
                             entry.paymentMethod === 'credit'
                               ? 'bg-amber-50 text-amber-800 border border-amber-200/80 font-bold'
                               : entry.paymentMethod === 'upi'
@@ -126,14 +187,14 @@ export const EntryList: React.FC<EntryListProps> = ({
                               e.stopPropagation();
                               setSettleEntry(entry);
                             }}
-                            className="ml-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100/90 text-amber-900 border border-amber-300/80 hover:bg-amber-200 active:scale-95 transition-all shadow-2xs"
+                            className="ml-0.5 px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300/80 hover:bg-amber-200 active:scale-95 transition-all shadow-2xs whitespace-nowrap shrink-0"
                           >
                             Mark Paid
                           </button>
                         )}
                       </div>
                     ) : (
-                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-red-50 text-iosRed flex items-center">
+                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-red-50 text-iosRed flex items-center whitespace-nowrap shrink-0">
                         <ArrowUpRight className="w-2.5 h-2.5 mr-0.5" />
                         {t('summary_out', language)}
                       </span>
@@ -141,12 +202,12 @@ export const EntryList: React.FC<EntryListProps> = ({
                   </div>
 
                   {/* Subtitle / time / note */}
-                  <div className="flex items-center space-x-2 mt-0.5 text-xs text-[#8E8E93] truncate">
-                    <span>{formatTime(entry.createdAt)}</span>
+                  <div className="flex items-center space-x-2 mt-0.5 text-xs text-[#8E8E93] truncate min-w-0">
+                    <span className="shrink-0">{formatTime(entry.createdAt)}</span>
                     {subtitleParts.length > 0 && (
                       <>
-                        <span>•</span>
-                        <span className="truncate">{subtitleParts.join(' • ')}</span>
+                        <span className="shrink-0">•</span>
+                        <span className="truncate min-w-0">{subtitleParts.join(' • ')}</span>
                       </>
                     )}
                   </div>
@@ -208,6 +269,66 @@ export const EntryList: React.FC<EntryListProps> = ({
             >
               Cancel
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Mark as Unpaid (Credit / Udhar) Modal */}
+      {unpaidEntry && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-fade-in"
+          onClick={() => setUnpaidEntry(null)}
+        >
+          <div
+            className="bg-white rounded-[18px] p-5 w-full max-w-xs shadow-2xl space-y-4 border border-black/[0.04] text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mx-auto">
+              <Clock className="w-6 h-6" />
+            </div>
+            <div>
+              <h4 className="text-[17px] font-bold text-black">
+                {t('mark_unpaid_title', language)}
+              </h4>
+              <p className="text-xs text-[#8E8E93] leading-relaxed mt-1">
+                Mark <strong className="text-black font-semibold">{formatINR(unpaidEntry.amount)}</strong> as Credit (Udhar)
+              </p>
+            </div>
+
+            <div className="text-left space-y-1">
+              <label className="text-xs font-semibold text-gray-700 ml-1">
+                {t('customer_label', language)} <span className="text-amber-600">*</span>
+              </label>
+              <input
+                type="text"
+                value={unpaidCustomerName}
+                onChange={(e) => {
+                  setUnpaidCustomerName(e.target.value);
+                  if (unpaidError) setUnpaidError(null);
+                }}
+                placeholder={t('customer_placeholder', language)}
+                className="w-full bg-[#F2F2F7] rounded-[10px] px-3 py-2.5 text-sm text-black focus:outline-none focus:ring-2 focus:ring-amber-500/40 border border-black/[0.04]"
+                autoFocus
+              />
+              {unpaidError && <p className="text-xs text-iosRed font-medium ml-1">{unpaidError}</p>}
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setUnpaidEntry(null)}
+                className="h-11 rounded-[12px] bg-gray-100 hover:bg-gray-200 active:scale-95 font-semibold text-sm text-black transition-all"
+              >
+                {t('cancel_action', language)}
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmMarkUnpaid}
+                className="h-11 rounded-[12px] bg-amber-500 hover:bg-amber-600 active:scale-95 font-semibold text-sm text-white transition-all shadow-sm shadow-amber-500/20"
+              >
+                {t('confirm_action', language)}
+              </button>
+            </div>
           </div>
         </div>
       )}

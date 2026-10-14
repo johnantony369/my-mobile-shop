@@ -64,4 +64,23 @@ describe('Repair Tracking Photos Display', () => {
     expect(html).toContain('Amount To Pay');
     expect(html).toContain('₹5,000');
   });
+
+  it('renders back arrow button when opened from within the app', () => {
+    const publicTrack = buildPublicRepairTrack(sampleJob, sampleSettings, samplePhotos);
+    const htmlWithBack = renderToString(
+      React.createElement(TrackRepairView, {
+        repair: publicTrack,
+        isFromApp: true,
+        onBack: () => {},
+      })
+    );
+    expect(htmlWithBack).toContain('aria-label="Back to App"');
+
+    const htmlWithoutBack = renderToString(
+      React.createElement(TrackRepairView, {
+        repair: publicTrack,
+      })
+    );
+    expect(htmlWithoutBack).not.toContain('aria-label="Back to App"');
+  });
 });

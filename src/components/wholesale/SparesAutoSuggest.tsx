@@ -25,19 +25,24 @@ export const SparesAutoSuggest: React.FC<SparesAutoSuggestProps> = ({
   useEffect(() => {
     let active = true;
     const q = value.trim();
-    if (q.length >= 2) {
+    if (q.length < 2) {
+      setSuggestions([]);
+      setIsOpen(false);
+      return;
+    }
+
+    const timer = setTimeout(() => {
       searchMasterSpares(q).then((results) => {
         if (active) {
           setSuggestions(results.slice(0, 6));
           setIsOpen(results.length > 0);
         }
       });
-    } else {
-      setSuggestions([]);
-      setIsOpen(false);
-    }
+    }, 150);
+
     return () => {
       active = false;
+      clearTimeout(timer);
     };
   }, [value]);
 

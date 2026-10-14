@@ -109,7 +109,7 @@ export async function importBackup(file: File): Promise<{ count: number }> {
     await updateAppSettings({
       shopName: data.settings.shopName,
       language: 'en',
-      showRepairs: data.settings.showRepairs ?? false,
+      showRepairs: data.settings.showRepairs ?? true,
       showStock: data.settings.showStock !== false,
     });
   }

@@ -20,7 +20,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
   const language: Language = 'en';
   const [shopName, setShopName] = useState('');
   const [businessType, setBusinessType] = useState<'retail' | 'wholesale'>('retail');
-  const [repairsChoice, setRepairsChoice] = useState<'no' | 'yes'>('no');
+  const [repairsChoice, setRepairsChoice] = useState<'no' | 'yes'>('yes');
   const [partnerCode, setPartnerCode] = useState<string>(getStoredReferralCode() || '');
   const [error, setError] = useState<string | null>(null);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -148,8 +148,8 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
               onChange={(val) => setRepairsChoice(val)}
               size="md"
               options={[
-                { value: 'no', label: t('onboarding_repairs_no', language) },
                 { value: 'yes', label: t('onboarding_repairs_yes', language) },
+                { value: 'no', label: t('onboarding_repairs_no', language) },
               ]}
             />
           </div>

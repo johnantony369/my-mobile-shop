@@ -1,5 +1,6 @@
 import { FloatingAction } from '../components/FloatingAction';
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, softDeleteStockItem, adjustStockQuantity } from '../db/db';
 import { StockItem, StockCategory, Language, UsedDevice } from '../types';
@@ -8,6 +9,7 @@ import { AddEditStockSheet } from './AddEditStockSheet';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { UsedPhonesView } from './UsedPhonesView';
 import { AddEditUsedPhoneSheet } from './AddEditUsedPhoneSheet';
+import { BarcodeScannerModal } from '../components/BarcodeScannerModal';
 import {
   Package,
   Wrench,
@@ -16,9 +18,10 @@ import {
   Minus,
   AlertTriangle,
   Edit2,
-  Trash2,
   Boxes,
-  TrendingUp,
+  X,
+  ScanBarcode,
+  CheckCircle2,
 } from 'lucide-react';
 
 interface StockScreenProps {
@@ -48,6 +51,21 @@ export const StockScreen: React.FC<StockScreenProps> = ({
   const [view, setView] = useState<'stock' | 'preowned'>('stock');
   const [isAddPreownedOpen, setIsAddPreownedOpen] = useState(false);
   const [editingPreowned, setEditingPreowned] = useState<UsedDevice | null>(null);
+
+  // Barcode scanning state
+  const [isScanModalOpen, setIsScanModalOpen] = useState(false);
+  const [scannedInitialSku, setScannedInitialSku] = useState('');
+  const [matchedProduct, setMatchedProduct] = useState<StockItem | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const showToast = (msg: string) => {
+    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+    setToastMessage(msg);
+    toastTimeoutRef.current = setTimeout(() => {
+      setToastMessage(null);
+    }, 2200);
+  };
 
   const preownedCount =
     useLiveQuery(
@@ -165,9 +183,47 @@ export const StockScreen: React.FC<StockScreenProps> = ({
     }
   };
 
-  const handleQuickAdjust = async (e: React.MouseEvent, id: number, delta: number) => {
+  const handleQuickAdjust = async (
+    e: React.MouseEvent,
+    id: number,
+    delta: number,
+    currentQty: number,
+    unit = 'pcs'
+  ) => {
     e.stopPropagation();
     await adjustStockQuantity(id, delta);
+    const updated = Math.max(0, currentQty + delta);
+    showToast(`Stock updated: ${updated} ${unit}`);
+  };
+
+  const handleBarcodeScanned = (scannedCode: string) => {
+    setIsScanModalOpen(false);
+    const code = scannedCode.trim();
+    if (!code) return;
+
+    // Search existing active stock items by SKU
+    const match = allStockItems.find(
+      (item) => item.sku && item.sku.trim().toLowerCase() === code.toLowerCase()
+    );
+
+    if (match) {
+      setMatchedProduct(match);
+    } else {
+      // New product not in stock: Open Add Sheet with pre-filled SKU
+      setScannedInitialSku(code);
+      setItemToEdit(null);
+      setDefaultAddCategory('product');
+      setIsAddSheetOpen(true);
+    }
+  };
+
+  const handleAddOneStock = async () => {
+    if (!matchedProduct || !matchedProduct.id) return;
+    await adjustStockQuantity(matchedProduct.id, 1);
+    const newQty = (matchedProduct.quantity ?? 0) + 1;
+    setMatchedProduct({ ...matchedProduct, quantity: newQty });
+    setToastMessage(`Stock +1: "${matchedProduct.name}" is now ${newQty} units`);
+    setTimeout(() => setToastMessage(null), 3000);
   };
 
   return (
@@ -189,190 +245,197 @@ export const StockScreen: React.FC<StockScreenProps> = ({
             Stock & Inventory
           </span>
           {isScrolled && (
-            <button
-              type="button"
-              onClick={() => {
-                if (view === 'stock') {
-                  handleOpenAdd('product');
-                } else {
-                  setEditingPreowned(null);
-                  setIsAddPreownedOpen(true);
-                }
-              }}
-              className="bg-iosBlue text-white text-xs font-semibold px-3 py-1.5 rounded-full flex items-center space-x-1 shadow-xs active:scale-95 transition-all"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>{view === 'stock' ? 'Add' : 'Intake'}</span>
-            </button>
+            <div className="flex items-center space-x-1.5">
+              <button
+                type="button"
+                onClick={() => setIsScanModalOpen(true)}
+                disabled={isReadOnly}
+                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-800 flex items-center justify-center transition-transform active:scale-95"
+                title="Scan Barcode"
+                aria-label="Scan Barcode"
+              >
+                <ScanBarcode className="w-4 h-4" />
+              </button>
+            </div>
           )}
         </div>
       </div>
 
       <div className="max-w-lg mx-auto px-4 space-y-4">
-        {/* Large Header Title & Total Valuation Capsule */}
+        {/* Header Title & Quick Actions */}
         <div className="pt-2 flex items-center justify-between gap-3">
-          <div>
-            <span className="text-[12px] font-bold text-[#8E8E93] uppercase tracking-wider block">
-              {shopName || 'My Mobile Shop'}
-            </span>
-            <h1 className="text-[34px] font-black text-black tracking-tight leading-none mt-0.5">
-              Stock
+          <div className="min-w-0">
+            <h1 className="text-[26px] sm:text-[28px] font-extrabold text-black tracking-tight leading-tight truncate">
+              {shopName || 'QuickFix'}
             </h1>
+            <p className="text-xs text-gray-500 mt-0.5 font-medium">Stock Inventory</p>
           </div>
-          {/* Frosted Total Valuation Card */}
-          <div className="bg-white/80 backdrop-blur-md border border-black/[0.06] rounded-2xl px-3.5 py-2 shadow-xs text-right">
-            <span className="text-[10px] font-semibold text-[#8E8E93] uppercase tracking-wider block leading-tight">
-              Total Value:
-            </span>
-            <span className="text-[16px] font-black text-black tracking-tight leading-tight block">
-              {formatINR(metrics.totalEstimatedValue)}
-            </span>
+
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Quick Barcode Scanner Button */}
+            <button
+              type="button"
+              onClick={() => setIsScanModalOpen(true)}
+              disabled={isReadOnly}
+              aria-label="Scan Barcode"
+              title="Scan Barcode"
+              className="w-10 h-10 rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-95 text-gray-800 flex items-center justify-center shadow-xs border border-black/[0.04] transition-all"
+            >
+              <ScanBarcode className="w-5 h-5 text-gray-800" />
+            </button>
           </div>
         </div>
 
-        {/* View Toggle: Stock / Pre-Owned */}
-        <div className="flex bg-[#E5E5EA]/70 backdrop-blur-md rounded-full p-1 border border-black/[0.04]">
-          <button
-            type="button"
-            onClick={() => setView('stock')}
-            className={`flex-1 py-2 rounded-full text-[13px] font-bold transition-all ${
-              view === 'stock' ? 'bg-white text-black shadow-xs' : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            New Stock ({allStockItems.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setView('preowned')}
-            className={`flex-1 py-2 rounded-full text-[13px] font-bold transition-all ${
-              view === 'preowned' ? 'bg-white text-black shadow-xs' : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Pre-Owned ({preownedCount})
-          </button>
+        {/* Catalog Switcher with Current Toggle Texts */}
+        <div className="w-full bg-[#E9E9EB] p-1 rounded-xl">
+          <div className="grid grid-cols-2 gap-1" role="tablist">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={view === 'stock'}
+              onClick={() => setView('stock')}
+              className={`py-2 px-2 rounded-lg font-semibold text-[13px] text-center transition-all ${
+                view === 'stock'
+                  ? 'bg-white text-black shadow-xs'
+                  : 'text-gray-500 hover:text-black'
+              }`}
+            >
+              New Stock ({allStockItems.length})
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={view === 'preowned'}
+              onClick={() => setView('preowned')}
+              className={`py-2 px-2 rounded-lg font-semibold text-[13px] text-center transition-all ${
+                view === 'preowned'
+                  ? 'bg-white text-black shadow-xs'
+                  : 'text-gray-500 hover:text-black'
+              }`}
+            >
+              Pre-Owned ({preownedCount})
+            </button>
+          </div>
         </div>
 
         {view === 'stock' ? (
         <>
-        {/* Quick Summary Bento Pill Bar */}
-        <div className="bg-white/90 backdrop-blur-md rounded-2xl p-1.5 border border-black/[0.05] shadow-xs grid grid-cols-3 divide-x divide-black/[0.06]">
-          {/* Card 1: Total Products */}
+        {/* Bento KPI Row */}
+        <div className="grid grid-cols-2 gap-2.5">
+          {/* Card 1: Valuation */}
           <button
             type="button"
             onClick={() => setCurrentFilter(currentFilter === 'product' ? 'all' : 'product')}
-            className={`p-2 rounded-xl text-left transition-all flex items-center space-x-2.5 ${
+            className={`bg-white rounded-2xl p-3.5 border text-left shadow-xs transition-all flex flex-col justify-between ${
               currentFilter === 'product'
-                ? 'bg-emerald-50/80 ring-1 ring-emerald-500/30'
-                : 'hover:bg-black/[0.02]'
+                ? 'border-iosBlue ring-2 ring-iosBlue/20'
+                : 'border-black/[0.05] hover:border-gray-300'
             }`}
           >
-            <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100">
-              <Package className="w-4 h-4" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 block truncate">
-                Products
+            <div className="flex items-start justify-between">
+              <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
+                Total Valuation
               </span>
-              <div className="text-[16px] font-black text-black tracking-tight leading-none mt-0.5">
-                {metrics.productCount}
+              <div className="w-6 h-6 rounded-lg bg-blue-50 text-iosBlue flex items-center justify-center">
+                <Package className="w-3.5 h-3.5" />
+              </div>
+            </div>
+            <div className="mt-2">
+              <div className="text-xl sm:text-2xl font-extrabold text-black tracking-tight leading-tight">
+                {formatINR(metrics.totalEstimatedValue)}
+              </div>
+              <div className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full bg-blue-50 text-iosBlue text-[10px] font-bold">
+                <span>{metrics.totalStockUnits} units in shop</span>
               </div>
             </div>
           </button>
 
-          {/* Card 2: Services */}
-          <button
-            type="button"
-            onClick={() => setCurrentFilter(currentFilter === 'service' ? 'all' : 'service')}
-            className={`p-2 rounded-xl text-left transition-all flex items-center space-x-2.5 pl-3 ${
-              currentFilter === 'service'
-                ? 'bg-purple-50/80 ring-1 ring-purple-500/30'
-                : 'hover:bg-black/[0.02]'
-            }`}
-          >
-            <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0 border border-purple-100">
-              <Wrench className="w-4 h-4" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 block truncate">
-                Services
-              </span>
-              <div className="text-[16px] font-black text-black tracking-tight leading-none mt-0.5">
-                {metrics.serviceCount}
-              </div>
-            </div>
-          </button>
-
-          {/* Card 3: Low Stock Alerts */}
+          {/* Card 2: Low Stock Alert */}
           <button
             type="button"
             onClick={() => setCurrentFilter(currentFilter === 'low_stock' ? 'all' : 'low_stock')}
-            className={`p-2 rounded-xl text-left transition-all flex items-center space-x-2.5 pl-3 ${
+            className={`bg-white rounded-2xl p-3.5 border text-left shadow-xs transition-all flex flex-col justify-between ${
               currentFilter === 'low_stock'
-                ? 'bg-amber-50/90 ring-1 ring-amber-500/30'
-                : metrics.lowStockCount > 0
-                ? 'bg-amber-50/40'
-                : 'hover:bg-black/[0.02]'
+                ? 'border-red-500 ring-2 ring-red-500/20'
+                : 'border-black/[0.05] hover:border-gray-300'
             }`}
           >
-            <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 border border-amber-100">
-              <AlertTriangle className="w-4 h-4" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 block truncate">
-                Low Stock
+            <div className="flex items-start justify-between">
+              <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
+                Low Stock Alert
               </span>
               <div
-                className={`text-[16px] font-black tracking-tight leading-none mt-0.5 ${
-                  metrics.lowStockCount > 0 ? 'text-amber-600' : 'text-black'
+                className={`w-6 h-6 rounded-lg flex items-center justify-center ${
+                  metrics.lowStockCount > 0 ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'
                 }`}
               >
-                {metrics.lowStockCount}
+                <AlertTriangle className="w-3.5 h-3.5" />
+              </div>
+            </div>
+            <div className="mt-2">
+              <div
+                className={`text-xl sm:text-2xl font-extrabold tracking-tight leading-tight ${
+                  metrics.lowStockCount > 0 ? 'text-red-600' : 'text-black'
+                }`}
+              >
+                {metrics.lowStockCount} Items
+              </div>
+              <div
+                className={`inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                  metrics.lowStockCount > 0
+                    ? 'bg-red-50 text-red-700 border border-red-200/60'
+                    : 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
+                }`}
+              >
+                <span>{metrics.lowStockCount > 0 ? 'Restock Required' : 'All Stocked'}</span>
               </div>
             </div>
           </button>
         </div>
 
-        {/* Search Bar */}
-        <div className="relative">
-          <Search className="w-4 h-4 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+        {/* Search Bar with Integrated Barcode Scan Button */}
+        <div className="relative w-full">
+          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+            <Search className="w-4 h-4" />
+          </div>
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search products, services, barcode..."
-            className="w-full bg-[#ECECEE]/80 backdrop-blur-md rounded-full pl-10 pr-20 py-2.5 text-[14px] text-black focus:outline-none focus:ring-2 focus:ring-black/10 border border-black/[0.04] transition-all"
+            className="w-full h-11 pl-10 pr-11 bg-white rounded-xl text-[14px] text-black placeholder:text-gray-400 shadow-xs border border-black/[0.06] focus:outline-none focus:ring-2 focus:ring-iosBlue/30 transition-all"
           />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 px-2.5 py-1 text-xs font-semibold text-gray-600 bg-white/90 rounded-full shadow-2xs hover:bg-white transition-all"
-            >
-              Clear
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => setIsScanModalOpen(true)}
+            aria-label="Scan barcode input"
+            title="Scan Barcode"
+            className="absolute inset-y-0 right-0 pr-3 flex items-center text-iosBlue hover:text-blue-700 active:scale-90 transition-transform"
+          >
+            <ScanBarcode className="w-5 h-5" />
+          </button>
         </div>
 
-        {/* Filter Tabs */}
-        <div className="flex items-center space-x-2 overflow-x-auto no-scrollbar momentum-scroll overscroll-x-contain touch-pan-x py-0.5 -mx-4 px-4 sm:mx-0 sm:px-0">
+        {/* Category Filter Pills */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar momentum-scroll py-0.5 -mx-4 px-4 sm:mx-0 sm:px-0">
           <button
             type="button"
             onClick={() => setCurrentFilter('all')}
-            className={`px-4 py-1.5 rounded-full text-xs font-bold shrink-0 whitespace-nowrap transition-all ${
+            className={`shrink-0 h-8 px-3.5 rounded-full text-xs font-semibold shadow-xs transition-all ${
               currentFilter === 'all'
-                ? 'bg-white text-black shadow-xs border border-black/[0.08]'
-                : 'bg-[#ECECEE]/70 text-gray-600 hover:bg-gray-200/80 border border-transparent'
+                ? 'bg-black text-white'
+                : 'bg-white text-gray-600 border border-black/[0.06] hover:bg-gray-100'
             }`}
           >
-            All Items ({allStockItems.length})
+            All ({allStockItems.length})
           </button>
           <button
             type="button"
             onClick={() => setCurrentFilter('product')}
-            className={`flex items-center space-x-1.5 px-4 py-1.5 rounded-full text-xs font-bold shrink-0 whitespace-nowrap transition-all ${
+            className={`shrink-0 h-8 px-3.5 rounded-full text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-all ${
               currentFilter === 'product'
-                ? 'bg-white text-emerald-800 shadow-xs border border-emerald-300'
-                : 'bg-[#ECECEE]/70 text-gray-600 hover:bg-gray-200/80 border border-transparent'
+                ? 'bg-iosBlue text-white'
+                : 'bg-white text-gray-600 border border-black/[0.06] hover:bg-gray-100'
             }`}
           >
             <Package className="w-3.5 h-3.5" />
@@ -381,10 +444,10 @@ export const StockScreen: React.FC<StockScreenProps> = ({
           <button
             type="button"
             onClick={() => setCurrentFilter('service')}
-            className={`flex items-center space-x-1.5 px-4 py-1.5 rounded-full text-xs font-bold shrink-0 whitespace-nowrap transition-all ${
+            className={`shrink-0 h-8 px-3.5 rounded-full text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-all ${
               currentFilter === 'service'
-                ? 'bg-white text-purple-800 shadow-xs border border-purple-300'
-                : 'bg-[#ECECEE]/70 text-gray-600 hover:bg-gray-200/80 border border-transparent'
+                ? 'bg-blue-600 text-white'
+                : 'bg-white text-gray-600 border border-black/[0.06] hover:bg-gray-100'
             }`}
           >
             <Wrench className="w-3.5 h-3.5" />
@@ -393,20 +456,20 @@ export const StockScreen: React.FC<StockScreenProps> = ({
           <button
             type="button"
             onClick={() => setCurrentFilter('low_stock')}
-            className={`flex items-center space-x-1.5 px-4 py-1.5 rounded-full text-xs font-bold shrink-0 whitespace-nowrap transition-all ${
+            className={`shrink-0 h-8 px-3.5 rounded-full text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-all ${
               currentFilter === 'low_stock'
-                ? 'bg-white text-amber-800 shadow-xs border border-amber-300'
-                : 'bg-[#ECECEE]/70 text-amber-700 hover:bg-gray-200/80 border border-transparent'
+                ? 'bg-red-600 text-white'
+                : 'bg-white text-red-700 border border-red-200 hover:bg-red-50'
             }`}
           >
-            <AlertTriangle className="w-3.5 h-3.5" />
+            <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
             <span>Low Stock ({metrics.lowStockCount})</span>
           </button>
         </div>
 
         {/* Stock Items List */}
         {displayedItems.length === 0 ? (
-          <div className="bg-white rounded-3xl p-8 text-center border border-black/[0.04] shadow-xs space-y-4 my-2">
+          <div className="bg-white rounded-2xl p-8 text-center border border-black/[0.04] shadow-xs space-y-4 my-2">
             <div className="w-14 h-14 rounded-2xl bg-blue-50 text-iosBlue flex items-center justify-center mx-auto shadow-inner">
               <Boxes className="w-7 h-7" />
             </div>
@@ -426,7 +489,7 @@ export const StockScreen: React.FC<StockScreenProps> = ({
               <button
                 type="button"
                 onClick={() => handleOpenAdd('product')}
-                className="w-full sm:w-auto px-5 py-2.5 bg-black text-white rounded-full text-xs font-bold active:scale-95 shadow-sm flex items-center justify-center space-x-1.5"
+                className="w-full sm:w-auto px-4 py-2.5 bg-iosBlue text-white rounded-full text-xs font-semibold active:scale-95 shadow-sm flex items-center justify-center space-x-1.5"
               >
                 <Plus className="w-4 h-4" />
                 <span>Add First Item</span>
@@ -434,7 +497,7 @@ export const StockScreen: React.FC<StockScreenProps> = ({
             </div>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="flex flex-col gap-3" id="inventoryList">
             {displayedItems.map((item) => {
               const isProduct = item.category === 'product';
               const qty = item.quantity ?? 0;
@@ -448,139 +511,140 @@ export const StockScreen: React.FC<StockScreenProps> = ({
                 <div
                   key={item.id}
                   onClick={() => handleOpenEdit(item)}
-                  className="bg-white rounded-3xl p-3.5 sm:p-4 border border-black/[0.05] shadow-xs hover:border-black/10 active:scale-[0.99] transition-all cursor-pointer select-none space-y-3"
+                  className="bg-white rounded-2xl p-4 shadow-xs border border-black/[0.06] hover:border-gray-300 transition-all cursor-pointer flex flex-col gap-3"
+                  data-item-id={item.id}
                 >
-                  {/* Top Row: Thumbnail + Info + Stepper */}
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center space-x-3 min-w-0 flex-1">
-                      <div
-                        className={`w-13 h-13 rounded-2xl flex items-center justify-center shrink-0 border ${
-                          isProduct
-                            ? 'bg-[#F2F2F7] text-gray-700 border-black/[0.04]'
-                            : 'bg-purple-50 text-purple-600 border-purple-100'
-                        }`}
-                      >
-                        {isProduct ? <Package className="w-6 h-6 stroke-[1.8]" /> : <Wrench className="w-6 h-6 stroke-[1.8]" />}
-                      </div>
-
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <h4 className="font-bold text-[15px] text-black leading-snug break-words">
-                            {item.name}
-                          </h4>
-                          {item.sku && (
-                            <span className="font-mono text-[9px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded tracking-wide">
-                              {item.sku}
-                            </span>
-                          )}
-                        </div>
-                        {item.notes && (
-                          <p className="text-[11px] text-gray-400 line-clamp-1 mt-0.5">
-                            {item.notes}
-                          </p>
-                        )}
-                        <span className="text-[16px] font-black text-black block tracking-tight leading-tight mt-1">
-                          {formatINR(item.sellingPrice)}
+                  {/* Top Row: Category Tag, SKU Chip, Name & Options */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex flex-col min-w-0">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <span
+                          className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                            isProduct
+                              ? 'bg-gray-100 text-gray-700'
+                              : 'bg-blue-50 text-blue-700'
+                          }`}
+                        >
+                          {isProduct ? 'Product' : 'Service'}
                         </span>
+                        {item.sku && (
+                          <span className="text-[11px] font-mono text-gray-500 truncate">
+                            #{item.sku}
+                          </span>
+                        )}
                       </div>
+                      <h2 className="text-[16px] font-bold text-black leading-snug">
+                        {item.name}
+                      </h2>
+                      {item.notes && (
+                        <p className="text-[11px] text-gray-400 line-clamp-1 mt-0.5 font-normal">
+                          {item.notes}
+                        </p>
+                      )}
                     </div>
 
-                    {/* Stepper (Product) or Tap indicator */}
-                    {isProduct && item.id ? (
+                    <div
+                      className="flex items-center space-x-1 shrink-0"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        type="button"
+                        title="Edit Item"
+                        onClick={() => handleOpenEdit(item)}
+                        className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-iosBlue hover:bg-gray-100 active:scale-95 transition-all"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Financial Snapshot */}
+                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-[#F4F3F8]">
+                    <div className="flex items-center gap-2 text-gray-600 text-[13px]">
+                      {hasCost ? (
+                        <>
+                          <span>
+                            Cost: <strong className="text-black font-semibold">{formatINR(item.costPrice!)}</strong>
+                          </span>
+                          <span className="text-gray-300">•</span>
+                          <span>
+                            Sell: <strong className="text-black font-semibold">{formatINR(item.sellingPrice)}</strong>
+                          </span>
+                        </>
+                      ) : (
+                        <span>
+                          Selling Price: <strong className="text-black font-semibold">{formatINR(item.sellingPrice)}</strong>
+                        </span>
+                      )}
+                    </div>
+                    {margin !== null && (
+                      <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[11px] font-bold">
+                        +{formatINR(margin)} margin
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Inventory Status Pill & Stepper */}
+                  <div className="flex items-center justify-between pt-0.5">
+                    {/* Status Pill on Left - STRICTLY NO short description under the pill */}
+                    <div>
+                      {isProduct ? (
+                        isOutOfStock ? (
+                          /* Red for out of stock */
+                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-red-100 text-red-800 text-[11px] font-bold">
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-600" />
+                            <span>Out of stock</span>
+                          </div>
+                        ) : isLowStock ? (
+                          /* Red for low stock */
+                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-red-100 text-red-800 text-[11px] font-bold">
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-600" />
+                            <span>Low Stock: {qty} {item.unit || 'pcs'}</span>
+                          </div>
+                        ) : (
+                          /* Green for healthy stock */
+                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-100 text-emerald-800 text-[11px] font-bold">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+                            <span>Stock: {qty} {item.unit || 'pcs'}</span>
+                          </div>
+                        )
+                      ) : (
+                        /* Blue for service */
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-100 text-blue-800 text-[11px] font-bold">
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
+                          <span>Service / Labour</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Tactile Quick Stepper on Right (Products only) */}
+                    {isProduct && item.id && (
                       <div
                         onClick={(e) => e.stopPropagation()}
-                        className="flex items-center space-x-1 bg-[#F2F2F7] px-1 py-0.5 rounded-full border border-black/[0.04] self-center shrink-0"
+                        className="flex items-center gap-1.5 bg-[#EEEDF3] p-1 rounded-xl"
                       >
                         <button
                           type="button"
-                          title="Decrease stock by 1"
-                          onClick={(e) => handleQuickAdjust(e, item.id!, -1)}
+                          aria-label="Reduce stock"
                           disabled={qty <= 0}
-                          className="w-7 h-7 rounded-full bg-white hover:bg-gray-100 active:scale-95 disabled:opacity-30 flex items-center justify-center text-gray-700 shadow-2xs transition-all"
+                          onClick={(e) => handleQuickAdjust(e, item.id!, -1, qty, item.unit)}
+                          className="w-9 h-9 rounded-lg bg-white text-gray-700 font-bold text-[16px] flex items-center justify-center active:scale-90 disabled:opacity-40 transition-transform shadow-xs"
                         >
-                          <Minus className="w-3.5 h-3.5 stroke-[2.5]" />
+                          <Minus className="w-4 h-4" />
                         </button>
-                        <span className="font-black text-xs text-black min-w-[26px] text-center select-none">
+                        <span className="font-bold text-[15px] text-black w-7 text-center select-none">
                           {qty}
                         </span>
                         <button
                           type="button"
-                          title="Increase stock by 1"
-                          onClick={(e) => handleQuickAdjust(e, item.id!, 1)}
-                          className="w-7 h-7 rounded-full bg-white hover:bg-gray-100 active:scale-95 flex items-center justify-center text-gray-700 shadow-2xs transition-all"
+                          aria-label="Increase stock"
+                          onClick={(e) => handleQuickAdjust(e, item.id!, 1, qty, item.unit)}
+                          className="w-9 h-9 rounded-lg bg-iosBlue text-white font-bold text-[16px] flex items-center justify-center active:scale-90 transition-transform shadow-xs shadow-iosBlue/25"
                         >
-                          <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                          <Plus className="w-4 h-4 stroke-[2.5]" />
                         </button>
                       </div>
-                    ) : (
-                      <div className="text-right shrink-0">
-                        {hasCost && (
-                          <span className="text-[10px] text-gray-400 block font-medium">
-                            Cost: {formatINR(item.costPrice!)}
-                          </span>
-                        )}
-                      </div>
                     )}
-                  </div>
-
-                  {/* Badges & Actions Row */}
-                  <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-gray-100/90 text-[11px]">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      {margin !== null && (
-                        <span className="text-[11px] text-emerald-700 font-bold bg-emerald-50 border border-emerald-200/70 px-2.5 py-0.5 rounded-full inline-flex items-center gap-1">
-                          <TrendingUp className="w-3 h-3 text-emerald-600" />
-                          <span>Profit + {formatINR(margin)}</span>
-                        </span>
-                      )}
-
-                      {isProduct ? (
-                        isOutOfStock ? (
-                          <span className="inline-flex items-center space-x-1 text-rose-700 font-bold bg-rose-50 border border-rose-200/70 px-2.5 py-0.5 rounded-full">
-                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 inline-block" />
-                            <span>Out of stock</span>
-                          </span>
-                        ) : isLowStock ? (
-                          <span className="inline-flex items-center space-x-1 text-amber-800 font-bold bg-amber-50 border border-amber-200/80 px-2.5 py-0.5 rounded-full shadow-2xs">
-                            <AlertTriangle className="w-3 h-3 text-amber-500" />
-                            <span>Low stock: {qty} left</span>
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center space-x-1 text-emerald-700 font-bold bg-emerald-50/70 border border-emerald-200/60 px-2.5 py-0.5 rounded-full">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
-                            <span>{qty} {item.unit || 'pcs'} in stock</span>
-                          </span>
-                        )
-                      ) : (
-                        <span className="inline-flex items-center space-x-1 text-purple-700 font-bold bg-purple-50 border border-purple-200 px-2.5 py-0.5 rounded-full">
-                          <span>Service / Labour</span>
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="flex items-center space-x-3 text-xs">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleOpenEdit(item);
-                        }}
-                        className="text-iosBlue hover:underline flex items-center space-x-1 py-0.5 font-semibold"
-                      >
-                        <Edit2 className="w-3 h-3" />
-                        <span>Edit</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setItemToDelete(item);
-                        }}
-                        className="text-iosRed hover:underline flex items-center space-x-1 py-0.5 font-semibold"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                        <span>Delete</span>
-                      </button>
-                    </div>
                   </div>
                 </div>
               );
@@ -618,9 +682,9 @@ export const StockScreen: React.FC<StockScreenProps> = ({
               setIsAddPreownedOpen(true);
             }
           }}
-          className="h-12 px-5 py-2.5 rounded-full flex items-center space-x-2 font-bold text-[14px] shadow-lg active:scale-95 transition-all duration-150 text-black bg-white/95 backdrop-blur-md border border-black/[0.08] shadow-black/10 hover:bg-white"
+          className="h-13 px-5 py-3 rounded-full flex items-center space-x-2 font-bold text-[15px] shadow-lg active:scale-95 transition-all duration-150 text-white bg-iosBlue shadow-iosBlue/35 hover:bg-blue-600"
         >
-          <Plus className="w-4 h-4 stroke-[2.5]" />
+          <Plus className="w-5 h-5 stroke-[2.5]" />
           <span>{view === 'stock' ? 'Add Item' : 'New Intake'}</span>
         </button>
       </FloatingAction>
@@ -629,13 +693,149 @@ export const StockScreen: React.FC<StockScreenProps> = ({
       {isAddSheetOpen && (
         <AddEditStockSheet
           isOpen={isAddSheetOpen}
-          onClose={() => setIsAddSheetOpen(false)}
-          onSaved={() => setIsAddSheetOpen(false)}
+          onClose={() => {
+            setIsAddSheetOpen(false);
+            setScannedInitialSku('');
+          }}
+          onSaved={() => {
+            setIsAddSheetOpen(false);
+            setScannedInitialSku('');
+          }}
+          onDelete={(item) => {
+            setIsAddSheetOpen(false);
+            setItemToDelete(item);
+          }}
           itemToEdit={itemToEdit}
           language={language}
           defaultCategory={defaultAddCategory}
+          initialSku={scannedInitialSku}
         />
       )}
+
+      {/* Barcode Scanner Modal */}
+      {isScanModalOpen && (
+        <BarcodeScannerModal
+          isOpen={isScanModalOpen}
+          onClose={() => setIsScanModalOpen(false)}
+          onScan={handleBarcodeScanned}
+          title="Scan Product Barcode"
+        />
+      )}
+
+      {/* Matched Product Result Sheet */}
+      {matchedProduct &&
+        createPortal(
+          <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+            <div className="w-full max-w-lg bg-white rounded-t-[24px] shadow-2xl p-5 border-t border-gray-100 animate-in slide-in-from-bottom duration-200 space-y-4">
+              {/* Header */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                    <CheckCircle2 className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider block">
+                      Product in Stock
+                    </span>
+                    <h3 className="text-lg font-bold text-black leading-tight">
+                      {matchedProduct.name}
+                    </h3>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setMatchedProduct(null)}
+                  className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Barcode & Price Details Card */}
+              <div className="bg-[#F2F2F7] rounded-[16px] p-3.5 space-y-2">
+                <div className="flex items-center justify-between text-xs text-gray-500">
+                  <span className="font-medium">Barcode / SKU:</span>
+                  <span className="font-mono font-bold text-gray-800 bg-white px-2 py-0.5 rounded-md border border-gray-200">
+                    {matchedProduct.sku}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between border-t border-gray-200/60 pt-2">
+                  <div>
+                    <span className="text-[11px] text-gray-500 block">Selling Price</span>
+                    <span className="text-xl font-extrabold text-black">
+                      {formatINR(matchedProduct.sellingPrice)}
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[11px] text-gray-500 block">Current Stock</span>
+                    <span
+                      className={`text-xl font-extrabold ${
+                        (matchedProduct.quantity ?? 0) <= (matchedProduct.lowStockThreshold || 5)
+                          ? 'text-amber-600'
+                          : 'text-emerald-600'
+                      }`}
+                    >
+                      {matchedProduct.quantity ?? 0} {matchedProduct.unit || 'pcs'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Toast Feedback */}
+              {toastMessage && (
+                <div className="bg-emerald-50 text-emerald-700 px-3 py-2 rounded-xl text-xs font-semibold text-center border border-emerald-200 animate-in fade-in">
+                  {toastMessage}
+                </div>
+              )}
+
+              {/* Actions Grid */}
+              <div className="grid grid-cols-2 gap-2.5 pb-[calc(env(safe-area-inset-bottom)+20px)] sm:pb-5">
+                <button
+                  type="button"
+                  onClick={handleAddOneStock}
+                  className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white rounded-xl font-bold text-sm shadow-md shadow-emerald-600/25 flex items-center justify-center space-x-1.5 transition-all"
+                >
+                  <Plus className="w-4 h-4 stroke-[2.5]" />
+                  <span>+1 Stock Unit</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const item = matchedProduct;
+                    setMatchedProduct(null);
+                    if (item) handleOpenEdit(item);
+                  }}
+                  className="w-full py-3 bg-iosBlue hover:bg-blue-600 active:scale-98 text-white rounded-xl font-bold text-sm shadow-md shadow-iosBlue/25 flex items-center justify-center space-x-1.5 transition-all"
+                >
+                  <Edit2 className="w-4 h-4" />
+                  <span>Edit Details</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMatchedProduct(null);
+                    setIsScanModalOpen(true);
+                  }}
+                  className="col-span-1 py-2.5 bg-gray-100 hover:bg-gray-200 active:scale-98 text-gray-800 rounded-xl font-semibold text-xs flex items-center justify-center space-x-1.5 transition-all"
+                >
+                  <ScanBarcode className="w-3.5 h-3.5" />
+                  <span>Scan Next</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setMatchedProduct(null)}
+                  className="col-span-1 py-2.5 bg-gray-100 hover:bg-gray-200 active:scale-98 text-gray-600 rounded-xl font-semibold text-xs transition-all"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
 
       {/* Add / Edit Pre-Owned Sheet Modal */}
       <AddEditUsedPhoneSheet
@@ -659,6 +859,14 @@ export const StockScreen: React.FC<StockScreenProps> = ({
         onConfirm={handleConfirmDelete}
         onCancel={() => setItemToDelete(null)}
       />
+
+      {/* Microfeedback Toast Overlay */}
+      {toastMessage && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-40 bg-gray-900 text-white px-4 py-2.5 rounded-full shadow-2xl flex items-center gap-2 transition-all duration-300 animate-in fade-in slide-in-from-bottom-2 pointer-events-none select-none">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span className="text-xs font-semibold">{toastMessage}</span>
+        </div>
+      )}
     </div>
   );
 };

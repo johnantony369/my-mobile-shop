@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useDeferredValue } from 'react';
 import {
   Search,
   Plus,
@@ -19,8 +19,7 @@ import {
   addCustomSparePart,
   updatePartCompatibility,
 } from '../../firebase/masterSpares';
-import { AddDeviceModal } from '../../components/wholesale/AddDeviceModal';
-import { AddSparePartModal } from '../../components/wholesale/AddSparePartModal';
+import { AddItemBottomSheet } from '../../components/wholesale/AddItemBottomSheet';
 import { PartCompatibilityModal } from '../../components/wholesale/PartCompatibilityModal';
 
 export interface SparesScreenProps {
@@ -61,9 +60,8 @@ export const SparesScreen: React.FC<SparesScreenProps> = () => {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [loading, setLoading] = useState(true);
 
-  // Modals
-  const [isAddDeviceOpen, setIsAddDeviceOpen] = useState(false);
-  const [isAddSpareOpen, setIsAddSpareOpen] = useState(false);
+  // Bottom Sheet & Modals
+  const [isAddItemOpen, setIsAddItemOpen] = useState(false);
   const [selectedDeviceForPart, setSelectedDeviceForPart] = useState<MasterDevice | undefined>();
   const [compatPart, setCompatPart] = useState<MasterSparePart | null>(null);
 
@@ -94,17 +92,72 @@ export const SparesScreen: React.FC<SparesScreenProps> = () => {
     };
   }, []);
 
+  const deferredSearchQuery = useDeferredValue(searchQuery);
+
+  // Pre-index spares by deviceId with deduplication for O(1) retrieval during render
+  const sparesByDeviceId = useMemo(() => {
+    const map = new Map<string, MasterSparePart[]>();
+    const seenPartIds = new Set<string>();
+
+    for (let i = 0; i < spares.length; i++) {
+      const s = spares[i];
+      if (!s.id || seenPartIds.has(s.id)) continue;
+      seenPartIds.add(s.id);
+
+      let list = map.get(s.deviceId);
+      if (!list) {
+        list = [];
+        map.set(s.deviceId, list);
+      }
+      list.push(s);
+    }
+    return map;
+  }, [spares]);
+
   // Reset pagination when filter or search changes
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
-  }, [selectedBrand, searchQuery]);
+  }, [selectedBrand, deferredSearchQuery]);
 
-  // Filter devices based on brand & search
+  // Filter devices based on brand & search with strict ID deduplication defense
   const filteredDevices = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
+    const q = deferredSearchQuery.trim().toLowerCase();
     const isTabletFilter = selectedBrand === 'Tablets / iPads';
 
-    return devices.filter((d) => {
+    const seenIds = new Set<string>();
+    const uniqueDevices: MasterDevice[] = [];
+    for (let i = 0; i < devices.length; i++) {
+      const d = devices[i];
+      if (d && d.id && !seenIds.has(d.id)) {
+        seenIds.add(d.id);
+        uniqueDevices.push(d);
+      }
+    }
+
+    // Fast-path: When no search query and "All" brand, return all deduplicated devices
+    if (!q && selectedBrand === 'All') {
+      return uniqueDevices;
+    }
+
+    // High-performance Inverted Index:
+    // If a search query exists, scan all spares ONCE in O(M) time (23,000 checks, ~2ms)
+    // instead of scanning all 23,000 spares for every single device (which was 61.8 million checks!)
+    let matchingDeviceIdsFromSpares: Set<string> | null = null;
+    if (q) {
+      matchingDeviceIdsFromSpares = new Set<string>();
+      for (let i = 0; i < spares.length; i++) {
+        const s = spares[i];
+        const nameMatch = s.partName.toLowerCase().includes(q);
+        const codeMatch = s.partCode ? s.partCode.toLowerCase().includes(q) : false;
+        const compatMatch = s.compatibleModels ? s.compatibleModels.some((m) => m.toLowerCase().includes(q)) : false;
+
+        if (nameMatch || codeMatch || compatMatch) {
+          matchingDeviceIdsFromSpares.add(s.deviceId);
+        }
+      }
+    }
+
+    return uniqueDevices.filter((d) => {
       const isTablet = /ipad|tab\b|pad\b|tablet/i.test(d.model);
       const brandMatch =
         selectedBrand === 'All'
@@ -122,16 +175,10 @@ export const SparesScreen: React.FC<SparesScreenProps> = () => {
           Array.isArray((d as { modelCodes?: string[] }).modelCodes) &&
           (d as { modelCodes?: string[] }).modelCodes?.some((code) => code.toLowerCase().includes(q)));
 
-      const partsMatch = spares.some(
-        (s) =>
-          s.deviceId === d.id &&
-          (s.partName.toLowerCase().includes(q) ||
-            (s.partCode && s.partCode.toLowerCase().includes(q)) ||
-            s.compatibleModels?.some((m) => m.toLowerCase().includes(q)))
-      );
+      const partsMatch = matchingDeviceIdsFromSpares ? matchingDeviceIdsFromSpares.has(d.id) : false;
       return deviceMatch || partsMatch;
     });
-  }, [devices, spares, selectedBrand, searchQuery]);
+  }, [devices, spares, selectedBrand, deferredSearchQuery]);
 
   const visibleDevices = useMemo(() => {
     return filteredDevices.slice(0, visibleCount);
@@ -139,13 +186,15 @@ export const SparesScreen: React.FC<SparesScreenProps> = () => {
 
   const handleSaveDevice = async (newDeviceData: Omit<MasterDevice, 'id'>) => {
     const created = await addCustomDevice(newDeviceData);
-    setDevices((prev) => [created, ...prev]);
+    setDevices((prev) => [created, ...prev.filter((d) => d.id !== created.id)]);
     setExpandedDeviceId(created.id);
+    return created;
   };
 
   const handleSaveSpare = async (newSpareData: Omit<MasterSparePart, 'id'>) => {
     const created = await addCustomSparePart(newSpareData);
-    setSpares((prev) => [created, ...prev]);
+    setSpares((prev) => [created, ...prev.filter((s) => s.id !== created.id)]);
+    return created;
   };
 
   const handleSaveCompatibility = async (partId: string, models: string[]) => {
@@ -157,7 +206,7 @@ export const SparesScreen: React.FC<SparesScreenProps> = () => {
 
   return (
     <div className="pb-24 pt-4 px-4 max-w-lg mx-auto space-y-4">
-      {/* Header & Quick Action Buttons */}
+      {/* Header & Quick Action Button */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-black tracking-tight flex items-center gap-2">
@@ -170,27 +219,17 @@ export const SparesScreen: React.FC<SparesScreenProps> = () => {
               : 'Pre-loaded smartphone models & spare parts'}
           </p>
         </div>
-        <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => setIsAddDeviceOpen(true)}
-            className="flex items-center gap-1 px-3 py-1.5 bg-white border border-slate-200 hover:border-slate-300 text-slate-800 text-xs font-semibold rounded-full shadow-2xs active:scale-95 transition-all"
-          >
-            <Plus className="w-3.5 h-3.5 text-iosBlue" />
-            <span>+ Add Phone Model</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setSelectedDeviceForPart(undefined);
-              setIsAddSpareOpen(true);
-            }}
-            className="flex items-center gap-1 px-3 py-1.5 bg-iosBlue hover:bg-blue-600 text-white text-xs font-bold rounded-full shadow-xs active:scale-95 transition-all"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>+ Add Spare Part</span>
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => {
+            setSelectedDeviceForPart(undefined);
+            setIsAddItemOpen(true);
+          }}
+          className="flex items-center gap-1.5 px-3.5 py-1.5 bg-iosBlue hover:bg-blue-600 text-white text-xs font-bold rounded-full shadow-xs active:scale-95 transition-all"
+        >
+          <Plus className="w-3.5 h-3.5" />
+          <span>Add Item</span>
+        </button>
       </div>
 
       {/* Search Input */}
@@ -236,8 +275,8 @@ export const SparesScreen: React.FC<SparesScreenProps> = () => {
       ) : (
         <div className="space-y-3">
           {visibleDevices.map((device) => {
+            const deviceSpares = sparesByDeviceId.get(device.id) || [];
             const isExpanded = expandedDeviceId === device.id;
-            const deviceSpares = spares.filter((s) => s.deviceId === device.id);
             const isTablet = /ipad|tab\b|pad\b|tablet/i.test(device.model);
 
             return (
@@ -307,7 +346,7 @@ export const SparesScreen: React.FC<SparesScreenProps> = () => {
                         type="button"
                         onClick={() => {
                           setSelectedDeviceForPart(device);
-                          setIsAddSpareOpen(true);
+                          setIsAddItemOpen(true);
                         }}
                         className="text-[11px] font-bold text-iosBlue hover:underline flex items-center gap-1"
                       >
@@ -392,19 +431,17 @@ export const SparesScreen: React.FC<SparesScreenProps> = () => {
         </div>
       )}
 
-      {/* Modals */}
-      <AddDeviceModal
-        isOpen={isAddDeviceOpen}
-        onClose={() => setIsAddDeviceOpen(false)}
-        onSave={handleSaveDevice}
-      />
-
-      <AddSparePartModal
-        isOpen={isAddSpareOpen}
+      {/* Bottom Sheet & Modals */}
+      <AddItemBottomSheet
+        isOpen={isAddItemOpen}
         devices={devices}
-        selectedDevice={selectedDeviceForPart}
-        onClose={() => setIsAddSpareOpen(false)}
-        onSave={handleSaveSpare}
+        initialDevice={selectedDeviceForPart}
+        onClose={() => {
+          setIsAddItemOpen(false);
+          setSelectedDeviceForPart(undefined);
+        }}
+        onSaveDevice={handleSaveDevice}
+        onSaveSpare={handleSaveSpare}
       />
 
       <PartCompatibilityModal

@@ -101,4 +101,76 @@ describe('PDF Bill Generator', () => {
       fs.unlinkSync(tempFile);
     }
   });
+
+  it('shareBillPDF uses navigator.share when files are shareable', async () => {
+    const { shareBillPDF } = await import('../src/utils/pdf');
+    const bill: Bill = {
+      invoiceNo: 'INV-0100',
+      date: '2026-10-06',
+      items: [{ name: 'Screen Guard', qty: 1, price: 100 }],
+      subtotal: 100,
+      discount: 0,
+      total: 100,
+      paymentMethod: 'cash',
+      createdAt: Date.now(),
+    };
+
+    const mockShare = vi.fn().mockResolvedValue(undefined);
+    const mockCanShare = vi.fn().mockReturnValue(true);
+
+    Object.defineProperty(globalThis, 'navigator', {
+      value: {
+        share: mockShare,
+        canShare: mockCanShare,
+      },
+      configurable: true,
+      writable: true,
+    });
+
+    const shared = await shareBillPDF({
+      bill,
+      shopName: 'Galaxy Mobiles',
+    });
+
+    expect(shared).toBe(true);
+    expect(mockCanShare).toHaveBeenCalled();
+    expect(mockShare).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Galaxy Mobiles - INV-0100',
+        files: expect.any(Array),
+      })
+    );
+  });
+
+  it('shareBillPDF falls back to download when navigator.share is unsupported', async () => {
+    const { shareBillPDF } = await import('../src/utils/pdf');
+    const bill: Bill = {
+      invoiceNo: 'INV-0101',
+      date: '2026-10-06',
+      items: [{ name: 'Cable', qty: 1, price: 150 }],
+      subtotal: 150,
+      discount: 0,
+      total: 150,
+      paymentMethod: 'cash',
+      createdAt: Date.now(),
+    };
+
+    Object.defineProperty(globalThis, 'navigator', {
+      value: {},
+      configurable: true,
+      writable: true,
+    });
+
+    const shared = await shareBillPDF({
+      bill,
+      shopName: 'Galaxy Mobiles',
+    });
+
+    expect(shared).toBe(true);
+    const tempFile = 'INV-0101.pdf';
+    const fs = await import('fs');
+    if (fs.existsSync(tempFile)) {
+      fs.unlinkSync(tempFile);
+    }
+  });
 });

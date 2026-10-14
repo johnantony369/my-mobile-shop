@@ -209,7 +209,7 @@ export const UsedPhonesView: React.FC<UsedPhonesViewProps> = ({
                 className="flex items-center space-x-1.5 bg-iosBlue hover:bg-blue-600 active:scale-95 text-white text-xs font-bold px-3.5 py-2 rounded-full shadow-md shadow-iosBlue/20 transition-all select-none ml-auto"
               >
                 <Plus className="w-4 h-4" />
-                <span>+ New Intake</span>
+                <span>New Intake</span>
               </button>
             </div>
 

@@ -146,4 +146,43 @@ describe('Repair Slips & Accounting Workflow', () => {
     const totalCollected = allEntries.reduce((sum, e) => sum + e.amount, 0);
     expect(totalCollected).toBe(1500);
   });
+
+  it('supports in_progress status in repair lifecycle and notifications', async () => {
+    // 1. Create a job in received status
+    const jobId = await db.jobs.add({
+      customerName: 'Priya',
+      phone: '9876543211',
+      model: 'OnePlus Nord',
+      complaint: 'Mic not working',
+      estimate: 1200,
+      advance: 200,
+      status: 'received',
+      receivedAt: Date.now(),
+    });
+
+    let job = await db.jobs.get(jobId);
+    expect(job?.status).toBe('received');
+    expect(buildJobNotificationMessage(job!, 'Tech Care')).toContain('Job Card');
+
+    // 2. Start Repair -> in_progress
+    await db.jobs.update(jobId, { status: 'in_progress' });
+    job = await db.jobs.get(jobId);
+    expect(job?.status).toBe('in_progress');
+    expect(buildJobNotificationMessage(job!, 'Tech Care')).toContain('Job Card');
+
+    // 3. Mark Ready -> ready
+    const readyTime = Date.now();
+    await db.jobs.update(jobId, { status: 'ready', readyAt: readyTime });
+    job = await db.jobs.get(jobId);
+    expect(job?.status).toBe('ready');
+    expect(buildJobNotificationMessage(job!, 'Tech Care')).toContain('Device Ready');
+    expect(buildJobNotificationMessage(job!, 'Tech Care')).toContain('Balance Due: ₹1,000');
+
+    // 4. Deliver -> delivered
+    const deliveryTime = Date.now();
+    await db.jobs.update(jobId, { status: 'delivered', deliveredAt: deliveryTime, finalAmount: 1200 });
+    job = await db.jobs.get(jobId);
+    expect(job?.status).toBe('delivered');
+    expect(buildJobNotificationMessage(job!, 'Tech Care')).toContain('Delivery Receipt');
+  });
 });

@@ -318,9 +318,11 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const [shopName, setShopName] = useState(settings.shopName);
   const [shopAddress, setShopAddress] = useState(settings.shopAddress || '');
   const [shopPhone, setShopPhone] = useState(settings.shopPhone || '');
+  const [shopGstin, setShopGstin] = useState(settings.shopGstin || '');
   const [shopLogo, setShopLogo] = useState<string | null>(settings.shopLogo || null);
   const [isCompressingLogo, setIsCompressingLogo] = useState(false);
   const [phoneError, setPhoneError] = useState<string | null>(null);
+  const [gstinError, setGstinError] = useState<string | null>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
   const [isSavedNotice, setIsSavedNotice] = useState(false);
   const [showReports, setShowReports] = useState(false);
@@ -433,6 +435,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     e.preventDefault();
     if (!shopName.trim()) return;
     setPhoneError(null);
+    setGstinError(null);
 
     let cleanedPhone: string | undefined = undefined;
     if (shopPhone.trim()) {
@@ -443,10 +446,17 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       }
     }
 
+    const trimmedGstin = shopGstin.trim().toUpperCase();
+    if (trimmedGstin && trimmedGstin.length < 15) {
+      setGstinError('Please enter a valid 15-character GSTIN');
+      return;
+    }
+
     await updateAppSettings({
       shopName: shopName.trim(),
       shopAddress: shopAddress.trim() || undefined,
       shopPhone: cleanedPhone || undefined,
+      shopGstin: trimmedGstin || undefined,
       shopLogo: shopLogo || undefined,
     });
     setIsSavedNotice(true);
@@ -765,6 +775,30 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               )}
               <span className="text-[11px] text-[#8E8E93] block mt-1">
                 Customers can call or message this number directly from live repair tracking slips
+              </span>
+            </div>
+
+            {/* GST Number (GSTIN) */}
+            <div>
+              <label className="text-xs text-[#8E8E93] block mb-1">
+                Shop GSTIN / GST Number (Optional)
+              </label>
+              <input
+                type="text"
+                maxLength={15}
+                value={shopGstin}
+                onChange={(e) => {
+                  setShopGstin(e.target.value.toUpperCase().replace(/[^0-9A-Z]/g, ''));
+                  if (gstinError) setGstinError(null);
+                }}
+                placeholder="e.g. 32AAAAA0000A1Z5"
+                className="w-full bg-[#F2F2F7] rounded-[10px] px-3.5 py-2.5 text-[15px] font-mono uppercase font-medium text-black focus:outline-none focus:ring-2 focus:ring-iosBlue/40 border border-black/[0.04]"
+              />
+              {gstinError && (
+                <p className="text-xs text-red-500 mt-1 font-medium">{gstinError}</p>
+              )}
+              <span className="text-[11px] text-[#8E8E93] block mt-1">
+                Included in GST Tax Invoices and reports generated for your shop
               </span>
             </div>
 

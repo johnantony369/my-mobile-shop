@@ -25,8 +25,8 @@ describe('Easy Billing', () => {
       { name: 'Glass', qty: 2, price: 150 },
       { name: 'Cover', qty: 1, price: 100 },
     ];
-    expect(computeBillTotals(items, 50)).toEqual({ subtotal: 400, total: 350 });
-    expect(computeBillTotals(items, 9999)).toEqual({ subtotal: 400, total: 0 });
+    expect(computeBillTotals(items, 50)).toEqual(expect.objectContaining({ subtotal: 400, total: 350 }));
+    expect(computeBillTotals(items, 9999)).toEqual(expect.objectContaining({ subtotal: 400, total: 0 }));
     expect(summarizeBillItems(items)).toBe('Glass x2, Cover');
   });
 
