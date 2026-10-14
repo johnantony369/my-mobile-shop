@@ -96,10 +96,10 @@ describe('Wholesale Mode Settings Lock & Activation Modal', () => {
   });
 
   it('provides setAccountWholesalerStatus function for remote superadmin approval', async () => {
-    const res = await setAccountWholesalerStatus('test-shop-uid', true);
+    const res = await setAccountWholesalerStatus('', true);
     expect(res.isWholesalerApproved).toBe(true);
 
-    const revoked = await setAccountWholesalerStatus('test-shop-uid', false);
+    const revoked = await setAccountWholesalerStatus('', false);
     expect(revoked.isWholesalerApproved).toBe(false);
   });
 });

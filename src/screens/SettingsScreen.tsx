@@ -589,6 +589,49 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           {t('settings_header', language)}
         </h1>
 
+        {/* Partner Program Card Banner */}
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => navigate('/partner')}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              navigate('/partner');
+            }
+          }}
+          className="w-full bg-white rounded-[16px] overflow-hidden border border-black/[0.06] shadow-sm active:scale-[0.99] transition-all cursor-pointer group text-left focus:outline-hidden focus:ring-2 focus:ring-iosBlue/50"
+          aria-label="Open Partner Program Portal"
+        >
+          <div className="relative aspect-[16/9] w-full bg-slate-900 overflow-hidden">
+            <img
+              src="/partner-program-banner.jpg"
+              alt="Partner Program Banner"
+              className="w-full h-full object-cover group-hover:scale-[1.01] transition-transform duration-300"
+              loading="eager"
+            />
+          </div>
+          <div className="p-3.5 flex items-center justify-between bg-white">
+            <div className="flex-1 pr-2">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[11px] font-bold text-iosBlue bg-blue-50 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                  Partner Program
+                </span>
+                <span className="text-xs font-semibold text-black">
+                  Distributor Network
+                </span>
+              </div>
+              <p className="text-xs text-[#8E8E93] mt-1 line-clamp-1">
+                Earn commissions on shop referrals &amp; access distributor tools
+              </p>
+            </div>
+            <div className="flex items-center gap-1 text-xs font-semibold text-iosBlue flex-shrink-0 group-hover:translate-x-0.5 transition-transform">
+              <span>Open</span>
+              <ChevronRight className="w-4 h-4" />
+            </div>
+          </div>
+        </div>
+
         {/* 30-Day Backup Alert Banner */}
         {backupWarning && (
           <div className="bg-amber-50 border border-amber-200 rounded-[14px] p-3.5 flex items-start space-x-3 shadow-sm">

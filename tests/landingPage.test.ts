@@ -12,7 +12,8 @@ describe('LandingPage Component', () => {
     expect(content).toContain('The All-in-One Counter App for Your Mobile Shop');
     expect(content).toContain('WhatsApp');
     expect(content).toContain('₹249');
-    expect(content).toContain('₹1,799');
+    expect(content).toContain('₹2,499');
+    expect(content.toLowerCase()).toContain('2 months free');
 
     // No free trial check
     expect(content.toLowerCase()).not.toContain('free trial');

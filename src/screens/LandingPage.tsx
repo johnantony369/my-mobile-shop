@@ -610,10 +610,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isAuthenticated = fals
             </button>
           </div>
 
-          {/* Yearly Plan (Best Value - 64% OFF) */}
+          {/* Yearly Plan (Best Value - 2 Months Free) */}
           <div className="bg-white rounded-[24px] p-6 border-2 border-[#007AFF] shadow-md flex flex-col justify-between space-y-5 relative">
             <div className="absolute -top-3 right-5 bg-[#007AFF] text-white text-[10px] font-black uppercase tracking-wider px-3 py-0.5 rounded-full shadow-xs">
-              Save 64% • Best Value
+              2 Months Free • Best Value
             </div>
 
             <div className="space-y-3.5">
@@ -622,7 +622,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isAuthenticated = fals
                   Annual Plan
                 </span>
                 <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-[#34C759]/15 text-[#34C759]">
-                  Early 50 Shops Special
+                  2 Months Free
                 </span>
               </div>
 
@@ -632,7 +632,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isAuthenticated = fals
                     ₹4,999
                   </span>
                   <span className="text-3xl sm:text-4xl font-extrabold text-slate-900 tabular-nums">
-                    ₹1,799
+                    ₹2,499
                   </span>
                   <span className="text-xs font-semibold text-[#8E8E93]">/ year</span>
                 </div>
@@ -640,12 +640,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isAuthenticated = fals
                 {/* Highlight per day cost */}
                 <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#34C759]/15 text-[#34C759] text-xs font-bold">
                   <Sparkles className="size-3.5 shrink-0" />
-                  <span>Just ~₹4.90 / day (₹150/month)</span>
+                  <span>Just ~₹6.80 / day (~₹208/month)</span>
                 </div>
               </div>
 
               <p className="text-xs text-[#34C759] font-semibold">
-                Less than half a cup of chai a day for a full year of peace of mind
+                Pay for 10 months, get 2 months free for a full year of peace of mind
               </p>
 
               <ul className="space-y-2 text-xs text-slate-700 pt-2 hairline-t">
@@ -677,7 +677,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isAuthenticated = fals
               onClick={handleGetStarted}
               className="w-full py-3 bg-[#007AFF] hover:bg-[#0062cc] text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-[#007AFF]/25 ios-press min-h-[44px]"
             >
-              Claim Yearly Offer (₹1,799/yr)
+              Claim Yearly Offer (₹2,499/yr • 2 Months Free)
             </button>
           </div>
         </div>
