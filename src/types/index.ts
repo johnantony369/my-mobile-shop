@@ -28,6 +28,15 @@ export interface Entry extends SyncMetadata {
   exchangeTradeInValue?: number; // credit given for the old phone
 }
 
+export interface Customer extends SyncMetadata {
+  id?: number;
+  name: string;
+  phone?: string;
+  address?: string;
+  notes?: string;
+  createdAt: number;
+}
+
 export type JobStatus = 'received' | 'in_progress' | 'waiting' | 'ready' | 'delivered' | 'returned';
 
 export interface Job extends SyncMetadata {

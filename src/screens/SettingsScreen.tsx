@@ -1,7 +1,9 @@
 import React, { useState, useRef } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { AppSettings, Language } from '../types';
 import { t } from '../i18n';
-import { updateAppSettings, clearLocalDatabase, cleanIndianPhone, isValidIndianPhone } from '../db/db';
+import { db, updateAppSettings, clearLocalDatabase, cleanIndianPhone, isValidIndianPhone } from '../db/db';
+import { CustomersModal } from '../components/CustomersModal';
 import { compressImageFile } from '../utils/image';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { checkCode, formatActivationCode, getTrialDaysRemaining } from '../utils/activation';
@@ -404,6 +406,14 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   // Wholesale activation state
   const [isWholesaleActivationModalOpen, setIsWholesaleActivationModalOpen] = useState(false);
 
+  // Customers state
+  const [isCustomersModalOpen, setIsCustomersModalOpen] = useState(false);
+  const customerCount = useLiveQuery(async () => {
+    if (!db.customers) return 0;
+    const all = await db.customers.toArray();
+    return all.filter((c) => c.syncStatus !== 'deleted' && !c.deletedAt).length;
+  }, []) || 0;
+
   const isAdmin = isSuperAdmin(user);
   const canToggleWholesale = isAdmin || Boolean(settings.isWholesalerApproved);
   const isProActive = hasFullAccess(isProCurrentlyActive(settings) || activationSuccess, user);
@@ -681,6 +691,35 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               </h3>
               <p className="text-xs text-[#8E8E93] mt-0.5">
                 Monthly revenue, day-by-day cash flow & repair stats
+              </p>
+            </div>
+          </div>
+          <ChevronRight className="w-5 h-5 text-[#8E8E93] shrink-0" />
+        </button>
+
+        {/* Customers Row */}
+        <button
+          type="button"
+          onClick={() => setIsCustomersModalOpen(true)}
+          className="w-full bg-white rounded-[14px] p-4 shadow-sm border border-black/[0.04] flex items-center justify-between text-left hover:bg-slate-50 active:scale-[0.99] transition-all"
+        >
+          <div className="flex items-center space-x-3.5">
+            <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
+              <Users className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-[15px] font-bold text-black tracking-tight">
+                  Customers
+                </h3>
+                {customerCount > 0 && (
+                  <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[11px] font-semibold text-slate-600">
+                    {customerCount}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-[#8E8E93] mt-0.5">
+                Manage saved customer details for faster counter &amp; spare entries
               </p>
             </div>
           </div>
@@ -1602,6 +1641,12 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         shopName={settings.shopName}
         shopPhone={settings.shopPhone}
         userUid={user?.uid}
+      />
+
+      {/* Customers Management Modal */}
+      <CustomersModal
+        isOpen={isCustomersModalOpen}
+        onClose={() => setIsCustomersModalOpen(false)}
       />
 
       {/* Link Phone Number Modal */}

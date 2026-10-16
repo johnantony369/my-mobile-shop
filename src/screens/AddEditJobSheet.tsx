@@ -73,6 +73,32 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
   ) ?? [];
 
   const nameInputRef = useRef<HTMLInputElement>(null);
+  const customerDropdownRef = useRef<HTMLDivElement>(null);
+  const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
+
+  // Live query for registered customers
+  const registeredCustomers = useLiveQuery(
+    async () => {
+      try {
+        if (!db.customers) return [];
+        const all = await db.customers.toArray();
+        return all.filter((c) => c.syncStatus !== 'deleted' && !c.deletedAt);
+      } catch {
+        return [];
+      }
+    },
+    []
+  ) ?? [];
+
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (customerDropdownRef.current && !customerDropdownRef.current.contains(e.target as Node)) {
+        setShowCustomerDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -376,19 +402,75 @@ export const AddEditJobSheet: React.FC<AddEditJobSheetProps> = ({
         )}
 
         {/* Customer Name */}
-        <div className="space-y-1">
+        <div ref={customerDropdownRef} className="space-y-1 relative">
           <label className="text-xs font-semibold text-[#8E8E93] ml-1">
             {t('field_customer_name', language)} *
           </label>
-            <input
+          <input
             ref={nameInputRef}
             type="text"
             required
             value={customerName}
-            onChange={(e) => setCustomerName(e.target.value)}
+            onChange={(e) => {
+              setCustomerName(e.target.value);
+              setShowCustomerDropdown(true);
+            }}
+            onFocus={() => setShowCustomerDropdown(true)}
             placeholder="Customer Name"
             className="w-full bg-[#F2F2F7] rounded-[10px] px-3.5 py-2.5 text-[15px] text-black focus:outline-none focus:ring-2 focus:ring-iosBlue/40 border border-black/[0.04]"
           />
+
+          {showCustomerDropdown && customerName.trim().length > 0 && (
+            (() => {
+              const query = customerName.toLowerCase().trim();
+              const matching = registeredCustomers.filter(
+                (c) =>
+                  c.name.toLowerCase().includes(query) ||
+                  (c.phone && c.phone.includes(query))
+              );
+              if (matching.length === 0) return null;
+              return (
+                <div className="absolute left-0 right-0 top-full mt-1 bg-white rounded-[14px] shadow-xl border border-black/[0.08] max-h-48 overflow-y-auto z-50 p-1.5 space-y-1">
+                  <div className="px-2 py-0.5 text-[10px] font-bold text-[#8E8E93] uppercase tracking-wider">
+                    Saved Customers
+                  </div>
+                  {matching.slice(0, 5).map((c) => (
+                    <button
+                      key={c.id || c.cloudId}
+                      type="button"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        setCustomerName(c.name);
+                        if (c.phone) {
+                          setPhone(c.phone);
+                          setPhoneError(null);
+                        }
+                        setShowCustomerDropdown(false);
+                      }}
+                      className="w-full text-left px-2.5 py-2 rounded-[8px] hover:bg-[#F2F2F7] active:bg-[#E5E5EA] flex items-center justify-between text-xs transition-colors"
+                    >
+                      <div className="flex items-center gap-2 min-w-0 pr-2">
+                        <div className="w-6 h-6 rounded-full bg-blue-50 text-iosBlue font-bold flex items-center justify-center shrink-0 text-[11px]">
+                          {c.name.slice(0, 1).toUpperCase()}
+                        </div>
+                        <div className="truncate">
+                          <span className="font-semibold text-black block truncate">{c.name}</span>
+                          {c.phone && (
+                            <span className="text-[11px] text-gray-500 block truncate">{c.phone}</span>
+                          )}
+                        </div>
+                      </div>
+                      {c.address && (
+                        <span className="text-[10px] text-gray-400 shrink-0 truncate max-w-[100px]">
+                          {c.address}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              );
+            })()
+          )}
         </div>
 
         {/* Phone Number */}

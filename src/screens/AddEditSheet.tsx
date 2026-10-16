@@ -4,7 +4,7 @@ import { BottomSheet } from '../components/BottomSheet';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { Entry, EntryType, PaymentMethod, Language, StockItem, Bill, BillItem } from '../types';
 import { t, formatINR } from '../i18n';
-import { db, adjustStockQuantity, createBillForEntry, getBillForEntry } from '../db/db';
+import { db, adjustStockQuantity, createBillForEntry, getBillForEntry, addCustomer } from '../db/db';
 import { getLocalDateString } from '../utils/date';
 import { buildBillText, computeBillTotals } from '../utils/billing';
 import { StockPickerSheet } from '../components/StockPickerSheet';
@@ -145,6 +145,9 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
   // Wholesale clients state & query
   const [selectedClientCloudId, setSelectedClientCloudId] = useState<string | undefined>(undefined);
   const [showClientDropdown, setShowClientDropdown] = useState(false);
+  const customerDropdownRef = useRef<HTMLDivElement>(null);
+  const [customerSavedNotice, setCustomerSavedNotice] = useState(false);
+
   const registeredClients = useLiveQuery(
     async () => {
       try {
@@ -156,6 +159,49 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
     },
     []
   ) ?? [];
+
+  // Registered customers state & query
+  const registeredCustomers = useLiveQuery(
+    async () => {
+      try {
+        if (!db.customers) return [];
+        const all = await db.customers.toArray();
+        return all.filter((c) => c.syncStatus !== 'deleted' && !c.deletedAt);
+      } catch {
+        return [];
+      }
+    },
+    []
+  ) ?? [];
+
+  const handleQuickSaveCustomer = async () => {
+    const trimmed = customerName.trim();
+    if (!trimmed) return;
+    try {
+      await addCustomer({ name: trimmed });
+      setCustomerSavedNotice(true);
+      setTimeout(() => setCustomerSavedNotice(false), 2000);
+      setShowClientDropdown(false);
+    } catch (err) {
+      console.error('Failed to quick-save customer:', err);
+    }
+  };
+
+  // Outside click to dismiss customer dropdown
+  useEffect(() => {
+    const handleCustomerOutsideClick = (e: MouseEvent) => {
+      if (
+        customerDropdownRef.current &&
+        !customerDropdownRef.current.contains(e.target as Node)
+      ) {
+        setShowClientDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleCustomerOutsideClick);
+    return () => {
+      document.removeEventListener('mousedown', handleCustomerOutsideClick);
+    };
+  }, []);
 
   const amountInputRef = useRef<HTMLInputElement>(null);
 
@@ -1504,26 +1550,33 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
         </div>
 
         {/* 5. Customer Name (Required if Credit, Optional otherwise) */}
-        <div className="space-y-1 relative">
+        <div ref={customerDropdownRef} className="space-y-1 relative">
           <label className="text-xs font-medium text-[#8E8E93] ml-1 flex items-center justify-between">
             <span>
-              {settings?.wholesaleMode ? 'Client Shop / Technician Name' : t('customer_label', language)}
+              {settings?.wholesaleMode ? 'Customer / Client Shop Name' : t('customer_label', language)}
               {type === 'in' && paymentMethod === 'credit' && (
                 <span className="text-amber-600 font-bold ml-1">* (Required for Credit)</span>
               )}
             </span>
-            {selectedClientCloudId && (
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedClientCloudId(undefined);
-                  setCustomerName('');
-                }}
-                className="text-[11px] text-iosBlue hover:underline font-semibold"
-              >
-                Clear Client
-              </button>
-            )}
+            <div className="flex items-center gap-2">
+              {customerSavedNotice && (
+                <span className="text-[11px] text-iosGreen font-semibold animate-fade-in flex items-center gap-1">
+                  <Check className="w-3 h-3" /> Saved!
+                </span>
+              )}
+              {selectedClientCloudId && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedClientCloudId(undefined);
+                    setCustomerName('');
+                  }}
+                  className="text-[11px] text-iosBlue hover:underline font-semibold"
+                >
+                  Clear Client
+                </button>
+              )}
+            </div>
           </label>
           <input
             type="text"
@@ -1535,56 +1588,141 @@ export const AddEditSheet: React.FC<AddEditSheetProps> = ({
             onFocus={() => setShowClientDropdown(true)}
             placeholder={
               settings?.wholesaleMode
-                ? 'Enter client shop name or select client...'
+                ? 'Enter customer or client shop name...'
                 : t('customer_placeholder', language)
             }
             disabled={isReadOnly}
             className="w-full bg-[#F2F2F7] rounded-[10px] px-3.5 py-2.5 text-[15px] text-black focus:outline-none focus:ring-2 focus:ring-iosBlue/40 border border-black/[0.04]"
           />
 
-          {/* Autocomplete dropdown for registered wholesale clients */}
-          {showClientDropdown && registeredClients.length > 0 && customerName && (
-            <div className="absolute left-0 right-0 top-full mt-1 bg-white rounded-[12px] shadow-xl border border-black/[0.08] max-h-48 overflow-y-auto z-50 p-1 space-y-0.5">
-              {registeredClients
-                .filter(
-                  (c) =>
-                    c.shopName.toLowerCase().includes(customerName.toLowerCase().trim()) ||
-                    (c.contactPerson && c.contactPerson.toLowerCase().includes(customerName.toLowerCase().trim())) ||
-                    c.phone.includes(customerName.trim())
-                )
-                .slice(0, 5)
-                .map((c) => (
-                  <button
-                    key={c.cloudId}
-                    type="button"
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      setCustomerName(c.shopName);
-                      setSelectedClientCloudId(c.cloudId);
-                      setShowClientDropdown(false);
-                    }}
-                    className="w-full text-left px-3 py-2 rounded-[8px] hover:bg-[#F2F2F7] flex items-center justify-between text-xs transition-colors"
-                  >
+          {/* Autocomplete dropdown for registered customers & wholesale clients */}
+          {showClientDropdown && (
+            (() => {
+              const query = customerName.toLowerCase().trim();
+              const matchingCustomers = query
+                ? registeredCustomers.filter(
+                    (c) =>
+                      c.name.toLowerCase().includes(query) ||
+                      (c.phone && c.phone.includes(query))
+                  )
+                : registeredCustomers.slice(0, 5);
+
+              const matchingClients = settings?.wholesaleMode && query
+                ? registeredClients.filter(
+                    (c) =>
+                      c.shopName.toLowerCase().includes(query) ||
+                      (c.contactPerson && c.contactPerson.toLowerCase().includes(query)) ||
+                      c.phone.includes(query)
+                  )
+                : [];
+
+              const hasExactCustomerMatch = registeredCustomers.some(
+                (c) => c.name.toLowerCase().trim() === query
+              );
+
+              if (matchingCustomers.length === 0 && matchingClients.length === 0 && (!query || hasExactCustomerMatch)) {
+                return null;
+              }
+
+              return (
+                <div className="absolute left-0 right-0 top-full mt-1 bg-white rounded-[14px] shadow-xl border border-black/[0.08] max-h-56 overflow-y-auto z-50 p-1.5 space-y-1">
+                  {/* Matching Regular Customers */}
+                  {matchingCustomers.length > 0 && (
                     <div>
-                      <span className="font-bold text-black block">{c.shopName}</span>
-                      {c.contactPerson && (
-                        <span className="text-[11px] text-[#8E8E93] block">
-                          {c.contactPerson} • {c.phone}
-                        </span>
-                      )}
+                      <div className="px-2.5 py-1 text-[10px] font-bold text-[#8E8E93] uppercase tracking-wider">
+                        Saved Customers
+                      </div>
+                      {matchingCustomers.slice(0, 6).map((c) => (
+                        <button
+                          key={c.id || c.cloudId}
+                          type="button"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            setCustomerName(c.name);
+                            setShowClientDropdown(false);
+                          }}
+                          className="w-full text-left px-2.5 py-2 rounded-[8px] hover:bg-[#F2F2F7] active:bg-[#E5E5EA] flex items-center justify-between text-xs transition-colors"
+                        >
+                          <div className="flex items-center gap-2 min-w-0 pr-2">
+                            <div className="w-6 h-6 rounded-full bg-blue-50 text-iosBlue font-bold flex items-center justify-center shrink-0 text-[11px]">
+                              {c.name.slice(0, 1).toUpperCase()}
+                            </div>
+                            <div className="truncate">
+                              <span className="font-semibold text-black block truncate">{c.name}</span>
+                              {c.phone && (
+                                <span className="text-[11px] text-gray-500 block truncate">{c.phone}</span>
+                              )}
+                            </div>
+                          </div>
+                          {c.address && (
+                            <span className="text-[10px] text-gray-400 shrink-0 truncate max-w-[110px]">
+                              {c.address}
+                            </span>
+                          )}
+                        </button>
+                      ))}
                     </div>
-                    <span
-                      className={`text-[11px] font-bold ${
-                        c.currentCreditBalance > 0 ? 'text-iosRed' : 'text-iosGreen'
-                      }`}
-                    >
-                      {c.currentCreditBalance > 0
-                        ? `${formatCurrencyINR(c.currentCreditBalance)} Due`
-                        : 'Settled'}
-                    </span>
-                  </button>
-                ))}
-            </div>
+                  )}
+
+                  {/* Matching Wholesale Clients (if in wholesale mode) */}
+                  {matchingClients.length > 0 && (
+                    <div className="border-t border-black/[0.05] pt-1 mt-1">
+                      <div className="px-2.5 py-1 text-[10px] font-bold text-[#8E8E93] uppercase tracking-wider">
+                        Wholesale Clients
+                      </div>
+                      {matchingClients.slice(0, 5).map((c) => (
+                        <button
+                          key={c.cloudId}
+                          type="button"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            setCustomerName(c.shopName);
+                            setSelectedClientCloudId(c.cloudId);
+                            setShowClientDropdown(false);
+                          }}
+                          className="w-full text-left px-2.5 py-2 rounded-[8px] hover:bg-[#F2F2F7] active:bg-[#E5E5EA] flex items-center justify-between text-xs transition-colors"
+                        >
+                          <div>
+                            <span className="font-bold text-black block">{c.shopName}</span>
+                            {c.contactPerson && (
+                              <span className="text-[11px] text-[#8E8E93] block">
+                                {c.contactPerson} • {c.phone}
+                              </span>
+                            )}
+                          </div>
+                          <span
+                            className={`text-[11px] font-bold ${
+                              c.currentCreditBalance > 0 ? 'text-iosRed' : 'text-iosGreen'
+                            }`}
+                          >
+                            {c.currentCreditBalance > 0
+                              ? `${formatCurrencyINR(c.currentCreditBalance)} Due`
+                              : 'Settled'}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Quick-save as new customer option */}
+                  {query.length >= 2 && !hasExactCustomerMatch && (
+                    <div className="border-t border-black/[0.05] pt-1">
+                      <button
+                        type="button"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          handleQuickSaveCustomer();
+                        }}
+                        className="w-full text-left px-2.5 py-2 rounded-[8px] hover:bg-blue-50 text-iosBlue flex items-center gap-2 text-xs font-semibold transition-colors"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Save &quot;{customerName.trim()}&quot; as new customer</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })()
           )}
         </div>
 

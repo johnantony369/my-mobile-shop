@@ -9,7 +9,7 @@ import {
 } from 'firebase/firestore';
 import { db, getAppSettings, generateCloudId, getJobPhotos, deduplicateLocalDatabase } from '../db/db';
 import { dbFirestore, auth, isFirebaseConfigured } from './config';
-import { Entry, Job, AppSettings, StockItem, Bill, PublicRepairTrack } from '../types';
+import { Entry, Job, AppSettings, StockItem, Bill, PublicRepairTrack, Customer } from '../types';
 import { upsertAccountSummary, calculateDataSize } from './admin';
 import { isSuperAdmin } from '../utils/admin';
 import { isProCurrentlyActive } from '../utils/proPlan';
@@ -253,6 +253,46 @@ export async function reconcileRemoteBills(remoteBills: Bill[]): Promise<number>
   return updatedCount;
 }
 
+export async function reconcileRemoteCustomers(remoteCustomers: Customer[]): Promise<number> {
+  if (!db.customers) return 0;
+  let updatedCount = 0;
+  await db.transaction('rw', db.customers, async () => {
+    for (const remote of remoteCustomers) {
+      if (!remote.cloudId) continue;
+      const matching = await db.customers.where('cloudId').equals(remote.cloudId).toArray();
+
+      if (matching.length === 0) {
+        if (remote.deletedAt) continue;
+        const { id, ...toInsert } = remote;
+        await db.customers.add({ ...toInsert, syncStatus: 'synced' } as Customer);
+        updatedCount++;
+      } else {
+        const local = matching[0];
+        if (matching.length > 1) {
+          const duplicateIds = matching.slice(1).map(m => m.id!).filter(Boolean);
+          if (duplicateIds.length > 0) {
+            await db.customers.bulkDelete(duplicateIds);
+          }
+        }
+
+        if (remote.deletedAt) {
+          await db.customers.delete(local.id!);
+          updatedCount++;
+        } else {
+          const remoteTime = remote.updatedAt ? new Date(remote.updatedAt).getTime() : 0;
+          const localTime = local.updatedAt ? new Date(local.updatedAt).getTime() : 0;
+          if (remoteTime > localTime) {
+            const { id, ...toUpdate } = remote;
+            await db.customers.update(local.id!, { ...toUpdate, syncStatus: 'synced' });
+            updatedCount++;
+          }
+        }
+      }
+    }
+  });
+  return updatedCount;
+}
+
 export async function reconcileRemoteSettings(remoteSettings: AppSettings, uid?: string): Promise<boolean> {
   if (!remoteSettings) return false;
   const local = await getAppSettings();
@@ -416,7 +456,38 @@ export async function pushPendingChanges(uid: string): Promise<number> {
     }
   }
 
-  // 5. Settings
+  // 5. Pending / Deleted customers
+  const allCustomers = db.customers ? await db.customers.toArray() : [];
+  const dirtyCustomers = allCustomers.filter(c => c.syncStatus !== 'synced');
+
+  for (const customer of dirtyCustomers) {
+    if (!customer.cloudId) continue;
+    const docRef = doc(dbFirestore, 'users', uid, 'customers', customer.cloudId);
+
+    if (customer.syncStatus === 'deleted') {
+      const now = new Date().toISOString();
+      const deletedAt = customer.deletedAt || now;
+      currentBatch.set(docRef, cleanForFirestore({
+        cloudId: customer.cloudId,
+        deletedAt,
+        updatedAt: now,
+        syncStatus: 'synced',
+      }), { merge: true });
+      if (customer.id) await db.customers.delete(customer.id);
+      batchOps++;
+      pushedCount++;
+      await commitBatchIfNeeded();
+    } else {
+      const { id, ...dataToSync } = customer;
+      currentBatch.set(docRef, cleanForFirestore({ ...dataToSync, syncStatus: 'synced' }), { merge: true });
+      if (customer.id) await db.customers.update(customer.id, { syncStatus: 'synced' });
+      batchOps++;
+      pushedCount++;
+      await commitBatchIfNeeded();
+    }
+  }
+
+  // 6. Settings
   if (localSettings && localSettings.syncStatus !== 'synced') {
     if (!localSettings.ownerUid || localSettings.ownerUid === uid) {
       const docRef = doc(dbFirestore, 'users', uid, 'settings', 'appSettings');
@@ -463,8 +534,8 @@ export async function pushPendingChanges(uid: string): Promise<number> {
   return pushedCount;
 }
 
-export async function pullCloudChanges(uid: string): Promise<{ pulledEntries: number; pulledJobs: number; pulledStock?: number; pulledBills?: number; settingsRestored: boolean }> {
-  if (!dbFirestore) return { pulledEntries: 0, pulledJobs: 0, pulledStock: 0, pulledBills: 0, settingsRestored: false };
+export async function pullCloudChanges(uid: string): Promise<{ pulledEntries: number; pulledJobs: number; pulledStock?: number; pulledBills?: number; pulledCustomers?: number; settingsRestored: boolean }> {
+  if (!dbFirestore) return { pulledEntries: 0, pulledJobs: 0, pulledStock: 0, pulledBills: 0, pulledCustomers: 0, settingsRestored: false };
 
   // If a pull is already in-flight for this user, return the existing active promise
   const existingPull = activePullPromises.get(uid);
@@ -504,7 +575,17 @@ export async function pullCloudChanges(uid: string): Promise<{ pulledEntries: nu
     console.warn('Failed to pull bills:', err);
   }
 
-  // 5. Pull settings
+  // 5. Pull customers
+  let pulledCustomers = 0;
+  try {
+    const customersSnap = await getDocs(collection(dbFirestore, 'users', uid, 'customers'));
+    const remoteCustomers = customersSnap.docs.map(d => d.data() as Customer);
+    pulledCustomers = await reconcileRemoteCustomers(remoteCustomers);
+  } catch (err) {
+    console.warn('Failed to pull customers:', err);
+  }
+
+  // 6. Pull settings
   let settingsRestored = false;
   try {
     const settingsSnap = await getDocs(collection(dbFirestore, 'users', uid, 'settings'));
@@ -564,7 +645,7 @@ export async function pullCloudChanges(uid: string): Promise<{ pulledEntries: nu
       // Safeguard: perform a deduplication pass to ensure IndexedDB has exactly one record per cloudId
       await deduplicateLocalDatabase();
 
-      return { pulledEntries, pulledJobs, pulledStock, pulledBills, settingsRestored };
+      return { pulledEntries, pulledJobs, pulledStock, pulledBills, pulledCustomers, settingsRestored };
     } finally {
       activePullPromises.delete(uid);
     }
@@ -595,8 +676,8 @@ export async function syncNow(userId?: string): Promise<{
 
   try {
     const pushed = await pushPendingChanges(uid);
-    const { pulledEntries, pulledJobs, pulledStock, pulledBills } = await pullCloudChanges(uid);
-    return { success: true, pushed, pulled: pulledEntries + pulledJobs + (pulledStock || 0) + (pulledBills || 0) };
+    const { pulledEntries, pulledJobs, pulledStock, pulledBills, pulledCustomers } = await pullCloudChanges(uid);
+    return { success: true, pushed, pulled: pulledEntries + pulledJobs + (pulledStock || 0) + (pulledBills || 0) + (pulledCustomers || 0) };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     console.error('Cloud sync error:', err);
@@ -701,6 +782,20 @@ export function startAutoSync(
       onStatusChange?.('error', undefined, err.message);
     });
     unsubscribers.push(unsubBills);
+
+    const customersRef = collection(dbFirestore, 'users', uid, 'customers');
+    const unsubCustomers = onSnapshot(customersRef, snapshot => {
+      if (snapshot.metadata.hasPendingWrites) return;
+      const changed = snapshot.docChanges().map(change => change.doc.data() as Customer);
+      if (changed.length > 0) {
+        reconcileRemoteCustomers(changed).then(() => {
+          onStatusChange?.('synced', new Date());
+        });
+      }
+    }, (err) => {
+      onStatusChange?.('error', undefined, err.message);
+    });
+    unsubscribers.push(unsubCustomers);
   } catch (e) {
     console.warn('Real-time listeners could not be attached:', e);
   }

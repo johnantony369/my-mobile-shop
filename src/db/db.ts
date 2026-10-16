@@ -1,5 +1,5 @@
 import Dexie, { Table } from 'dexie';
-import { Entry, AppSettings, DaySummary, Job, Language, StockItem, Bill, BillItem, PaymentMethod, PurchaseItem, JobPhoto, UsedDevice } from '../types';
+import { Entry, AppSettings, DaySummary, Job, Language, StockItem, Bill, BillItem, PaymentMethod, PurchaseItem, JobPhoto, UsedDevice, Customer } from '../types';
 import { WholesaleClient, ClientTransaction, CustomPartCompatibility } from '../types/wholesale';
 import { getLocalDateString } from '../utils/date';
 import { computeBillTotals, formatInvoiceNo, summarizeBillItems } from '../utils/billing';
@@ -23,6 +23,7 @@ export class ShopDatabase extends Dexie {
   clients!: Table<WholesaleClient, number>;
   clientTransactions!: Table<ClientTransaction, number>;
   customCompatibilities!: Table<CustomPartCompatibility, number>;
+  customers!: Table<Customer, number>;
 
   constructor() {
     super('MyMobileShopDB');
@@ -121,6 +122,21 @@ export class ShopDatabase extends Dexie {
       clients: '++id, cloudId, shopName, phone, currentCreditBalance, createdAt, updatedAt, syncStatus',
       clientTransactions: '++id, cloudId, clientCloudId, dayBookEntryId, type, amount, date, createdAt, updatedAt, syncStatus',
       customCompatibilities: '++id, cloudId, partKey, updatedAt, syncStatus',
+    });
+
+    this.version(10).stores({
+      entries: '++id, cloudId, type, amount, date, createdAt, updatedAt, syncStatus, paymentMethod, repairId',
+      settings: '++id, cloudId, updatedAt, syncStatus',
+      jobs: '++id, cloudId, status, phone, customerName, model, receivedAt, readyAt, deliveredAt, bookEntryId, updatedAt, syncStatus',
+      stock: '++id, cloudId, name, category, sellingPrice, quantity, sku, createdAt, updatedAt, syncStatus',
+      bills: '++id, cloudId, invoiceNo, date, createdAt, updatedAt, syncStatus',
+      purchases: '++id, cloudId, name, isPurchased, createdAt, updatedAt, syncStatus',
+      jobPhotos: '++id, photoId, jobCloudId, uploadStatus, createdAt, syncStatus',
+      usedDevices: '++id, cloudId, imei, serialNumber, deviceCategory, status, brand, model, purchaseDate, createdAt, updatedAt, syncStatus',
+      clients: '++id, cloudId, shopName, phone, currentCreditBalance, createdAt, updatedAt, syncStatus',
+      clientTransactions: '++id, cloudId, clientCloudId, dayBookEntryId, type, amount, date, createdAt, updatedAt, syncStatus',
+      customCompatibilities: '++id, cloudId, partKey, updatedAt, syncStatus',
+      customers: '++id, cloudId, name, phone, createdAt, updatedAt, syncStatus',
     });
 
     this.clients.hook('creating', (_primKey, obj) => {
@@ -260,6 +276,19 @@ export class ShopDatabase extends Dexie {
       if (!obj.updatedAt) obj.updatedAt = new Date().toISOString();
       if (!obj.syncStatus) obj.syncStatus = 'pending';
     });
+
+    this.customers.hook('creating', (_primKey, obj) => {
+      if (!obj.cloudId) obj.cloudId = generateCloudId();
+      if (!obj.createdAt) obj.createdAt = Date.now();
+      if (!obj.updatedAt) obj.updatedAt = new Date().toISOString();
+      if (!obj.syncStatus) obj.syncStatus = 'pending';
+    });
+    this.customers.hook('updating', (modifications: Partial<Customer>) => {
+      if (!modifications.updatedAt) {
+        return { ...modifications, updatedAt: new Date().toISOString(), syncStatus: modifications.syncStatus || 'pending' };
+      }
+      return undefined;
+    });
   }
 }
 
@@ -272,7 +301,7 @@ export async function getAppSettings(): Promise<AppSettings | undefined> {
 
 export async function clearLocalDatabase(): Promise<void> {
   try {
-    await db.transaction('rw', [db.entries, db.settings, db.jobs, db.stock, db.bills, db.purchases, db.jobPhotos, db.usedDevices], async () => {
+    await db.transaction('rw', [db.entries, db.settings, db.jobs, db.stock, db.bills, db.purchases, db.jobPhotos, db.usedDevices, db.customers], async () => {
       await db.entries.clear();
       await db.settings.clear();
       await db.jobs.clear();
@@ -895,5 +924,50 @@ export async function deduplicateLocalDatabase(): Promise<{
 
   return { entriesRemoved, jobsRemoved, stockRemoved, billsRemoved };
 }
+
+export async function addCustomer(
+  customer: Omit<Customer, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>
+): Promise<number> {
+  const newCustomer: Customer = {
+    ...customer,
+    cloudId: customer.cloudId || generateCloudId(),
+    createdAt: Date.now(),
+    updatedAt: new Date().toISOString(),
+    syncStatus: 'pending',
+  };
+  return await db.customers.add(newCustomer);
+}
+
+export async function updateCustomer(
+  id: number,
+  modifications: Partial<Omit<Customer, 'id' | 'createdAt'>>
+): Promise<void> {
+  await db.customers.where('id').equals(id).modify((record) => {
+    Object.assign(record, modifications);
+    record.updatedAt = new Date().toISOString();
+    record.syncStatus = 'pending';
+  });
+}
+
+export async function deleteCustomer(id: number): Promise<void> {
+  const customer = await db.customers.get(id);
+  if (customer && customer.cloudId) {
+    await db.customers.where('id').equals(id).modify((record) => {
+      record.deletedAt = new Date().toISOString();
+      record.updatedAt = new Date().toISOString();
+      record.syncStatus = 'deleted';
+    });
+  } else {
+    await db.customers.delete(id);
+  }
+}
+
+export async function getCustomers(): Promise<Customer[]> {
+  return await db.customers
+    .filter((c) => c.syncStatus !== 'deleted' && !c.deletedAt)
+    .reverse()
+    .sortBy('createdAt');
+}
+
 
 
