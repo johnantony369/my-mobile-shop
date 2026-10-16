@@ -10,4 +10,14 @@ describe('Partner Portal UI Specifications', () => {
     expect(CRM_STATUS_LABELS.payout_in_progress.label).toBe('Payout in Progress');
     expect(CRM_STATUS_LABELS.paid.label).toBe('Paid');
   });
+
+  it('navigates back to Settings page instead of landing page', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const content = fs.readFileSync(path.resolve(__dirname, '../src/screens/partner/PartnerPortalScreen.tsx'), 'utf-8');
+
+    expect(content).toContain("navigate('/app?tab=settings')");
+    expect(content).toContain('Back to Settings');
+    expect(content).not.toContain("onClick={() => navigate('/')}");
+  });
 });

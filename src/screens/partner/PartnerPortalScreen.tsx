@@ -204,11 +204,11 @@ export const PartnerPortalScreen: React.FC = () => {
           <div className="text-center space-y-2">
             <button
               type="button"
-              onClick={() => navigate('/')}
-              className="inline-flex items-center gap-1 text-xs font-semibold text-[#8E8E93] hover:text-slate-900 mb-2 transition-colors"
+              onClick={() => navigate('/app?tab=settings')}
+              className="inline-flex items-center gap-1 text-xs font-semibold text-[#8E8E93] hover:text-slate-900 mb-2 transition-colors cursor-pointer"
             >
               <ChevronLeft className="size-4" />
-              <span>Back to My Mobile Shop</span>
+              <span>Back to Settings</span>
             </button>
             <div className="size-12 rounded-2xl bg-white shadow-xs border border-black/5 mx-auto flex items-center justify-center">
               <Building2 className="size-6 text-iosBlue" />
@@ -438,6 +438,15 @@ export const PartnerPortalScreen: React.FC = () => {
       <header className="sticky top-0 z-40 bg-[#F2F2F7]/85 backdrop-blur-2xl border-b border-black/5">
         <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
+            <button
+              type="button"
+              onClick={() => navigate('/app?tab=settings')}
+              className="p-1.5 -ml-1.5 text-slate-500 hover:text-slate-900 rounded-full active:bg-black/5 transition-colors cursor-pointer"
+              title="Back to Settings"
+              aria-label="Back to Settings"
+            >
+              <ChevronLeft className="size-5" />
+            </button>
             <div className="size-8 rounded-xl bg-iosBlue text-white flex items-center justify-center font-bold text-xs shadow-2xs">
               <Building2 className="size-4" />
             </div>
