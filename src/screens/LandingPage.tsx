@@ -36,7 +36,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isAuthenticated = fals
       const saved = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY_COUNTRY) : null;
       if (!saved) {
         resolveVisitorCountry().then((geoCountry) => {
-          if (isMounted && geoCountry) {
+          if (isMounted && geoCountry && !localStorage.getItem(STORAGE_KEY_COUNTRY)) {
             setSelectedCountry(geoCountry);
           }
         });
