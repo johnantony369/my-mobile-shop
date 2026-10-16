@@ -348,24 +348,31 @@ export async function resolveVisitorCountry(options: ResolveGeoOptions = {}): Pr
   try {
     if (typeof fetch !== 'undefined') {
       const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
-      const timeoutId = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
-
-      const res = await fetch('/api/geo', {
-        signal: controller ? controller.signal : undefined,
-      });
-
-      if (timeoutId) clearTimeout(timeoutId);
-
-      if (res.ok) {
-        const data = await res.json();
-        const code = (data?.country || '').toUpperCase();
-        if (code && PRICING_CONFIG[code as CountryCode]) {
-          cachedAutoCountry = code as CountryCode;
-          return cachedAutoCountry;
+      let timeoutId: ReturnType<typeof setTimeout> | null = null;
+      try {
+        if (controller) {
+          timeoutId = setTimeout(() => controller.abort(), timeoutMs);
         }
-        // If country is outside supported GCC/India, route to Canonical USD
-        cachedAutoCountry = 'US';
-        return 'US';
+
+        const res = await fetch('/api/geo', {
+          signal: controller ? controller.signal : undefined,
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          const code = (data?.country || '').toUpperCase();
+          if (code && PRICING_CONFIG[code as CountryCode]) {
+            cachedAutoCountry = code as CountryCode;
+            return cachedAutoCountry;
+          }
+          // If country is outside supported GCC/India, route to Canonical USD
+          cachedAutoCountry = 'US';
+          return 'US';
+        }
+      } finally {
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+        }
       }
     }
   } catch {

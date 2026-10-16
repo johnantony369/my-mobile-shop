@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ArrowRight, Check, ChevronDown, Menu, X, ShieldCheck, WifiOff, Mail, Globe } from 'lucide-react';
 import { LegalModal } from '../components/LegalModal';
@@ -10,6 +10,8 @@ import {
   calculateSavings,
   detectVisitorCountry,
   saveVisitorCountry,
+  resolveVisitorCountry,
+  STORAGE_KEY_COUNTRY,
   PlanId,
 } from '../utils/pricing';
 
@@ -28,7 +30,26 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isAuthenticated = fals
   const [legal, setLegal] = useState<'privacy' | 'terms' | null>(null);
   const [selectedCountry, setSelectedCountry] = useState<CountryCode>(() => detectVisitorCountry());
 
-  const handleCountryChange = (country: CountryCode) => {
+  useEffect(() => {
+    let isMounted = true;
+    try {
+      const saved = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY_COUNTRY) : null;
+      if (!saved) {
+        resolveVisitorCountry().then((geoCountry) => {
+          if (isMounted && geoCountry) {
+            setSelectedCountry(geoCountry);
+          }
+        });
+      }
+    } catch {
+      // ignore
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const handleSelectCountry = (country: CountryCode) => {
     setSelectedCountry(country);
     saveVisitorCountry(country);
   };
@@ -222,7 +243,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isAuthenticated = fals
                   <button
                     key={code}
                     type="button"
-                    onClick={() => handleCountryChange(code)}
+                    onClick={() => handleSelectCountry(code)}
                     className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all ${
                       isSelected
                         ? 'bg-[#1769FF] text-white shadow-sm ring-2 ring-[#1769FF]/20'

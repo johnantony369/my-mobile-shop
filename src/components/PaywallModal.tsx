@@ -33,6 +33,8 @@ import {
   calculateSavings,
   detectVisitorCountry,
   saveVisitorCountry,
+  resolveVisitorCountry,
+  STORAGE_KEY_COUNTRY,
 } from '../utils/pricing';
 
 const RAZORPAY_MONTHLY_URL = 'https://rzp.io/rzp/AIScmrWq';
@@ -83,6 +85,26 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
       getRevenueCatOfferings().then(setRcOffering);
     }
   }, [isOpen, isIOS]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    let isMounted = true;
+    try {
+      const saved = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY_COUNTRY) : null;
+      if (!saved) {
+        resolveVisitorCountry().then((geoCountry) => {
+          if (isMounted && geoCountry) {
+            setSelectedCountry(geoCountry);
+          }
+        });
+      }
+    } catch {
+      // ignore
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen) {
