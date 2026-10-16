@@ -16,7 +16,6 @@ export interface PlanConfig {
 export interface CountryPricingConfig {
   countryCode: CountryCode;
   countryName: string;
-  flag: string;
   currencyCode: string;
   currencySymbol: string;
   symbolPosition: 'prefix' | 'suffix';
@@ -35,7 +34,6 @@ export const PRICING_CONFIG: Record<CountryCode, CountryPricingConfig> = {
   AE: {
     countryCode: 'AE',
     countryName: 'United Arab Emirates',
-    flag: '🇦🇪',
     currencyCode: 'AED',
     currencySymbol: 'AED',
     symbolPosition: 'prefix',
@@ -52,7 +50,6 @@ export const PRICING_CONFIG: Record<CountryCode, CountryPricingConfig> = {
   SA: {
     countryCode: 'SA',
     countryName: 'Saudi Arabia',
-    flag: '🇸🇦',
     currencyCode: 'SAR',
     currencySymbol: 'SAR',
     symbolPosition: 'prefix',
@@ -69,7 +66,6 @@ export const PRICING_CONFIG: Record<CountryCode, CountryPricingConfig> = {
   QA: {
     countryCode: 'QA',
     countryName: 'Qatar',
-    flag: '🇶🇦',
     currencyCode: 'QAR',
     currencySymbol: 'QAR',
     symbolPosition: 'prefix',
@@ -86,7 +82,6 @@ export const PRICING_CONFIG: Record<CountryCode, CountryPricingConfig> = {
   OM: {
     countryCode: 'OM',
     countryName: 'Oman',
-    flag: '🇴🇲',
     currencyCode: 'OMR',
     currencySymbol: 'OMR',
     symbolPosition: 'prefix',
@@ -103,7 +98,6 @@ export const PRICING_CONFIG: Record<CountryCode, CountryPricingConfig> = {
   BH: {
     countryCode: 'BH',
     countryName: 'Bahrain',
-    flag: '🇧🇭',
     currencyCode: 'BHD',
     currencySymbol: 'BHD',
     symbolPosition: 'prefix',
@@ -120,7 +114,6 @@ export const PRICING_CONFIG: Record<CountryCode, CountryPricingConfig> = {
   KW: {
     countryCode: 'KW',
     countryName: 'Kuwait',
-    flag: '🇰🇼',
     currencyCode: 'KWD',
     currencySymbol: 'KWD',
     symbolPosition: 'prefix',
@@ -137,7 +130,6 @@ export const PRICING_CONFIG: Record<CountryCode, CountryPricingConfig> = {
   IN: {
     countryCode: 'IN',
     countryName: 'India',
-    flag: '🇮🇳',
     currencyCode: 'INR',
     currencySymbol: '₹',
     symbolPosition: 'prefix',
@@ -154,7 +146,6 @@ export const PRICING_CONFIG: Record<CountryCode, CountryPricingConfig> = {
   US: {
     countryCode: 'US',
     countryName: 'International (USD)',
-    flag: '🌐',
     currencyCode: 'USD',
     currencySymbol: '$',
     symbolPosition: 'prefix',
