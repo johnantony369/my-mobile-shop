@@ -8,7 +8,7 @@ describe('Vercel SPA & Routing Configuration', () => {
     expect(fs.existsSync(vercelPath)).toBe(true);
     const config = JSON.parse(fs.readFileSync(vercelPath, 'utf-8'));
     expect(config.rewrites).toBeDefined();
-    expect(config.rewrites[0].source).toBe('/(.*)');
+    expect(config.rewrites[0].source).toBe('/((?!api/).*)');
     expect(config.rewrites[0].destination).toBe('/index.html');
   });
 
