@@ -325,7 +325,7 @@ export function LoginModal({
                   <Store className="w-4 h-4 text-slate-400 shrink-0" />
                   <input
                     type="text"
-                    placeholder="e.g. keralamobile or email"
+                    placeholder="Enter email or Shop ID"
                     value={loginId}
                     onChange={e => setLoginId(e.target.value)}
                     className="w-full bg-transparent text-sm font-medium text-slate-900 outline-none"
@@ -342,7 +342,7 @@ export function LoginModal({
                   <Lock className="w-4 h-4 text-slate-400 shrink-0" />
                   <input
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="••••••••"
+                    placeholder="Enter password"
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                     className="w-full bg-transparent text-sm font-medium text-slate-900 outline-none"
@@ -447,7 +447,7 @@ export function LoginModal({
                 <span className="text-sm font-semibold text-slate-500">+91</span>
                 <input
                   type="tel"
-                  placeholder="9876543210"
+                  placeholder="Enter 10-digit mobile number"
                   maxLength={10}
                   value={phoneNumber}
                   onChange={e => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
@@ -492,7 +492,7 @@ export function LoginModal({
               </label>
               <input
                 type="text"
-                placeholder="123456"
+                placeholder="Enter 6-digit OTP"
                 maxLength={6}
                 value={otpCode}
                 onChange={e => setOtpCode(e.target.value.replace(/\D/g, ''))}
