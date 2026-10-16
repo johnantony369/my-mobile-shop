@@ -276,12 +276,6 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
                 className="bg-slate-100 hover:bg-slate-200/70 border border-slate-200/90 rounded-xl px-2.5 py-1 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-iosBlue cursor-pointer transition-colors"
               >
                 <option value="IN">India · INR</option>
-                <option value="AE">UAE · AED</option>
-                <option value="SA">Saudi Arabia · SAR</option>
-                <option value="QA">Qatar · QAR</option>
-                <option value="OM">Oman · OMR</option>
-                <option value="BH">Bahrain · BHD</option>
-                <option value="KW">Kuwait · KWD</option>
                 <option value="US">International · USD</option>
               </select>
             </div>

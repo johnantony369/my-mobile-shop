@@ -4,35 +4,49 @@ import type { IncomingMessage, ServerResponse } from 'http';
 import { resolveVisitorCountry, _resetCachedAutoCountry, STORAGE_KEY_COUNTRY, PRICING_CONFIG } from '../src/utils/pricing';
 
 describe('/api/geo handler', () => {
-  it('returns uppercase country code from x-vercel-ip-country header', () => {
-    const req = {
+  it('returns IN for India and US for other countries from x-vercel-ip-country header', () => {
+    const reqIn = {
       headers: {
-        'x-vercel-ip-country': 'ae',
+        'x-vercel-ip-country': 'in',
       },
     } as unknown as IncomingMessage;
 
     let statusCode = 0;
     let headers: Record<string, string> = {};
-    let body = '';
+    let bodyIn = '';
 
-    const res = {
+    const resIn = {
       writeHead(code: number, h: Record<string, string>) {
         statusCode = code;
         headers = h;
         return this;
       },
       end(data: string) {
-        body = data;
+        bodyIn = data;
         return this;
       },
     } as unknown as ServerResponse;
 
-    geoHandler(req, res);
+    geoHandler(reqIn, resIn);
 
     expect(statusCode).toBe(200);
     expect(headers['Content-Type']).toBe('application/json');
     expect(headers['Cache-Control']).toContain('s-maxage=86400');
-    expect(JSON.parse(body)).toEqual({ country: 'AE' });
+    expect(JSON.parse(bodyIn)).toEqual({ country: 'IN' });
+
+    const reqAe = {
+      headers: {
+        'x-vercel-ip-country': 'ae',
+      },
+    } as unknown as IncomingMessage;
+    let bodyAe = '';
+    const resAe = {
+      writeHead: () => resAe,
+      end: (data: string) => { bodyAe = data; return resAe; },
+    } as unknown as ServerResponse;
+
+    geoHandler(reqAe, resAe);
+    expect(JSON.parse(bodyAe)).toEqual({ country: 'US' });
   });
 
   it('defaults to US when header is missing', () => {
@@ -92,31 +106,31 @@ describe('resolveVisitorCountry()', () => {
   });
 
   it('respects saved manual override in localStorage before fetching', async () => {
-    localStorage.setItem(STORAGE_KEY_COUNTRY, 'SA');
+    localStorage.setItem(STORAGE_KEY_COUNTRY, 'IN');
     const country = await resolveVisitorCountry();
-    expect(country).toBe('SA');
+    expect(country).toBe('IN');
   });
 
-  it('resolves country from /api/geo response when valid', async () => {
+  it('resolves country from /api/geo response when IN', async () => {
     const originalFetch = global.fetch;
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ country: 'QA' }),
+      json: async () => ({ country: 'IN' }),
     }) as any;
 
     try {
       const country = await resolveVisitorCountry({ bypassCache: true });
-      expect(country).toBe('QA');
+      expect(country).toBe('IN');
     } finally {
       global.fetch = originalFetch;
     }
   });
 
-  it('maps unsupported foreign countries to US canonical reference', async () => {
+  it('maps all international countries (including GCC) to US', async () => {
     const originalFetch = global.fetch;
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ country: 'DE' }),
+      json: async () => ({ country: 'AE' }),
     }) as any;
 
     try {
@@ -165,17 +179,17 @@ describe('resolveVisitorCountry()', () => {
     const originalFetch = global.fetch;
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ country: 'AE' }),
+      json: async () => ({ country: 'IN' }),
     });
     global.fetch = fetchMock as any;
 
     try {
       const country1 = await resolveVisitorCountry({ bypassCache: true });
-      expect(country1).toBe('AE');
+      expect(country1).toBe('IN');
       expect(fetchMock).toHaveBeenCalledTimes(1);
 
       const country2 = await resolveVisitorCountry();
-      expect(country2).toBe('AE');
+      expect(country2).toBe('IN');
       expect(fetchMock).toHaveBeenCalledTimes(1);
     } finally {
       global.fetch = originalFetch;

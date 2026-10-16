@@ -1,10 +1,13 @@
 import type { IncomingMessage, ServerResponse } from 'http';
 
 export default function handler(req: IncomingMessage, res: ServerResponse): void {
-  const countryHeader = req.headers['x-vercel-ip-country'];
-  const country = typeof countryHeader === 'string' && countryHeader.trim().length > 0
-    ? countryHeader.trim().toUpperCase()
+  const rawHeader = req.headers['x-vercel-ip-country'];
+  const rawCountry = typeof rawHeader === 'string' && rawHeader.trim().length > 0
+    ? rawHeader.trim().toUpperCase()
     : 'US';
+
+  // Support only two currencies: INR for India and USD for all international markets (including GCC)
+  const country = rawCountry === 'IN' ? 'IN' : 'US';
 
   res.writeHead(200, {
     'Content-Type': 'application/json',

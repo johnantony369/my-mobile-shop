@@ -1,7 +1,6 @@
 export type PlanId = 'monthly' | 'yearly' | 'two_year' | 'three_year' | 'lifetime';
 
-export type GCCCountryCode = 'AE' | 'SA' | 'QA' | 'OM' | 'BH' | 'KW';
-export type CountryCode = GCCCountryCode | 'IN' | 'US';
+export type CountryCode = 'IN' | 'US';
 
 export interface PlanConfig {
   id: PlanId;
@@ -25,107 +24,11 @@ export interface CountryPricingConfig {
 
 /**
  * Centralized, typed pricing matrix.
- * - Canonical USD reference prices
- * - GCC Regional fixed prices
- * - Preserved Indian prices (₹249/mo, ₹2,499/yr)
+ * Supported currencies:
+ * - India: INR (₹249/month, ₹2,499/year)
+ * - International: USD ($19/month, $145/year)
  */
 export const PRICING_CONFIG: Record<CountryCode, CountryPricingConfig> = {
-  // United Arab Emirates
-  AE: {
-    countryCode: 'AE',
-    countryName: 'United Arab Emirates',
-    currencyCode: 'AED',
-    currencySymbol: 'AED',
-    symbolPosition: 'prefix',
-    decimalPlaces: 0,
-    plans: {
-      monthly: { id: 'monthly', name: 'Monthly Pro', durationMonths: 1, price: 69 },
-      yearly: { id: 'yearly', name: 'Annual Pro', durationMonths: 12, recommended: true, price: 529 },
-      two_year: { id: 'two_year', name: '2-Year Pro', durationMonths: 24, price: 1249 },
-      three_year: { id: 'three_year', name: '3-Year Pro', durationMonths: 36, bestValue: true, price: 1649 },
-      lifetime: { id: 'lifetime', name: 'Lifetime Pro', durationMonths: null, isOneTime: true, price: 2499 },
-    },
-  },
-  // Saudi Arabia
-  SA: {
-    countryCode: 'SA',
-    countryName: 'Saudi Arabia',
-    currencyCode: 'SAR',
-    currencySymbol: 'SAR',
-    symbolPosition: 'prefix',
-    decimalPlaces: 0,
-    plans: {
-      monthly: { id: 'monthly', name: 'Monthly Pro', durationMonths: 1, price: 69 },
-      yearly: { id: 'yearly', name: 'Annual Pro', durationMonths: 12, recommended: true, price: 529 },
-      two_year: { id: 'two_year', name: '2-Year Pro', durationMonths: 24, price: 1299 },
-      three_year: { id: 'three_year', name: '3-Year Pro', durationMonths: 36, bestValue: true, price: 1699 },
-      lifetime: { id: 'lifetime', name: 'Lifetime Pro', durationMonths: null, isOneTime: true, price: 2599 },
-    },
-  },
-  // Qatar
-  QA: {
-    countryCode: 'QA',
-    countryName: 'Qatar',
-    currencyCode: 'QAR',
-    currencySymbol: 'QAR',
-    symbolPosition: 'prefix',
-    decimalPlaces: 0,
-    plans: {
-      monthly: { id: 'monthly', name: 'Monthly Pro', durationMonths: 1, price: 69 },
-      yearly: { id: 'yearly', name: 'Annual Pro', durationMonths: 12, recommended: true, price: 529 },
-      two_year: { id: 'two_year', name: '2-Year Pro', durationMonths: 24, price: 1249 },
-      three_year: { id: 'three_year', name: '3-Year Pro', durationMonths: 36, bestValue: true, price: 1649 },
-      lifetime: { id: 'lifetime', name: 'Lifetime Pro', durationMonths: null, isOneTime: true, price: 2499 },
-    },
-  },
-  // Oman
-  OM: {
-    countryCode: 'OM',
-    countryName: 'Oman',
-    currencyCode: 'OMR',
-    currencySymbol: 'OMR',
-    symbolPosition: 'prefix',
-    decimalPlaces: 0,
-    plans: {
-      monthly: { id: 'monthly', name: 'Monthly Pro', durationMonths: 1, price: 7 },
-      yearly: { id: 'yearly', name: 'Annual Pro', durationMonths: 12, recommended: true, price: 53 },
-      two_year: { id: 'two_year', name: '2-Year Pro', durationMonths: 24, price: 129 },
-      three_year: { id: 'three_year', name: '3-Year Pro', durationMonths: 36, bestValue: true, price: 169 },
-      lifetime: { id: 'lifetime', name: 'Lifetime Pro', durationMonths: null, isOneTime: true, price: 269 },
-    },
-  },
-  // Bahrain
-  BH: {
-    countryCode: 'BH',
-    countryName: 'Bahrain',
-    currencyCode: 'BHD',
-    currencySymbol: 'BHD',
-    symbolPosition: 'prefix',
-    decimalPlaces: 0,
-    plans: {
-      monthly: { id: 'monthly', name: 'Monthly Pro', durationMonths: 1, price: 7 },
-      yearly: { id: 'yearly', name: 'Annual Pro', durationMonths: 12, recommended: true, price: 53 },
-      two_year: { id: 'two_year', name: '2-Year Pro', durationMonths: 24, price: 129 },
-      three_year: { id: 'three_year', name: '3-Year Pro', durationMonths: 36, bestValue: true, price: 169 },
-      lifetime: { id: 'lifetime', name: 'Lifetime Pro', durationMonths: null, isOneTime: true, price: 259 },
-    },
-  },
-  // Kuwait
-  KW: {
-    countryCode: 'KW',
-    countryName: 'Kuwait',
-    currencyCode: 'KWD',
-    currencySymbol: 'KWD',
-    symbolPosition: 'prefix',
-    decimalPlaces: 1,
-    plans: {
-      monthly: { id: 'monthly', name: 'Monthly Pro', durationMonths: 1, price: 5.9 },
-      yearly: { id: 'yearly', name: 'Annual Pro', durationMonths: 12, recommended: true, price: 44 },
-      two_year: { id: 'two_year', name: '2-Year Pro', durationMonths: 24, price: 209 },
-      three_year: { id: 'three_year', name: '3-Year Pro', durationMonths: 36, bestValue: true, price: 279 },
-      lifetime: { id: 'lifetime', name: 'Lifetime Pro', durationMonths: null, isOneTime: true, price: 429 },
-    },
-  },
   // India (Preserved)
   IN: {
     countryCode: 'IN',
@@ -142,7 +45,7 @@ export const PRICING_CONFIG: Record<CountryCode, CountryPricingConfig> = {
       lifetime: { id: 'lifetime', name: 'Lifetime Pro', durationMonths: null, isOneTime: true, price: 9999 },
     },
   },
-  // Canonical USD Reference / International
+  // Canonical USD Reference / International (Used for all international markets including GCC)
   US: {
     countryCode: 'US',
     countryName: 'International (USD)',
@@ -160,8 +63,7 @@ export const PRICING_CONFIG: Record<CountryCode, CountryPricingConfig> = {
   },
 };
 
-export const SUPPORTED_COUNTRIES: CountryCode[] = ['IN', 'AE', 'SA', 'QA', 'OM', 'BH', 'KW', 'US'];
-export const GCC_COUNTRIES: GCCCountryCode[] = ['AE', 'SA', 'QA', 'OM', 'BH', 'KW'];
+export const SUPPORTED_COUNTRIES: CountryCode[] = ['IN', 'US'];
 
 export const STORAGE_KEY_COUNTRY = 'mms_pricing_country';
 
@@ -231,14 +133,9 @@ export function calculateSavings(
 
 /**
  * Timezone-to-country mapping heuristic for initial detection.
+ * Indian timezones map to 'IN'; all international markets map to 'US'.
  */
 const TIMEZONE_COUNTRY_MAP: Record<string, CountryCode> = {
-  'Asia/Dubai': 'AE',
-  'Asia/Muscat': 'OM',
-  'Asia/Riyadh': 'SA',
-  'Asia/Qatar': 'QA',
-  'Asia/Bahrain': 'BH',
-  'Asia/Kuwait': 'KW',
   'Asia/Kolkata': 'IN',
   'Asia/Calcutta': 'IN',
 };
@@ -247,8 +144,8 @@ const TIMEZONE_COUNTRY_MAP: Record<string, CountryCode> = {
  * Detect visitor country heuristic without forcing.
  * Priority:
  * 1. Saved preference in localStorage
- * 2. TimeZone matching
- * 3. Default to 'IN' (or 'US' if outside)
+ * 2. TimeZone matching (India -> IN, All other markets -> US)
+ * 3. Default to 'US'
  */
 function getStorage(): Storage | null {
   try {
@@ -265,15 +162,14 @@ function getStorage(): Storage | null {
  * Priority:
  * 1. Saved preference in localStorage
  * 2. TimeZone matching
- * 3. Default to 'IN' (or 'US' if outside)
+ * 3. Default to 'US' (or 'IN' if Indian timezone detected)
  */
 export function detectVisitorCountry(): CountryCode {
   const storage = getStorage();
   if (storage) {
-    const saved = storage.getItem(STORAGE_KEY_COUNTRY) as CountryCode | null;
-    if (saved && PRICING_CONFIG[saved]) {
-      return saved;
-    }
+    const saved = storage.getItem(STORAGE_KEY_COUNTRY);
+    if (saved === 'IN') return 'IN';
+    if (saved === 'US') return 'US';
   }
 
   try {
@@ -285,7 +181,7 @@ export function detectVisitorCountry(): CountryCode {
     // ignore
   }
 
-  return 'IN';
+  return 'US';
 }
 
 /**
@@ -324,10 +220,9 @@ export function _resetCachedAutoCountry(): void {
 export async function resolveVisitorCountry(options: ResolveGeoOptions = {}): Promise<CountryCode> {
   const storage = getStorage();
   if (storage) {
-    const saved = storage.getItem(STORAGE_KEY_COUNTRY) as CountryCode | null;
-    if (saved && PRICING_CONFIG[saved]) {
-      return saved;
-    }
+    const saved = storage.getItem(STORAGE_KEY_COUNTRY);
+    if (saved === 'IN') return 'IN';
+    if (saved === 'US') return 'US';
   }
 
   if (!options.bypassCache && cachedAutoCountry && PRICING_CONFIG[cachedAutoCountry]) {
@@ -352,11 +247,11 @@ export async function resolveVisitorCountry(options: ResolveGeoOptions = {}): Pr
         if (res.ok) {
           const data = await res.json();
           const code = (data?.country || '').toUpperCase();
-          if (code && PRICING_CONFIG[code as CountryCode]) {
-            cachedAutoCountry = code as CountryCode;
-            return cachedAutoCountry;
+          if (code === 'IN') {
+            cachedAutoCountry = 'IN';
+            return 'IN';
           }
-          // If country is outside supported GCC/India, route to Canonical USD
+          // All other international markets (including GCC) route to US (USD)
           cachedAutoCountry = 'US';
           return 'US';
         }

@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
   PRICING_CONFIG,
   SUPPORTED_COUNTRIES,
-  GCC_COUNTRIES,
   formatPrice,
   calculateSavings,
   detectVisitorCountry,
@@ -11,7 +10,7 @@ import {
   STORAGE_KEY_COUNTRY,
 } from '../src/utils/pricing';
 
-describe('Canonical USD Pricing', () => {
+describe('Canonical USD Pricing (International Markets & GCC)', () => {
   const usd = PRICING_CONFIG.US.plans;
 
   it('Monthly Pro is $19 for 1 month', () => {
@@ -43,95 +42,27 @@ describe('Canonical USD Pricing', () => {
   });
 });
 
-describe('GCC Regional Pricing Matrix', () => {
-  it('UAE (AED) matches exact required prices', () => {
-    const uae = PRICING_CONFIG.AE;
-    expect(uae.currencyCode).toBe('AED');
-    expect(uae.plans.monthly.price).toBe(69);
-    expect(uae.plans.yearly.price).toBe(529);
-    expect(uae.plans.two_year.price).toBe(1249);
-    expect(uae.plans.three_year.price).toBe(1649);
-    expect(uae.plans.lifetime.price).toBe(2499);
-  });
-
-  it('Saudi Arabia (SAR) matches exact required prices', () => {
-    const sa = PRICING_CONFIG.SA;
-    expect(sa.currencyCode).toBe('SAR');
-    expect(sa.plans.monthly.price).toBe(69);
-    expect(sa.plans.yearly.price).toBe(529);
-    expect(sa.plans.two_year.price).toBe(1299);
-    expect(sa.plans.three_year.price).toBe(1699);
-    expect(sa.plans.lifetime.price).toBe(2599);
-  });
-
-  it('Qatar (QAR) matches exact required prices', () => {
-    const qa = PRICING_CONFIG.QA;
-    expect(qa.currencyCode).toBe('QAR');
-    expect(qa.plans.monthly.price).toBe(69);
-    expect(qa.plans.yearly.price).toBe(529);
-    expect(qa.plans.two_year.price).toBe(1249);
-    expect(qa.plans.three_year.price).toBe(1649);
-    expect(qa.plans.lifetime.price).toBe(2499);
-  });
-
-  it('Oman (OMR) matches exact required prices', () => {
-    const om = PRICING_CONFIG.OM;
-    expect(om.currencyCode).toBe('OMR');
-    expect(om.plans.monthly.price).toBe(7);
-    expect(om.plans.yearly.price).toBe(53);
-    expect(om.plans.two_year.price).toBe(129);
-    expect(om.plans.three_year.price).toBe(169);
-    expect(om.plans.lifetime.price).toBe(269);
-  });
-
-  it('Bahrain (BHD) matches exact required prices', () => {
-    const bh = PRICING_CONFIG.BH;
-    expect(bh.currencyCode).toBe('BHD');
-    expect(bh.plans.monthly.price).toBe(7);
-    expect(bh.plans.yearly.price).toBe(53);
-    expect(bh.plans.two_year.price).toBe(129);
-    expect(bh.plans.three_year.price).toBe(169);
-    expect(bh.plans.lifetime.price).toBe(259);
-  });
-
-  it('Kuwait (KWD) matches exact required prices with decimals', () => {
-    const kw = PRICING_CONFIG.KW;
-    expect(kw.currencyCode).toBe('KWD');
-    expect(kw.plans.monthly.price).toBe(5.9);
-    expect(kw.plans.yearly.price).toBe(44);
-    expect(kw.plans.two_year.price).toBe(209);
-    expect(kw.plans.three_year.price).toBe(279);
-    expect(kw.plans.lifetime.price).toBe(429);
-  });
-
-  it('Includes all 6 GCC countries', () => {
-    expect(GCC_COUNTRIES).toEqual(['AE', 'SA', 'QA', 'OM', 'BH', 'KW']);
-  });
-});
-
-describe('Preserved Indian Pricing', () => {
+describe('Preserved Indian Pricing (INR)', () => {
   it('preserves ₹249/mo and ₹2,499/yr', () => {
     const india = PRICING_CONFIG.IN;
     expect(india.currencyCode).toBe('INR');
     expect(india.currencySymbol).toBe('₹');
     expect(india.plans.monthly.price).toBe(249);
     expect(india.plans.yearly.price).toBe(2499);
+    expect(india.plans.two_year.price).toBe(4999);
+    expect(india.plans.three_year.price).toBe(6999);
+    expect(india.plans.lifetime.price).toBe(9999);
+  });
+});
+
+describe('Supported Countries Configuration', () => {
+  it('supports exactly two currencies: INR (India) and USD (International/GCC)', () => {
+    expect(SUPPORTED_COUNTRIES).toEqual(['IN', 'US']);
+    expect(Object.keys(PRICING_CONFIG)).toEqual(['IN', 'US']);
   });
 });
 
 describe('formatPrice', () => {
-  it('formats UAE AED prices with comma grouping', () => {
-    expect(formatPrice(69, 'AE')).toBe('AED 69');
-    expect(formatPrice(1249, 'AE')).toBe('AED 1,249');
-    expect(formatPrice(2499, 'AE')).toBe('AED 2,499');
-  });
-
-  it('formats Kuwait KWD prices with decimal where needed', () => {
-    expect(formatPrice(5.9, 'KW')).toBe('KWD 5.9');
-    expect(formatPrice(44, 'KW')).toBe('KWD 44');
-    expect(formatPrice(209, 'KW')).toBe('KWD 209');
-  });
-
   it('formats Indian INR prices with ₹', () => {
     expect(formatPrice(249, 'IN')).toBe('₹249');
     expect(formatPrice(2499, 'IN')).toBe('₹2,499');
@@ -140,26 +71,28 @@ describe('formatPrice', () => {
   it('formats USD prices with $', () => {
     expect(formatPrice(19, 'US')).toBe('$19');
     expect(formatPrice(145, 'US')).toBe('$145');
+    expect(formatPrice(345, 'US')).toBe('$345');
+    expect(formatPrice(449, 'US')).toBe('$449');
+    expect(formatPrice(699, 'US')).toBe('$699');
   });
 });
 
 describe('calculateSavings (Mathematical Accuracy)', () => {
-  it('calculates UAE Annual Pro savings accurately', () => {
-    // UAE Monthly: 69, Annual: 529. Baseline: 12 * 69 = 828. Savings = 299.
-    const savings = calculateSavings('yearly', 'AE');
+  it('calculates USD Annual Pro savings accurately ($83, ~36%)', () => {
+    // USD Monthly: 19, Annual: 145. Baseline: 12 * 19 = 228. Savings = 83.
+    const savings = calculateSavings('yearly', 'US');
     expect(savings).not.toBeNull();
-    expect(savings!.savingsAmount).toBe(299);
-    expect(savings!.savingsPercent).toBe(36); // 299 / 828 * 100 = 36.11%
-    expect(savings!.effectiveMonthlyPrice).toBe(44); // 529 / 12 = 44.08
+    expect(savings!.savingsAmount).toBe(83);
+    expect(savings!.savingsPercent).toBe(36); // 83 / 228 * 100 = 36.4%
+    expect(savings!.effectiveMonthlyPrice).toBe(12); // 145 / 12 = 12.08
   });
 
-  it('calculates UAE 3-Year Pro savings accurately', () => {
-    // UAE Monthly: 69, 3-Year: 1649. Baseline: 36 * 69 = 2484. Savings = 835.
-    const savings = calculateSavings('three_year', 'AE');
+  it('calculates USD 3-Year Pro savings accurately ($235, ~34%)', () => {
+    // USD Monthly: 19, 3-Year: 449. Baseline: 36 * 19 = 684. Savings = 235.
+    const savings = calculateSavings('three_year', 'US');
     expect(savings).not.toBeNull();
-    expect(savings!.savingsAmount).toBe(835);
+    expect(savings!.savingsAmount).toBe(235);
     expect(savings!.savingsPercent).toBe(34);
-    expect(savings!.effectiveMonthlyPrice).toBe(46); // 1649 / 36 = 45.8
   });
 
   it('calculates India Annual Pro savings accurately (₹489, ~16%)', () => {
@@ -172,8 +105,8 @@ describe('calculateSavings (Mathematical Accuracy)', () => {
   });
 
   it('returns null for Monthly Pro and Lifetime Pro', () => {
-    expect(calculateSavings('monthly', 'AE')).toBeNull();
-    expect(calculateSavings('lifetime', 'AE')).toBeNull();
+    expect(calculateSavings('monthly', 'US')).toBeNull();
+    expect(calculateSavings('lifetime', 'US')).toBeNull();
   });
 });
 
@@ -182,7 +115,6 @@ describe('Visitor Country Detection and Override', () => {
 
   beforeEach(() => {
     const store: Record<string, string> = {};
-    // Mock localStorage
     Object.defineProperty(globalThis, 'localStorage', {
       value: {
         getItem: (k: string) => store[k] ?? null,
@@ -204,30 +136,49 @@ describe('Visitor Country Detection and Override', () => {
   });
 
   it('respects manual country selection stored in localStorage', () => {
-    saveVisitorCountry('SA');
-    expect(detectVisitorCountry()).toBe('SA');
+    saveVisitorCountry('IN');
+    expect(detectVisitorCountry()).toBe('IN');
 
-    saveVisitorCountry('KW');
-    expect(detectVisitorCountry()).toBe('KW');
+    saveVisitorCountry('US');
+    expect(detectVisitorCountry()).toBe('US');
   });
 
-  it('defaults to India when no stored country and no specific timezone match', () => {
-    expect(detectVisitorCountry()).toBe('IN');
+  it('defaults to US for non-India visitors without stored preference', () => {
+    const originalResolvedOptions = Intl.DateTimeFormat.prototype.resolvedOptions;
+    Intl.DateTimeFormat.prototype.resolvedOptions = function() {
+      return { ...originalResolvedOptions.call(this), timeZone: 'America/New_York' };
+    };
+    try {
+      expect(detectVisitorCountry()).toBe('US');
+    } finally {
+      Intl.DateTimeFormat.prototype.resolvedOptions = originalResolvedOptions;
+    }
+  });
+
+  it('detects IN for Indian visitors without stored preference', () => {
+    const originalResolvedOptions = Intl.DateTimeFormat.prototype.resolvedOptions;
+    Intl.DateTimeFormat.prototype.resolvedOptions = function() {
+      return { ...originalResolvedOptions.call(this), timeZone: 'Asia/Kolkata' };
+    };
+    try {
+      expect(detectVisitorCountry()).toBe('IN');
+    } finally {
+      Intl.DateTimeFormat.prototype.resolvedOptions = originalResolvedOptions;
+    }
   });
 });
 
 describe('validatePlanPrice (Server/Client Safety)', () => {
   it('validates authentic configured prices as true', () => {
-    expect(validatePlanPrice('monthly', 'AE', 69)).toBe(true);
-    expect(validatePlanPrice('yearly', 'AE', 529)).toBe(true);
-    expect(validatePlanPrice('three_year', 'SA', 1699)).toBe(true);
     expect(validatePlanPrice('monthly', 'IN', 249)).toBe(true);
     expect(validatePlanPrice('yearly', 'IN', 2499)).toBe(true);
+    expect(validatePlanPrice('monthly', 'US', 19)).toBe(true);
+    expect(validatePlanPrice('yearly', 'US', 145)).toBe(true);
   });
 
   it('rejects tampered or forged prices as false', () => {
-    expect(validatePlanPrice('monthly', 'AE', 1)).toBe(false);
-    expect(validatePlanPrice('yearly', 'AE', 100)).toBe(false);
+    expect(validatePlanPrice('monthly', 'IN', 1)).toBe(false);
+    expect(validatePlanPrice('yearly', 'US', 100)).toBe(false);
     expect(validatePlanPrice('lifetime', 'US', 99)).toBe(false);
   });
 });
