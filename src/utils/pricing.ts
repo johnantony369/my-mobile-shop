@@ -259,9 +259,27 @@ const TIMEZONE_COUNTRY_MAP: Record<string, CountryCode> = {
  * 2. TimeZone matching
  * 3. Default to 'IN' (or 'US' if outside)
  */
+function getStorage(): Storage | null {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) return window.localStorage;
+    if (typeof localStorage !== 'undefined') return localStorage;
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
+/**
+ * Detect visitor country heuristic without forcing.
+ * Priority:
+ * 1. Saved preference in localStorage
+ * 2. TimeZone matching
+ * 3. Default to 'IN' (or 'US' if outside)
+ */
 export function detectVisitorCountry(): CountryCode {
-  if (typeof window !== 'undefined' && window.localStorage) {
-    const saved = window.localStorage.getItem(STORAGE_KEY_COUNTRY) as CountryCode | null;
+  const storage = getStorage();
+  if (storage) {
+    const saved = storage.getItem(STORAGE_KEY_COUNTRY) as CountryCode | null;
     if (saved && PRICING_CONFIG[saved]) {
       return saved;
     }
@@ -283,8 +301,9 @@ export function detectVisitorCountry(): CountryCode {
  * Saves manual country selection preference.
  */
 export function saveVisitorCountry(code: CountryCode): void {
-  if (typeof window !== 'undefined' && window.localStorage) {
-    window.localStorage.setItem(STORAGE_KEY_COUNTRY, code);
+  const storage = getStorage();
+  if (storage) {
+    storage.setItem(STORAGE_KEY_COUNTRY, code);
   }
 }
 

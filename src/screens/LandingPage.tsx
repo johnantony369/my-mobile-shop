@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ArrowRight, Check, ChevronDown, Menu, X, ShieldCheck, WifiOff, Mail, Globe, Sparkles } from 'lucide-react';
+import { ArrowRight, Check, ChevronDown, Menu, X, ShieldCheck, WifiOff, Mail, Globe } from 'lucide-react';
 import { LegalModal } from '../components/LegalModal';
 import {
   CountryCode,
@@ -198,7 +198,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isAuthenticated = fals
       <section id="features" className="border-y border-slate-200 bg-slate-50/70 py-20 sm:py-24"><div className="mx-auto max-w-6xl px-5 sm:px-8"><p className="text-xs font-bold uppercase tracking-[.14em] text-[#1769FF]">One counter. One clear system.</p><h2 className="mt-3 max-w-2xl text-3xl font-bold tracking-[-.05em] sm:text-5xl">The essentials, designed around your day.</h2><div className="mt-10 grid gap-5 md:grid-cols-3"><Feature label="Daily book" title="Know today’s cash and UPI at a glance." text="Capture income and expenses in seconds, then close the day with a number you can trust." /><Feature label="Repairs" title="Every device has a clear record." text="Keep job cards, estimates, receipts and customer updates together." /><Feature label="Used phones" title="Buy with a better paper trail." text="Keep KYC and IMEI details organised as your stock moves." /></div></div></section>
       <section id="workflow" className="mx-auto max-w-6xl px-5 py-20 sm:px-8 sm:py-24"><div className="grid gap-12 lg:grid-cols-2"><div><p className="text-xs font-bold uppercase tracking-[.14em] text-[#1769FF]">A simpler daily rhythm</p><h2 className="mt-3 text-3xl font-bold tracking-[-.05em] sm:text-5xl">From opening balance to shutter down.</h2><p className="mt-5 max-w-md text-base leading-7 text-slate-600">No extra process to learn. MMS follows the work already happening at your counter.</p></div><div className="divide-y divide-slate-200 border-y border-slate-200">{[['01','Open with clarity','Start with your opening balance and yesterday’s records within reach.'],['02','Record as you serve','Log a payment, repair intake or stock movement without breaking the conversation.'],['03','Close with confidence','Review cash, UPI and activity before you lock up for the night.']].map(([n,t,d]) => <div className="flex gap-5 py-7" key={n}><span className="text-xs font-bold text-[#1769FF]">{n}</span><div><span className="mb-3 flex size-9 items-center justify-center rounded-xl bg-[#1769FF]/10 text-[#1769FF]"><ShieldCheck className="size-4" /></span><h3 className="text-lg font-bold">{t}</h3><p className="mt-2 text-sm leading-6 text-slate-600">{d}</p></div></div>)}</div></div></section>
       <section id="pricing" className="border-t border-slate-200/80 bg-white py-20 sm:py-28">
-        <div className="mx-auto max-w-6xl px-5 sm:px-8">
+        <div className="mx-auto max-w-7xl px-5 sm:px-8">
           <div className="mx-auto max-w-2xl text-center">
             <p className="inline-flex items-center gap-1.5 rounded-full border border-sky-300/60 bg-sky-50 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-[#1769FF]">
               Simple pricing
@@ -209,24 +209,91 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isAuthenticated = fals
             <p className="mt-3.5 text-base sm:text-lg text-slate-600">
               No commission on your sales and no confusing setup fee.
             </p>
+
+            {/* Regional Country Selector */}
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
+              <span className="text-xs font-bold text-slate-500 mr-1 flex items-center gap-1">
+                <Globe className="size-3.5 text-[#1769FF]" /> Region:
+              </span>
+              {SUPPORTED_COUNTRIES.map((code) => {
+                const country = PRICING_CONFIG[code];
+                const isSelected = selectedCountry === code;
+                return (
+                  <button
+                    key={code}
+                    type="button"
+                    onClick={() => handleCountryChange(code)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                      isSelected
+                        ? 'bg-[#1769FF] text-white shadow-sm ring-2 ring-[#1769FF]/20'
+                        : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                    }`}
+                    aria-pressed={isSelected}
+                  >
+                    <span>{code === 'US' ? 'Global · USD' : `${country.countryName.split(' ')[0]} · ${country.currencyCode}`}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-          <div className="mt-14 mx-auto max-w-4xl grid gap-8 md:grid-cols-2 items-stretch">
-            <Plan
-              name="Monthly"
-              price="₹249"
-              suffix="/ month"
-              text="Flexible access for your everyday counter."
-              featured={false}
-              onClick={start}
-            />
-            <Plan
-              name="Annual"
-              price="₹2,499"
-              suffix="/ year"
-              text="Our best value, with two months included free."
-              featured
-              onClick={start}
-            />
+
+          {/* 5 Pro Plans Grid */}
+          <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 items-stretch">
+            {(['monthly', 'yearly', 'two_year', 'three_year', 'lifetime'] as PlanId[]).map((planId) => {
+              const countryConfig = PRICING_CONFIG[selectedCountry] || PRICING_CONFIG.IN;
+              const plan = countryConfig.plans[planId];
+              const savings = calculateSavings(planId, selectedCountry);
+
+              const badge =
+                plan.recommended ? 'Recommended' :
+                plan.bestValue ? 'Best Value' :
+                plan.isOneTime ? 'One-Time Payment' : undefined;
+
+              const suffix =
+                planId === 'monthly' ? '/ month' :
+                planId === 'yearly' ? '/ year' :
+                planId === 'two_year' ? '/ 2 years' :
+                planId === 'three_year' ? '/ 3 years' : 'one-time';
+
+              const durationLabel =
+                planId === 'monthly' ? 'Billed monthly' :
+                planId === 'yearly' ? 'Billed annually (12 months)' :
+                planId === 'two_year' ? 'Billed every 2 years (24 months)' :
+                planId === 'three_year' ? 'Billed every 3 years (36 months)' : 'One-time payment · Never expires';
+
+              let savingsLabel: string | null = null;
+              if (planId === 'monthly' && selectedCountry === 'IN') {
+                savingsLabel = '₹249 / month · Flexible everyday counter access';
+              } else if (planId === 'yearly' && selectedCountry === 'IN') {
+                savingsLabel = '₹2,499 / year · Only ₹208/mo · Save ₹489 every year · 2 Months Free';
+              } else if (savings && savings.savingsAmount > 0) {
+                savingsLabel = `Only ${savings.formattedEffectiveMonthly} / month · Save ${savings.formattedSavings}`;
+              } else if (plan.isOneTime) {
+                savingsLabel = 'Permanent product-lifetime access';
+              }
+
+              const blurb =
+                planId === 'monthly' ? 'Flexible access for your everyday counter.' :
+                planId === 'yearly' ? 'Our best balance of flexibility and annual savings.' :
+                planId === 'two_year' ? 'Extended 24-month peace of mind for your shop.' :
+                planId === 'three_year' ? 'Maximum long-term value for established retailers.' :
+                'Pay once, keep full access forever.';
+
+              return (
+                <Plan
+                  key={planId}
+                  name={plan.name}
+                  price={formatPrice(plan.price, selectedCountry)}
+                  suffix={suffix}
+                  durationLabel={durationLabel}
+                  savingsLabel={savingsLabel}
+                  text={blurb}
+                  badge={badge}
+                  featured={plan.recommended || plan.bestValue}
+                  onClick={start}
+                />
+              );
+            })}
           </div>
         </div>
       </section>
@@ -263,99 +330,106 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isAuthenticated = fals
   );
 };
 function Feature({ label, title, text }: { label: string; title: string; text: string }) { return <article className="rounded-[24px] border border-slate-200 bg-white p-6 sm:p-8"><span className="text-xs font-bold uppercase tracking-[.12em] text-[#1769FF]">{label}</span><h3 className="mt-3 text-xl font-bold tracking-[-.04em]">{title}</h3><p className="mt-3 text-sm leading-6 text-slate-600">{text}</p></article>; }
+
 function Plan({
   name,
   price,
   suffix,
+  durationLabel,
+  savingsLabel,
   text,
+  badge,
   featured,
   onClick,
 }: {
   name: string;
   price: string;
   suffix: string;
+  durationLabel: string;
+  savingsLabel?: string | null;
   text: string;
+  badge?: string;
   featured?: boolean;
   onClick: () => void;
 }) {
   const features = [
     'Unlimited day book entries',
-    'Repair job cards and receipts',
+    'Repair job cards & receipts',
     'Offline-first counter workflow',
-    'Stock records and inventory reports',
+    'Stock records & inventory',
   ];
 
-  if (featured) {
-    return (
-      <article className="relative flex flex-col justify-between rounded-[28px] border-2 border-[#1769FF] bg-gradient-to-b from-sky-50/50 via-white to-white p-7 sm:p-9 shadow-lg shadow-sky-500/10">
-        <div className="absolute -top-3.5 right-6 sm:right-8">
-          <span className="rounded-full bg-[#1769FF] px-3.5 py-1 text-[11px] font-bold uppercase tracking-wider text-white shadow-xs">
-            Best value · 2 Months Free
+  return (
+    <article
+      className={`relative flex flex-col justify-between rounded-[24px] p-6 shadow-xs transition-all ${
+        featured
+          ? 'border-2 border-[#1769FF] bg-gradient-to-b from-sky-50/50 via-white to-white shadow-md shadow-sky-500/10'
+          : 'border border-slate-200/90 bg-white hover:border-slate-300 hover:shadow-md'
+      }`}
+    >
+      {badge && (
+        <div className="absolute -top-3 right-4">
+          <span
+            className={`rounded-full px-3 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-white shadow-xs ${
+              badge === 'Best Value'
+                ? 'bg-gradient-to-r from-amber-500 to-orange-500'
+                : badge === 'One-Time Payment'
+                ? 'bg-gradient-to-r from-purple-600 to-indigo-600'
+                : 'bg-[#1769FF]'
+            }`}
+          >
+            {badge}
           </span>
         </div>
-        <div>
-          <div>
-            <h3 className="text-xl font-bold text-slate-900">{name}</h3>
-            <p className="mt-1 text-sm text-slate-500">{text}</p>
-          </div>
-          <div className="mt-6 flex items-baseline gap-1.5">
-            <span className="text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-950">{price}</span>
-            <span className="text-sm font-semibold text-slate-500">{suffix}</span>
-          </div>
-          <p className="mt-1.5 text-xs font-semibold text-[#1769FF]">
-            Only ₹208 / month · Save ₹489 every year
-          </p>
-          <ul className="mt-7 space-y-3.5 border-t border-slate-100 pt-7 text-sm text-slate-700">
-            {features.map((feature) => (
-              <li key={feature} className="flex items-center gap-3">
-                <div className="flex size-5 shrink-0 items-center justify-center rounded-full bg-[#1769FF] text-white">
-                  <Check className="size-3.5" />
-                </div>
-                <span className="font-medium text-slate-800">{feature}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div className="mt-8 pt-2">
-          <button
-            onClick={onClick}
-            className="min-h-12 w-full rounded-full bg-[#1769FF] hover:bg-[#1258d9] px-6 text-sm font-bold text-white shadow-md shadow-[#1769FF]/20 active:scale-95 transition-all"
-          >
-            Choose {name.toLowerCase()}
-          </button>
-        </div>
-      </article>
-    );
-  }
+      )}
 
-  return (
-    <article className="flex flex-col justify-between rounded-[28px] border border-slate-200/90 bg-white p-7 sm:p-9 shadow-xs hover:shadow-md transition-shadow">
       <div>
         <div>
-          <h3 className="text-xl font-bold text-slate-900">{name}</h3>
-          <p className="mt-1 text-sm text-slate-500">{text}</p>
+          <h3 className="text-lg font-bold text-slate-900">{name}</h3>
+          <p className="mt-1 text-xs text-slate-500 min-h-[32px]">{text}</p>
         </div>
-        <div className="mt-6 flex items-baseline gap-1.5">
-          <span className="text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-950">{price}</span>
-          <span className="text-sm font-semibold text-slate-500">{suffix}</span>
+
+        <div className="mt-5 flex items-baseline gap-1">
+          <span className="text-3xl font-extrabold tracking-tight text-slate-950">{price}</span>
+          <span className="text-xs font-semibold text-slate-500">{suffix}</span>
         </div>
-        <ul className="mt-8 space-y-3.5 border-t border-slate-100 pt-7 text-sm text-slate-600">
+
+        <p className="mt-1 text-[11px] font-medium text-slate-400">{durationLabel}</p>
+
+        {savingsLabel ? (
+          <p className="mt-2 text-[11px] font-semibold text-[#1769FF] leading-snug">
+            {savingsLabel}
+          </p>
+        ) : (
+          <div className="mt-2 h-[18px]" />
+        )}
+
+        <ul className="mt-6 space-y-2.5 border-t border-slate-100 pt-5 text-xs text-slate-700">
           {features.map((feature) => (
-            <li key={feature} className="flex items-center gap-3">
-              <div className="flex size-5 shrink-0 items-center justify-center rounded-full bg-sky-50 text-[#1769FF]">
-                <Check className="size-3.5" />
+            <li key={feature} className="flex items-center gap-2.5">
+              <div
+                className={`flex size-4 shrink-0 items-center justify-center rounded-full ${
+                  featured ? 'bg-[#1769FF] text-white' : 'bg-sky-50 text-[#1769FF]'
+                }`}
+              >
+                <Check className="size-2.5 stroke-[2.5]" />
               </div>
-              <span>{feature}</span>
+              <span className="font-medium text-slate-800">{feature}</span>
             </li>
           ))}
         </ul>
       </div>
-      <div className="mt-8 pt-2">
+
+      <div className="mt-6 pt-2">
         <button
           onClick={onClick}
-          className="min-h-12 w-full rounded-full border border-slate-300 bg-white px-6 text-sm font-semibold text-slate-800 shadow-xs hover:border-slate-400 hover:bg-slate-50 active:scale-95 transition-all"
+          className={`min-h-11 w-full rounded-full px-4 text-xs font-bold transition-all active:scale-95 ${
+            featured
+              ? 'bg-[#1769FF] hover:bg-[#1258d9] text-white shadow-md shadow-[#1769FF]/20'
+              : 'border border-slate-300 bg-white text-slate-800 hover:border-slate-400 hover:bg-slate-50'
+          }`}
         >
-          Choose {name.toLowerCase()}
+          Choose {name.replace(' Pro', '')}
         </button>
       </div>
     </article>
