@@ -11,6 +11,11 @@ const config: CapacitorConfig = {
     allowMixedContent: false,
     captureInput: true,
   },
+  ios: {
+    contentInset: 'automatic',
+    backgroundColor: '#F2F2F7',
+    scrollEnabled: false,
+  },
 };
 
 export default config;

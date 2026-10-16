@@ -12,11 +12,17 @@
     "gen-code": "node scripts/gen-code.js",
     "cap:sync": "cap sync android",
     "cap:open": "cap open android",
-    "cap:build": "npm run build && cap sync android"
+    "cap:build": "npm run build && cap sync android",
+    "cap:sync:ios": "cap sync ios",
+    "cap:open:ios": "cap open ios",
+    "cap:build:ios": "npm run build && cap sync ios"
   },
   "dependencies": {
     "@capacitor/app": "^8.1.2",
     "@capacitor/core": "^8.5.3",
+    "@capacitor/ios": "^8.5.3",
+    "@capacitor/status-bar": "^8.0.4",
+    "@revenuecat/purchases-capacitor": "^13.7.4",
     "dexie": "^4.0.11",
     "dexie-react-hooks": "^1.1.7",
     "firebase": "^12.19.0",

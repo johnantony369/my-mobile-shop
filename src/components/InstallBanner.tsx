@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Download, X, Share, MoreVertical } from 'lucide-react';
 import { usePWAInstall, InstallPlatform } from '../utils/usePWAInstall';
 import { Language } from '../types';
+import { isiOSNativeApp } from '../utils/platform';
 
 interface InstallBannerProps {
   language: Language;
@@ -170,6 +171,9 @@ export const InstallGuideModal: React.FC<{
 export const InstallBanner: React.FC<InstallBannerProps> = ({ language: _language }) => {
   const { showBanner, canInstall, platform, triggerInstall, dismissBanner } = usePWAInstall();
   const [showGuide, setShowGuide] = useState(false);
+
+  // Never show PWA install prompt inside native iOS app
+  if (isiOSNativeApp()) return null;
 
   if (!showBanner) return null;
 

@@ -41,3 +41,23 @@ export function isAndroidNativeApp(override?: PlatformOverrideOptions): boolean 
 
   return isAndroid && isStandalone;
 }
+
+/**
+ * Checks whether the current runtime environment is inside a native iOS app
+ * (Capacitor iOS wrapper).
+ */
+export function isiOSNativeApp(): boolean {
+  if (typeof window === 'undefined') return false;
+  const cap = (window as any).Capacitor;
+  if (cap && typeof cap.isNativePlatform === 'function' && cap.isNativePlatform()) {
+    return typeof cap.getPlatform === 'function' && cap.getPlatform() === 'ios';
+  }
+  return false;
+}
+
+/**
+ * True when running inside any Capacitor native wrapper (Android or iOS).
+ */
+export function isNativeApp(): boolean {
+  return isAndroidNativeApp() || isiOSNativeApp();
+}
