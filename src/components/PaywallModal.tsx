@@ -4,7 +4,15 @@ import { Language } from '../types';
 import { t } from '../i18n';
 import { checkCode, formatActivationCode } from '../utils/activation';
 import { updateAppSettings } from '../db/db';
-import { isAndroidNativeApp } from '../utils/platform';
+import { isAndroidNativeApp, isiOSNativeApp } from '../utils/platform';
+import {
+  RC_MONTHLY_ID,
+  RC_YEARLY_ID,
+  getRevenueCatOfferings,
+  purchaseRevenueCat,
+  restoreRevenueCatPurchases,
+  RCOffering,
+} from '../utils/revenueCat';
 import {
   Check,
   CheckCircle2,
@@ -37,12 +45,23 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
   const [rendered, setRendered] = useState(isOpen);
   const [animate, setAnimate] = useState(false);
   const isAndroid = isAndroidNativeApp();
+  const isIOS = isiOSNativeApp();
+  const [rcOffering, setRcOffering] = useState<RCOffering>({});
+  const [rcLoading, setRcLoading] = useState(false);
+  const [rcError, setRcError] = useState<string | null>(null);
+  const [restoring, setRestoring] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('yearly');
   const [showCodeInput, setShowCodeInput] = useState(isAndroid);
   const [code, setCode] = useState('');
   const [codeError, setCodeError] = useState<string | null>(null);
   const [isActivating, setIsActivating] = useState(false);
   const [activationSuccess, setActivationSuccess] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && isIOS) {
+      getRevenueCatOfferings().then(setRcOffering);
+    }
+  }, [isOpen, isIOS]);
 
   useEffect(() => {
     if (isOpen) {
@@ -57,6 +76,7 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
         setCode('');
         setCodeError(null);
         setActivationSuccess(false);
+        setRcError(null);
       }, 250);
       return () => clearTimeout(timer);
     }
@@ -74,6 +94,38 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
   }, [isOpen]);
 
   if (!rendered) return null;
+
+  const handleIOSPurchase = async () => {
+    const packageId = selectedPlan === 'yearly' ? RC_YEARLY_ID : RC_MONTHLY_ID;
+    setRcLoading(true);
+    setRcError(null);
+    const result = await purchaseRevenueCat(packageId);
+    setRcLoading(false);
+    if (result.success) {
+      // Write to local DB — plan/expiry will be verified from RevenueCat on next launch
+      await updateAppSettings({ activated: true, proPlan: result.plan ?? 'monthly', proExpiresAt: null });
+      setActivationSuccess(true);
+      if (onActivated) onActivated();
+      setTimeout(() => onClose(), 1500);
+    } else if (!result.cancelled) {
+      setRcError('Purchase failed. Please try again or restore your purchases below.');
+    }
+  };
+
+  const handleIOSRestore = async () => {
+    setRestoring(true);
+    setRcError(null);
+    const hasEntitlement = await restoreRevenueCatPurchases();
+    setRestoring(false);
+    if (hasEntitlement) {
+      await updateAppSettings({ activated: true, proPlan: 'yearly', proExpiresAt: null });
+      setActivationSuccess(true);
+      if (onActivated) onActivated();
+      setTimeout(() => onClose(), 1500);
+    } else {
+      setRcError('No active purchases found on your Apple ID.');
+    }
+  };
 
   const handleOpenRazorpay = () => {
     const url = selectedPlan === 'yearly' ? RAZORPAY_YEARLY_URL : RAZORPAY_MONTHLY_URL;
@@ -246,7 +298,89 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
           </div>
 
           {/* Action Area */}
-          {isAndroid ? (
+          {isIOS ? (
+            <div className="space-y-3 pt-1">
+              {/* Subscribe button */}
+              <button
+                type="button"
+                onClick={handleIOSPurchase}
+                disabled={rcLoading || activationSuccess}
+                className="w-full py-3.5 px-4 bg-gradient-to-r from-iosBlue via-blue-600 to-indigo-600 text-white rounded-[14px] font-bold text-[15px] flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25 active:scale-[0.98] transition-all disabled:opacity-50"
+              >
+                {rcLoading ? (
+                  <span>Processing...</span>
+                ) : activationSuccess ? (
+                  <><CheckCircle2 className="w-5 h-5" /><span>Subscribed!</span></>
+                ) : (
+                  <span>
+                    {selectedPlan === 'yearly'
+                      ? `Subscribe • ${rcOffering.yearly?.priceString ?? '₹2,499/yr'}`
+                      : `Subscribe • ${rcOffering.monthly?.priceString ?? '₹249/mo'}`}
+                  </span>
+                )}
+              </button>
+
+              {rcError && (
+                <p className="text-xs text-iosRed font-medium text-center">{rcError}</p>
+              )}
+
+              {/* Trust note */}
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-1.5 text-[11px] font-medium text-[#8E8E93]">
+                  <ShieldCheck className="w-3.5 h-3.5 text-iosGreen" />
+                  <span>Billed via Apple · Manage in App Store</span>
+                </div>
+              </div>
+
+              {/* Restore Purchases — Apple requires this */}
+              <button
+                type="button"
+                onClick={handleIOSRestore}
+                disabled={restoring}
+                className="w-full py-2 text-xs font-semibold text-iosBlue hover:opacity-80 transition-opacity disabled:opacity-50 text-center"
+              >
+                {restoring ? 'Restoring...' : 'Restore Purchases'}
+              </button>
+
+              {/* Activation code — collapsible, same as web */}
+              <div className="border-t border-[#E5E5EA] pt-2.5">
+                <button
+                  type="button"
+                  onClick={() => setShowCodeInput(!showCodeInput)}
+                  className="w-full flex items-center justify-between text-xs font-semibold text-iosBlue py-1 px-1 hover:opacity-80 transition-opacity"
+                >
+                  <span>{t('paywall_have_code', language)}</span>
+                  {showCodeInput ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </button>
+                {showCodeInput && (
+                  <form onSubmit={handleActivateWithCode} className="mt-2 space-y-2.5 animate-fade-slide-in">
+                    <input
+                      type="text"
+                      maxLength={19}
+                      value={code}
+                      onChange={handleCodeChange}
+                      placeholder="XXXX-XXXX-XXXX-XXXX"
+                      className="w-full bg-[#F2F2F7] rounded-[10px] px-3 py-2.5 text-center font-mono tracking-widest text-[15px] font-semibold text-black uppercase focus:outline-none focus:ring-2 focus:ring-iosBlue/40 border border-black/[0.06]"
+                    />
+                    {codeError && <p className="text-xs text-iosRed font-medium text-center">{codeError}</p>}
+                    {activationSuccess && (
+                      <div className="p-2.5 bg-green-50 text-iosGreen border border-green-200 rounded-[10px] text-xs font-semibold flex items-center justify-center gap-1.5">
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>{t('activated_success_msg', language)}</span>
+                      </div>
+                    )}
+                    <button
+                      type="submit"
+                      disabled={isActivating || activationSuccess}
+                      className="w-full py-2.5 bg-iosBlue text-white font-semibold text-xs rounded-[10px] active:opacity-85 shadow-sm transition-opacity disabled:opacity-50"
+                    >
+                      {isActivating ? 'Verifying...' : t('paywall_verify_btn', language)}
+                    </button>
+                  </form>
+                )}
+              </div>
+            </div>
+          ) : isAndroid ? (
             <div className="space-y-3 pt-1">
               <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl flex items-start gap-2.5 text-xs text-blue-900 leading-relaxed">
                 <KeyRound className="w-4 h-4 text-iosBlue shrink-0 mt-0.5" />

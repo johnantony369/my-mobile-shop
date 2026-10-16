@@ -6,12 +6,14 @@ import { SettingsScreen } from '../src/screens/SettingsScreen';
 import { AppSettings } from '../src/types';
 
 describe('SettingsScreen Partner Program Banner', () => {
-  const baseSettings: AppSettings = {
+  const freeSettings: AppSettings = {
     id: 1,
     shopName: 'Test Mobile Shop',
     language: 'en',
     firstLaunchDate: '2026-10-01',
-    activated: true,
+    activated: false,
+    proPlan: null,
+    proExpiresAt: null,
     lastBackupAt: null,
     showRepairs: true,
     showStock: true,
@@ -20,11 +22,11 @@ describe('SettingsScreen Partner Program Banner', () => {
     updatedAt: new Date().toISOString(),
   };
 
-  it('renders the Partner Program card banner at the top of SettingsScreen', () => {
+  it('renders the Partner Program card banner and top-right Upgrade button for non-pro user', () => {
     const html = renderToString(
       <MemoryRouter>
         <SettingsScreen
-          settings={baseSettings}
+          settings={freeSettings}
           language="en"
           onLanguageChange={() => {}}
           onRefreshSettings={() => {}}
@@ -32,11 +34,30 @@ describe('SettingsScreen Partner Program Banner', () => {
       </MemoryRouter>
     );
 
-    // Option 1 Premium Midnight Obsidian Banner Elements
-    expect(html).toContain('Partner Network');
-    expect(html).toContain('₹300 / Referral');
-    expect(html).toContain('Earn with Every Mobile Shop');
-    expect(html).toContain('Free Acrylic Standee');
-    expect(html).toContain('Open Partner Portal');
+    // Option B Soft Accent Card Elements
+    expect(html).toContain('Partner Program');
+    expect(html).toContain('₹300 / Shop');
+    expect(html).toContain('Distributor network');
+    expect(html).toContain('Open');
+
+    // Top Right Upgrade Button & Banner Removal
+    expect(html).toContain('Upgrade');
+    expect(html).not.toContain('Unlimited day book transactions, automatic cloud sync');
+  });
+
+  it('renders Pro status at top right and no large banner for pro user', () => {
+    const html = renderToString(
+      <MemoryRouter>
+        <SettingsScreen
+          settings={{ ...freeSettings, activated: true, proPlan: 'yearly' }}
+          language="en"
+          onLanguageChange={() => {}}
+          onRefreshSettings={() => {}}
+        />
+      </MemoryRouter>
+    );
+
+    expect(html).toContain('Pro');
+    expect(html).not.toContain('Unlimited day book transactions, automatic cloud sync');
   });
 });

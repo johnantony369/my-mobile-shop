@@ -24,6 +24,8 @@ import { Language } from './types';
 import { pullCloudChanges } from './firebase/sync';
 import { scheduleDailyNotification } from './utils/notifications';
 import { initHardwareBackButton } from './utils/hardwareBackButton';
+import { isiOSNativeApp } from './utils/platform';
+import { initRevenueCat } from './utils/revenueCat';
 
 export default function App() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -52,6 +54,9 @@ export default function App() {
 
     // Request OS to keep storage persistent
     requestPersistentStorage();
+
+    // Initialize RevenueCat for iOS native IAP
+    initRevenueCat(isiOSNativeApp()).catch((err) => console.warn('RevenueCat init error:', err));
 
     const timer = setTimeout(() => {
       setLoadingTimeout(true);

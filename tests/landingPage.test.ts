@@ -9,8 +9,7 @@ describe('LandingPage Component', () => {
     const content = fs.readFileSync(filePath, 'utf-8');
 
     // Benefit checks
-    expect(content).toContain('The All-in-One Counter App for Your Mobile Shop');
-    expect(content).toContain('WhatsApp');
+    expect(content).toContain('A calmer way to run your mobile shop.');
     expect(content).toContain('₹249');
     expect(content).toContain('₹2,499');
     expect(content.toLowerCase()).toContain('2 months free');

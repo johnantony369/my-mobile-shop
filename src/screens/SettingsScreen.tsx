@@ -37,6 +37,7 @@ import {
   Camera,
   Cpu,
   Lock,
+  Users,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ReportsScreen } from './ReportsScreen';
@@ -60,6 +61,8 @@ import {
   requestNotificationPermission,
   triggerDailySummaryNotification,
 } from '../utils/notifications';
+import { isiOSNativeApp } from '../utils/platform';
+import { restoreRevenueCatPurchases } from '../utils/revenueCat';
 
 /** Standalone sub-component so it has its own state without polluting SettingsScreen */
 const AppUpdatesSection: React.FC<{ language: Language }> = ({ language }) => {
@@ -342,6 +345,21 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const [activationError, setActivationError] = useState<string | null>(null);
   const [activationSuccess, setActivationSuccess] = useState(false);
 
+  // iOS In-App Purchase restore state
+  const isIOS = isiOSNativeApp();
+  const [restoreStatus, setRestoreStatus] = useState<'idle' | 'restoring' | 'success' | 'failed'>('idle');
+
+  const handleRestorePurchases = async () => {
+    setRestoreStatus('restoring');
+    const ok = await restoreRevenueCatPurchases();
+    setRestoreStatus(ok ? 'success' : 'failed');
+    if (ok) {
+      // Reload settings to reflect restored entitlement
+      onRefreshSettings();
+    }
+    setTimeout(() => setRestoreStatus('idle'), 3000);
+  };
+
   // Cloud Sync state
   const { user, isConfigured, syncState, lastSyncTime, syncError, triggerSync, signOut, reloadUser } = useAuth();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -584,75 +602,57 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   return (
     <div className="flex flex-col min-h-screen overflow-y-auto pb-28 pt-2">
       <div className="max-w-lg mx-auto px-4 space-y-4">
-        {/* Large Title */}
-        <h1 className="text-[32px] font-extrabold text-black tracking-tight mb-2">
-          {t('settings_header', language)}
-        </h1>
+        {/* Header Title & Top-Right Upgrade Action */}
+        <div className="flex items-center justify-between pt-1 mb-1">
+          <h1 className="text-[32px] font-extrabold text-black tracking-tight">
+            {t('settings_header', language)}
+          </h1>
+          {!isProActive ? (
+            <button
+              type="button"
+              onClick={handleOpenPaywall}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-xs shadow-xs active:scale-95 transition-all cursor-pointer min-h-[34px]"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Upgrade</span>
+            </button>
+          ) : (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/80 text-xs font-semibold">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+              <span>{isAdmin ? 'Superadmin' : 'Pro'}</span>
+            </span>
+          )}
+        </div>
 
-        {/* Partner Program Premium Obsidian Banner */}
-        <div
-          role="button"
-          tabIndex={0}
+        {/* Partner Program Soft Accent Card (UI Friendly) */}
+        <button
+          type="button"
           onClick={() => navigate('/partner')}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              navigate('/partner');
-            }
-          }}
-          className="relative overflow-hidden rounded-[18px] bg-gradient-to-br from-[#0B1328] via-[#101C38] to-[#080D1A] p-4.5 sm:p-5 text-white shadow-lg shadow-blue-950/20 border border-white/10 group cursor-pointer transition-all active:scale-[0.99] focus:outline-hidden focus:ring-2 focus:ring-iosBlue/50 text-left"
-          aria-label="Open Partner Program Portal"
+          className="w-full bg-gradient-to-r from-blue-50/90 via-indigo-50/40 to-white rounded-[14px] p-4 border border-[#007AFF]/25 shadow-xs flex items-center justify-between text-left hover:border-[#007AFF]/40 active:scale-[0.99] transition-all cursor-pointer group"
         >
-          {/* Ambient Lighting Blobs */}
-          <div className="absolute -top-12 -right-12 w-44 h-44 bg-blue-500/20 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-12 -left-12 w-40 h-40 bg-purple-500/15 rounded-full blur-3xl pointer-events-none" />
-
-          <div className="relative z-10 space-y-3">
-            {/* Header Row: Badges */}
-            <div className="flex items-center justify-between">
-              <span className="inline-flex items-center gap-1.5 text-[11px] font-bold tracking-wider text-cyan-300 bg-cyan-950/80 border border-cyan-500/30 px-2.5 py-0.5 rounded-full uppercase shadow-xs">
-                <span>✦</span> Partner Network
-              </span>
-              <span className="inline-flex items-center text-[11px] font-extrabold text-emerald-300 bg-emerald-950/70 border border-emerald-500/30 px-2.5 py-0.5 rounded-full shadow-xs">
-                ₹300 / Referral
-              </span>
+          <div className="flex items-center space-x-3.5">
+            <div className="w-10 h-10 rounded-xl bg-iosBlue text-white flex items-center justify-center shrink-0 shadow-xs">
+              <Users className="w-5 h-5" />
             </div>
-
-            {/* Title & Copy */}
-            <div>
-              <h3 className="text-[17px] sm:text-lg font-extrabold text-white tracking-tight leading-snug">
-                Earn with Every Mobile Shop
-              </h3>
-              <p className="text-xs text-slate-300 font-normal leading-relaxed mt-1">
-                Distributors, wholesalers &amp; technicians: earn instant UPI payouts on Pro upgrades + receive a branded counter standee.
+            <div className="flex-1 pr-1">
+              <div className="flex items-center gap-2">
+                <h3 className="text-[15px] font-bold text-slate-900 tracking-tight">
+                  Partner Program
+                </h3>
+                <span className="text-[10px] font-extrabold text-iosBlue bg-iosBlue/15 px-2 py-0.5 rounded-full">
+                  ₹300 / Shop
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 mt-0.5 line-clamp-1">
+                Distributor network • Order standees &amp; earn payouts
               </p>
             </div>
-
-            {/* Feature Pills */}
-            <div className="flex flex-wrap gap-1.5 pt-0.5">
-              <span className="text-[11px] font-medium text-slate-200 bg-white/10 px-2.5 py-1 rounded-lg backdrop-blur-md">
-                ⚡ Direct UPI Transfer
-              </span>
-              <span className="text-[11px] font-medium text-slate-200 bg-white/10 px-2.5 py-1 rounded-lg backdrop-blur-md">
-                🪧 Free Acrylic Standee
-              </span>
-              <span className="text-[11px] font-medium text-slate-200 bg-white/10 px-2.5 py-1 rounded-lg backdrop-blur-md">
-                📊 Live Lead CRM
-              </span>
-            </div>
-
-            {/* Action CTA Button */}
-            <div className="pt-1.5">
-              <button
-                type="button"
-                className="w-full py-2.5 px-4 bg-white hover:bg-slate-100 text-slate-950 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-sm transition-all group-hover:bg-slate-50"
-              >
-                <span>Open Partner Portal</span>
-                <ChevronRight className="w-4 h-4 text-slate-900" />
-              </button>
-            </div>
           </div>
-        </div>
+          <div className="flex items-center gap-1 text-xs font-semibold text-iosBlue shrink-0">
+            <span>Open</span>
+            <ChevronRight className="w-4 h-4 text-iosBlue group-hover:translate-x-0.5 transition-transform" />
+          </div>
+        </button>
 
         {/* 30-Day Backup Alert Banner */}
         {backupWarning && (
@@ -664,57 +664,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           </div>
         )}
 
-        {/* Featured Lifetime Pro Upgrade Banner */}
-        {!isProActive ? (
-          <div className="bg-gradient-to-br from-amber-500 via-amber-600 to-yellow-600 rounded-[16px] p-4 text-white shadow-md shadow-amber-500/20 relative overflow-hidden">
-            <div className="absolute -right-4 -bottom-4 w-28 h-28 bg-white/10 rounded-full blur-xl pointer-events-none" />
-            <div className="flex items-center justify-between mb-2">
-              <span className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wider bg-black/20 backdrop-blur-md px-2.5 py-0.5 rounded-full border border-white/20">
-                <img src="/icon-192.png" alt="Pro" className="w-3.5 h-3.5 rounded-xs object-cover" />
-                <span>Pro Plan</span>
-              </span>
-              <span className="text-[11px] font-bold text-amber-100 bg-white/20 px-2.5 py-0.5 rounded-full">
-                ₹99/mo • ₹999/yr
-              </span>
-            </div>
-
-            <h3 className="text-[19px] font-extrabold tracking-tight leading-tight mt-1">
-              {t('upgrade_to_pro', language)}
-            </h3>
-            <p className="text-xs text-amber-100 font-medium mt-1 leading-relaxed">
-              Unlimited day book transactions, automatic cloud sync, and mobile repairs
-            </p>
-
-            <button
-              type="button"
-              onClick={handleOpenPaywall}
-              className="mt-3.5 w-full py-3 px-4 bg-white hover:bg-amber-50 text-slate-900 rounded-[12px] font-bold text-sm flex items-center justify-center gap-2 shadow-sm active:scale-[0.98] transition-all"
-            >
-              <Sparkles className="w-4 h-4 text-amber-600" />
-              <span>{t('upgrade_button', language)}</span>
-              <ChevronRight className="w-4 h-4 ml-0.5 text-slate-400" />
-            </button>
-          </div>
-        ) : (
-          <div className="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-[16px] p-4 text-white shadow-sm flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shadow-xs overflow-hidden">
-                <img src="/icon-192.png" alt="Pro" className="w-8 h-8 rounded-lg object-cover" />
-              </div>
-              <div>
-                <h3 className="text-[15px] font-bold tracking-tight">
-                  {isAdmin ? 'Superadmin Pro Access' : t('pro_member_badge', language)}
-                </h3>
-                <p className="text-xs text-emerald-100">
-                  {isAdmin
-                    ? 'All features & admin privileges fully unlocked.'
-                    : t('pro_active_desc', language)}
-                </p>
-              </div>
-            </div>
-            <CheckCircle2 className="w-6 h-6 text-white shrink-0" />
-          </div>
-        )}
 
         {/* Reports & Analytics Row */}
         <button
@@ -1136,6 +1085,45 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   </span>
                 </button>
               </div>
+            </div>
+          )}
+
+          {/* iOS Restore Purchases Row */}
+          {isIOS && (
+            <div className="mt-3 pt-3 border-t border-[#E5E5EA]">
+              <button
+                type="button"
+                onClick={handleRestorePurchases}
+                disabled={restoreStatus === 'restoring'}
+                className="w-full flex items-center justify-between py-1 text-left hover:opacity-80 active:scale-[0.99] transition-all disabled:opacity-50"
+              >
+                <div className="flex items-center space-x-2">
+                  <RefreshCw className={`w-4 h-4 text-iosBlue ${restoreStatus === 'restoring' ? 'animate-spin' : ''}`} />
+                  <span className="text-xs font-semibold text-iosBlue">Restore Purchases</span>
+                </div>
+                <div className="flex items-center space-x-1 text-xs text-[#8E8E93]">
+                  {restoreStatus === 'restoring' && <span className="text-slate-500 font-medium">Restoring...</span>}
+                  {restoreStatus === 'success' && (
+                    <span className="text-iosGreen font-semibold flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Restored
+                    </span>
+                  )}
+                  {restoreStatus === 'failed' && <span className="text-iosRed font-semibold">No active plan</span>}
+                  {restoreStatus === 'idle' && <ChevronRight className="w-4 h-4 text-[#C7C7CC]" />}
+                </div>
+              </button>
+              {restoreStatus === 'success' && (
+                <div className="mt-2 p-2 bg-green-50 text-iosGreen text-xs rounded-lg flex items-center gap-1.5 font-medium border border-green-200">
+                  <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                  <span>Purchases restored successfully!</span>
+                </div>
+              )}
+              {restoreStatus === 'failed' && (
+                <div className="mt-2 p-2 bg-red-50 text-iosRed text-xs rounded-lg flex items-center gap-1.5 font-medium border border-red-200">
+                  <Info className="w-3.5 h-3.5 shrink-0" />
+                  <span>No active subscriptions found for this Apple ID.</span>
+                </div>
+              )}
             </div>
           )}
         </div>
