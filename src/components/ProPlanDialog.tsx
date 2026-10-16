@@ -21,6 +21,8 @@ interface ProPlanDialogProps {
 const PLAN_META: Record<ProPlan, { blurb: string; icon: React.ReactNode }> = {
   monthly: { blurb: '1 month of full access', icon: <Calendar className="w-5 h-5" /> },
   yearly: { blurb: '12 months of full access', icon: <CalendarRange className="w-5 h-5" /> },
+  two_year: { blurb: '24 months of full access', icon: <CalendarRange className="w-5 h-5" /> },
+  three_year: { blurb: '36 months of full access', icon: <CalendarRange className="w-5 h-5" /> },
   lifetime: { blurb: 'Full access, never expires', icon: <InfinityIcon className="w-5 h-5" /> },
 };
 

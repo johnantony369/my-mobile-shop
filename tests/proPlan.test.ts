@@ -41,6 +41,16 @@ describe('computeProExpiry', () => {
     expect([exp.getFullYear(), exp.getMonth(), exp.getDate()]).toEqual([2027, 9, 3]);
   });
 
+  it('two_year expires two years (24 months) from now', () => {
+    const exp = new Date(computeProExpiry('two_year', NOW)!);
+    expect([exp.getFullYear(), exp.getMonth(), exp.getDate()]).toEqual([2028, 9, 3]);
+  });
+
+  it('three_year expires three years (36 months) from now', () => {
+    const exp = new Date(computeProExpiry('three_year', NOW)!);
+    expect([exp.getFullYear(), exp.getMonth(), exp.getDate()]).toEqual([2029, 9, 3]);
+  });
+
   it('renewing an unexpired plan extends from the current expiry', () => {
     const current = new Date(2026, 9, 20, 12).toISOString();
     const exp = new Date(computeProExpiry('monthly', NOW, current)!);

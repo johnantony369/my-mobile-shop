@@ -87,8 +87,8 @@ export interface AppSettings extends SyncMetadata {
   language: Language;
   firstLaunchDate: string; // 'YYYY-MM-DD' or ISO
   activated: boolean;
-  proPlan?: 'monthly' | 'yearly' | 'lifetime' | null; // plan granted when activated
-  proExpiresAt?: string | null; // ISO expiry for monthly/yearly; null/absent = lifetime
+  proPlan?: 'monthly' | 'yearly' | 'two_year' | 'three_year' | 'lifetime' | null; // plan granted when activated
+  proExpiresAt?: string | null; // ISO expiry for monthly/yearly/multi-year; null/absent = lifetime
   lastBackupAt: string | null;
   showRepairs: boolean; // toggle for repairs module
   showStock?: boolean; // toggle for stock/inventory module

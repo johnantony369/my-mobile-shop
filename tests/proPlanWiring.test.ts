@@ -22,11 +22,11 @@ describe('Pro plan wiring (monthly / yearly / lifetime)', () => {
     expect(src).not.toContain('window.confirm');
   });
 
-  it('ProPlanDialog lists all three plans', () => {
+  it('ProPlanDialog lists all plans', () => {
     const src = read('../src/components/ProPlanDialog.tsx');
     expect(src).toContain('PRO_PLANS.map');
     const util = read('../src/utils/proPlan.ts');
-    expect(util).toMatch(/PRO_PLANS: ProPlan\[\] = \['monthly', 'yearly', 'lifetime'\]/);
+    expect(util).toMatch(/PRO_PLANS: ProPlan\[\] = \['monthly', 'yearly', 'two_year', 'three_year', 'lifetime'\]/);
   });
 
   it('the app enforces expiry instead of trusting the raw activated flag', () => {

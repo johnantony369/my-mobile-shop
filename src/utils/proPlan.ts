@@ -8,13 +8,15 @@
  * Accounts activated before plans existed have `activated: true` and no
  * `proExpiresAt`, which is treated as lifetime.
  */
-export type ProPlan = 'monthly' | 'yearly' | 'lifetime';
+export type ProPlan = 'monthly' | 'yearly' | 'two_year' | 'three_year' | 'lifetime';
 
-export const PRO_PLANS: ProPlan[] = ['monthly', 'yearly', 'lifetime'];
+export const PRO_PLANS: ProPlan[] = ['monthly', 'yearly', 'two_year', 'three_year', 'lifetime'];
 
 export const PRO_PLAN_LABELS: Record<ProPlan, string> = {
   monthly: 'Monthly',
   yearly: 'Yearly',
+  two_year: '2-Year',
+  three_year: '3-Year',
   lifetime: 'Lifetime',
 };
 
@@ -47,7 +49,11 @@ export function computeProExpiry(
       base = current;
     }
   }
-  return addMonths(base, plan === 'monthly' ? 1 : 12).toISOString();
+  const months =
+    plan === 'monthly' ? 1 :
+    plan === 'yearly' ? 12 :
+    plan === 'two_year' ? 24 : 36;
+  return addMonths(base, months).toISOString();
 }
 
 interface ProState {

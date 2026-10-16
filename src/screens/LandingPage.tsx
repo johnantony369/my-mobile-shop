@@ -1,7 +1,17 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ArrowRight, Check, ChevronDown, Menu, X, ShieldCheck, WifiOff, Mail } from 'lucide-react';
+import { ArrowRight, Check, ChevronDown, Menu, X, ShieldCheck, WifiOff, Mail, Globe, Sparkles } from 'lucide-react';
 import { LegalModal } from '../components/LegalModal';
+import {
+  CountryCode,
+  PRICING_CONFIG,
+  SUPPORTED_COUNTRIES,
+  formatPrice,
+  calculateSavings,
+  detectVisitorCountry,
+  saveVisitorCountry,
+  PlanId,
+} from '../utils/pricing';
 
 interface LandingPageProps { isAuthenticated?: boolean }
 const faqs = [
@@ -16,6 +26,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isAuthenticated = fals
   const [menu, setMenu] = useState(false);
   const [faq, setFaq] = useState<number | null>(null);
   const [legal, setLegal] = useState<'privacy' | 'terms' | null>(null);
+  const [selectedCountry, setSelectedCountry] = useState<CountryCode>(() => detectVisitorCountry());
+
+  const handleCountryChange = (country: CountryCode) => {
+    setSelectedCountry(country);
+    saveVisitorCountry(country);
+  };
+
   const start = () => navigate(isAuthenticated ? '/app' : '/login?mode=register');
   const signin = () => navigate(isAuthenticated ? '/app' : '/login');
   return (
