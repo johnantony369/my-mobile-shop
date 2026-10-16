@@ -307,6 +307,76 @@ export function saveVisitorCountry(code: CountryCode): void {
   }
 }
 
+let cachedAutoCountry: CountryCode | null = null;
+
+export interface ResolveGeoOptions {
+  bypassCache?: boolean;
+  timeoutMs?: number;
+}
+
+/**
+ * Reset cached country (primarily for unit tests).
+ */
+export function _resetCachedAutoCountry(): void {
+  cachedAutoCountry = null;
+}
+
+/**
+ * Resolves visitor country automatically.
+ * Priority:
+ * 1. Explicit user selection saved in localStorage.
+ * 2. In-memory cached result from previous resolution.
+ * 3. Vercel edge geolocation (/api/geo).
+ * 4. Client timezone heuristic (detectVisitorCountry).
+ * 5. Default to 'IN'.
+ */
+export async function resolveVisitorCountry(options: ResolveGeoOptions = {}): Promise<CountryCode> {
+  const storage = getStorage();
+  if (storage) {
+    const saved = storage.getItem(STORAGE_KEY_COUNTRY) as CountryCode | null;
+    if (saved && PRICING_CONFIG[saved]) {
+      return saved;
+    }
+  }
+
+  if (!options.bypassCache && cachedAutoCountry && PRICING_CONFIG[cachedAutoCountry]) {
+    return cachedAutoCountry;
+  }
+
+  const timeoutMs = options.timeoutMs ?? 1500;
+
+  try {
+    if (typeof fetch !== 'undefined') {
+      const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+      const timeoutId = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
+
+      const res = await fetch('/api/geo', {
+        signal: controller ? controller.signal : undefined,
+      });
+
+      if (timeoutId) clearTimeout(timeoutId);
+
+      if (res.ok) {
+        const data = await res.json();
+        const code = (data?.country || '').toUpperCase();
+        if (code && PRICING_CONFIG[code as CountryCode]) {
+          cachedAutoCountry = code as CountryCode;
+          return cachedAutoCountry;
+        }
+        // If country is outside supported GCC/India, route to Canonical USD
+        cachedAutoCountry = 'US';
+        return 'US';
+      }
+    }
+  } catch {
+    // Timeout, offline, or local dev: fall back smoothly
+  }
+
+  const fallback = detectVisitorCountry();
+  cachedAutoCountry = fallback;
+  return fallback;
+}
+
 /**
  * Server-side / trusted validation:
  * Verifies that the given plan and amount match the trusted configuration for the given country.
