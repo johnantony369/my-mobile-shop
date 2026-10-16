@@ -1,8 +1,14 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FileText, ArrowLeft, Mail } from 'lucide-react';
+import { FileText, ArrowLeft, Mail, ShieldCheck } from 'lucide-react';
 
 export const TermsScreen: React.FC = () => {
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.title = 'Terms of Service - My Mobile Shop';
+    }
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#F2F2F7] text-slate-800 font-sans selection:bg-iosBlue/20 pb-16">
       {/* Top Bar */}
@@ -35,12 +41,12 @@ export const TermsScreen: React.FC = () => {
               Terms of Service
             </h1>
             <p className="text-xs text-slate-500 mt-1.5">
-              Last updated: October 8, 2026 • Governing My Mobile Shop (Web & Mobile Apps)
+              Last updated: October 16, 2026 • Governing My Mobile Shop (Web & Mobile Apps)
             </p>
           </div>
 
           <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 text-xs text-slate-700 leading-relaxed">
-            <strong>Welcome to My Mobile Shop.</strong> By downloading, installing, or accessing the application (online at mymobileshop.online or via Android application), you agree to be bound by these Terms of Service.
+            <strong>Welcome to My Mobile Shop.</strong> By downloading, installing, or accessing the application (online at mymobileshop.online or via Android and iOS applications), you agree to be bound by these Terms of Service.
           </div>
 
           <section className="space-y-2">
@@ -53,11 +59,12 @@ export const TermsScreen: React.FC = () => {
           </section>
 
           <section className="space-y-2">
-            <h2 className="text-base font-bold text-slate-900">
-              2. User Accounts & Security
+            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-iosBlue" />
+              2. User Accounts & Google Authentication
             </h2>
             <p className="text-xs leading-relaxed text-slate-600">
-              You are responsible for keeping your device secure and safeguarding any authentication credentials. While My Mobile Shop offers local offline operation and encrypted cloud backups, you are strongly advised to perform regular CSV exports of critical financial daybooks.
+              You are responsible for keeping your device secure and safeguarding any authentication credentials. You may authenticate into My Mobile Shop via Google Sign-In, Phone OTP, or Shop ID credentials. When using Google Sign-In, you agree to comply with Google&apos;s applicable terms and policies. Cloud backup synchronization utilizes Google Firebase to secure your digital records.
             </p>
           </section>
 
@@ -105,8 +112,12 @@ export const TermsScreen: React.FC = () => {
               Account Deletion
             </Link>
             <span className="text-slate-300">•</span>
-            <Link to="/app" className="text-iosBlue hover:underline font-medium">
-              Launch App
+            <Link to="/login" className="text-iosBlue hover:underline font-medium">
+              Sign In
+            </Link>
+            <span className="text-slate-300">•</span>
+            <Link to="/" className="text-iosBlue hover:underline font-medium">
+              Home
             </Link>
           </div>
         </div>

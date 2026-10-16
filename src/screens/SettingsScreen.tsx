@@ -1468,14 +1468,30 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               </a>
             </div>
             <div className="flex justify-between items-center py-1.5 border-b border-[#E5E5EA]">
-              <span>Legal & Policies</span>
-              <button
-                type="button"
-                onClick={() => setIsLegalModalOpen(true)}
-                className="text-xs font-semibold text-iosBlue hover:underline"
-              >
-                Privacy Policy & Terms
-              </button>
+              <span>Privacy Policy</span>
+              <div className="flex items-center gap-2">
+                <a
+                  href="/privacy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs font-semibold text-iosBlue hover:underline"
+                >
+                  /privacy
+                </a>
+              </div>
+            </div>
+            <div className="flex justify-between items-center py-1.5 border-b border-[#E5E5EA]">
+              <span>Terms of Service</span>
+              <div className="flex items-center gap-2">
+                <a
+                  href="/terms"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs font-semibold text-iosBlue hover:underline"
+                >
+                  /terms
+                </a>
+              </div>
             </div>
             <div className="py-1 text-center font-medium text-iosGreen">
               {t('offline_notice', language)}

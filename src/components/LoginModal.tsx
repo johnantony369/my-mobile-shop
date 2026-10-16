@@ -22,7 +22,6 @@ import {
   AlertCircle,
   CheckCircle2
 } from 'lucide-react';
-import { LegalModal } from './LegalModal';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -39,10 +38,6 @@ export function LoginModal({
   // Auth Method View: 'password' | 'phone_number' | 'phone_otp'
   const [view, setView] = useState<'password' | 'phone_number' | 'phone_otp'>('password');
   const [mode, setMode] = useState<'login' | 'register'>('login');
-
-  // Legal Modal State
-  const [isLegalOpen, setIsLegalOpen] = useState(false);
-  const [legalTab, setLegalTab] = useState<'privacy' | 'terms'>('privacy');
 
   // Password Form State
   const [loginId, setLoginId] = useState('');
@@ -536,37 +531,26 @@ export function LoginModal({
         <div className="mt-5 pt-3.5 border-t border-slate-100 text-center">
           <p className="text-[11px] text-slate-400">
             By continuing, you agree to our{' '}
-            <button
-              type="button"
-              onClick={() => {
-                setLegalTab('terms');
-                setIsLegalOpen(true);
-              }}
+            <a
+              href="/terms"
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-iosBlue hover:underline font-medium"
             >
               Terms of Service
-            </button>
+            </a>
             {' & '}
-            <button
-              type="button"
-              onClick={() => {
-                setLegalTab('privacy');
-                setIsLegalOpen(true);
-              }}
+            <a
+              href="/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-iosBlue hover:underline font-medium"
             >
               Privacy Policy
-            </button>
+            </a>
           </p>
         </div>
       </div>
-
-      {/* Legal & Trust Modal */}
-      <LegalModal
-        isOpen={isLegalOpen}
-        onClose={() => setIsLegalOpen(false)}
-        initialTab={legalTab}
-      />
     </div>
   );
 

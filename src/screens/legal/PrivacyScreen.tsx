@@ -1,8 +1,14 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ShieldCheck, Database, Lock, Mail, ArrowLeft, ArrowUpRight } from 'lucide-react';
+import { ShieldCheck, Database, Lock, Mail, ArrowLeft, ArrowUpRight, KeyRound } from 'lucide-react';
 
 export const PrivacyScreen: React.FC = () => {
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.title = 'Privacy Policy - My Mobile Shop';
+    }
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#F2F2F7] text-slate-800 font-sans selection:bg-iosBlue/20 pb-16">
       {/* Top Bar */}
@@ -35,7 +41,7 @@ export const PrivacyScreen: React.FC = () => {
               Privacy Policy
             </h1>
             <p className="text-xs text-slate-500 mt-1.5">
-              Last updated: October 8, 2026 • Effective for My Mobile Shop (Web & Android)
+              Last updated: October 16, 2026 • Effective for My Mobile Shop (Web & Mobile Apps)
             </p>
           </div>
 
@@ -66,10 +72,27 @@ export const PrivacyScreen: React.FC = () => {
             </p>
           </section>
 
-          {/* Section 3 */}
+          {/* Section 3: Google User Data & Limited Use Policy */}
+          <section className="space-y-2">
+            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <KeyRound className="w-4 h-4 text-iosBlue" />
+              3. Google API Services User Data Policy & Limited Use Disclosure
+            </h2>
+            <p className="text-xs leading-relaxed text-slate-600">
+              When you choose to authenticate via <strong>Google Sign-In</strong>, My Mobile Shop accesses your basic profile information (such as your Google display name, email address, profile picture, and Google UID) strictly to authenticate your account and securely associate your cloud daybook records.
+            </p>
+            <ul className="list-disc pl-5 text-xs text-slate-600 space-y-1.5 leading-relaxed">
+              <li><strong>Limited Purpose:</strong> Google user data is utilized exclusively for user authentication, access control, and cloud backup synchronization of your shop&apos;s ledger.</li>
+              <li><strong>No Third-Party Sharing:</strong> We do not sell, rent, license, or disclose your Google user data to third parties, advertising exchanges, or data brokers.</li>
+              <li><strong>No AI/ML Training:</strong> Information received through Google APIs is never used to train generalized artificial intelligence or machine learning models.</li>
+              <li><strong>Limited Use Compliance:</strong> My Mobile Shop&apos;s use and transfer to any other app of information received from Google APIs will adhere to the <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener noreferrer" className="text-iosBlue font-semibold hover:underline">Google API Services User Data Policy</a>, including the Limited Use requirements.</li>
+            </ul>
+          </section>
+
+          {/* Section 4 */}
           <section className="space-y-2">
             <h2 className="text-base font-bold text-slate-900">
-              3. Information We Collect
+              4. Information We Collect
             </h2>
             <ul className="list-disc pl-5 text-xs text-slate-600 space-y-1.5 leading-relaxed">
               <li><strong>Account Credentials:</strong> Shop ID, email address, or phone number used to verify your business account.</li>
@@ -78,10 +101,10 @@ export const PrivacyScreen: React.FC = () => {
             </ul>
           </section>
 
-          {/* Section 4 */}
+          {/* Section 5 */}
           <section className="space-y-2">
             <h2 className="text-base font-bold text-slate-900">
-              4. Data Retention & Account Deletion
+              5. Data Retention & Account Deletion
             </h2>
             <p className="text-xs leading-relaxed text-slate-600">
               You maintain total ownership of your data. You can export complete CSV / JSON daybook ledgers at any time from Settings. You can also wipe all local records or initiate complete account and cloud data deletion via our in-app settings or through our dedicated{' '}
@@ -91,24 +114,24 @@ export const PrivacyScreen: React.FC = () => {
             </p>
           </section>
 
-          {/* Section 5 */}
+          {/* Section 6 */}
           <section className="space-y-2">
             <h2 className="text-base font-bold text-slate-900">
-              5. Children’s Privacy
+              6. Children’s Privacy
             </h2>
             <p className="text-xs leading-relaxed text-slate-600">
               My Mobile Shop is a commercial daybook tool intended solely for business owners and technicians aged 18 and older. We do not knowingly solicit or collect data from children under 13.
             </p>
           </section>
 
-          {/* Section 6 */}
+          {/* Section 7 */}
           <section className="space-y-2 pt-4 border-t border-slate-100">
             <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
               <Mail className="w-4 h-4 text-iosBlue" />
-              6. Contact & Data Privacy Officer
+              7. Contact & Data Privacy Officer
             </h2>
             <p className="text-xs leading-relaxed text-slate-600">
-              For any questions regarding this Privacy Policy or your personal data rights, please email us directly at{' '}
+              For any questions regarding this Privacy Policy, Google user data handling, or your personal data rights, please email us directly at{' '}
               <a
                 href="mailto:support@mymobileshop.online"
                 className="text-iosBlue font-semibold hover:underline"
@@ -125,11 +148,15 @@ export const PrivacyScreen: React.FC = () => {
             </Link>
             <span className="text-slate-300">•</span>
             <Link to="/delete-account" className="text-iosBlue hover:underline font-medium">
-              Data & Account Deletion Request
+              Data &amp; Account Deletion Request
             </Link>
             <span className="text-slate-300">•</span>
-            <Link to="/app" className="text-iosBlue hover:underline font-medium">
-              Open App Counter
+            <Link to="/login" className="text-iosBlue hover:underline font-medium">
+              Sign In
+            </Link>
+            <span className="text-slate-300">•</span>
+            <Link to="/" className="text-iosBlue hover:underline font-medium">
+              Home
             </Link>
           </div>
         </div>

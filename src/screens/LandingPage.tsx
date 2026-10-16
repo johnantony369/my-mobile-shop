@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { ArrowRight, Check, ChevronDown, Menu, X, ShieldCheck, WifiOff, Mail } from 'lucide-react';
 import { LegalModal } from '../components/LegalModal';
 
@@ -216,7 +216,32 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isAuthenticated = fals
       <section id="faq" className="mx-auto max-w-4xl px-5 py-20 sm:px-8 sm:py-24"><div className="text-center"><p className="text-xs font-bold uppercase tracking-[.14em] text-[#1769FF]">FAQ</p><h2 className="mt-3 text-3xl font-bold tracking-[-.05em] sm:text-5xl">Questions before you start.</h2></div><div className="mt-10 divide-y divide-slate-200 border-y border-slate-200">{faqs.map(([q,a],i) => <div key={q}><button onClick={() => setFaq(faq === i ? null : i)} className="flex w-full justify-between gap-4 py-5 text-left text-sm font-semibold" aria-expanded={faq === i}>{q}<ChevronDown className={`size-5 text-[#1769FF] ${faq === i ? 'rotate-180' : ''}`} /></button>{faq === i && <p className="pb-5 text-sm leading-6 text-slate-600">{a}</p>}</div>)}</div></section>
       <section className="px-5 pb-20 sm:px-8"><div className="mx-auto max-w-6xl rounded-[28px] bg-[#1769FF] px-6 py-14 text-center text-white sm:px-12"><h2 className="text-3xl font-bold tracking-[-.05em] sm:text-5xl">Your counter deserves a clearer view.</h2><button onClick={start} className="mt-7 rounded-full bg-white px-7 py-3 text-sm font-bold text-[#101828]">Get started <ArrowRight className="inline size-4" /></button></div></section>
     </main>
-    <footer className="border-t border-slate-200 px-5 py-10 sm:px-8"><div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-5 text-xs text-slate-500"><span className="font-bold text-[#101828]">My Mobile Shop</span><div className="flex gap-5"><button onClick={() => navigate('/partner')}>Partner program</button><button onClick={() => setLegal('privacy')}>Privacy</button><button onClick={() => setLegal('terms')}>Terms</button><a href="mailto:support@mymobileshop.online"><Mail className="inline size-3.5" /> Support</a></div><span>© {new Date().getFullYear()} My Mobile Shop</span></div></footer><LegalModal isOpen={!!legal} onClose={() => setLegal(null)} initialTab={legal || 'privacy'} />
+    <footer className="border-t border-slate-200 px-5 py-10 sm:px-8">
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-5 text-xs text-slate-500">
+        <span className="font-bold text-[#101828]">My Mobile Shop</span>
+        <div className="flex flex-wrap items-center gap-5">
+          <Link to="/partner" className="hover:text-slate-900 transition-colors">
+            Partner program
+          </Link>
+          <Link to="/privacy" className="hover:text-slate-900 transition-colors">
+            Privacy Policy
+          </Link>
+          <Link to="/terms" className="hover:text-slate-900 transition-colors">
+            Terms of Service
+          </Link>
+          <a
+            href="mailto:support@mymobileshop.online"
+            className="hover:text-slate-900 transition-colors flex items-center gap-1"
+          >
+            <Mail className="inline size-3.5" /> Support
+          </a>
+        </div>
+        <span>© {new Date().getFullYear()} My Mobile Shop</span>
+      </div>
+    </footer>
+    {legal && (
+      <LegalModal isOpen={!!legal} onClose={() => setLegal(null)} initialTab={legal || 'privacy'} />
+    )}
   </div>
   );
 };

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
+import { isiOSNativeApp } from '../utils/platform';
 import {
   X,
   ScanBarcode,
@@ -165,7 +166,11 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
         console.warn('Camera barcode scanner error:', err);
         const errMsg = err instanceof Error ? err.message : String(err);
         if (errMsg.toLowerCase().includes('permission') || errMsg.toLowerCase().includes('notallowed')) {
-          setCameraError('Camera permission was denied. Please allow camera access in browser settings or enter barcode manually.');
+          setCameraError(
+            isiOSNativeApp()
+              ? 'Camera access was denied. Please allow camera access in iOS Settings > My Mobile Shop or enter barcode manually.'
+              : 'Camera permission was denied. Please allow camera access in browser settings or enter barcode manually.'
+          );
         } else {
           setCameraError('Unable to open camera stream. You can enter the barcode number manually below.');
         }
@@ -227,7 +232,7 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
   return createPortal(
     <div className="fixed inset-0 z-50 flex flex-col bg-black text-white select-none">
       {/* Top Header Bar */}
-      <div className="pt-safe flex items-center justify-between px-4 py-3 bg-black/80 backdrop-blur-md border-b border-white/10 z-20">
+      <div className="pt-[calc(env(safe-area-inset-top)+8px)] flex items-center justify-between px-4 py-3 bg-black/80 backdrop-blur-md border-b border-white/10 z-20">
         <div className="flex items-center space-x-2">
           <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
             <ScanBarcode className="w-4 h-4 text-white" />
@@ -279,7 +284,7 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
         {!isManualInput ? (
           <>
             {/* html5-qrcode reader element */}
-            <div id={readerElementId} className="w-full h-full max-w-lg mx-auto flex items-center justify-center" />
+            <div id={readerElementId} className="w-full h-full max-w-lg mx-auto flex items-center justify-center [&_video]:object-cover [&_video]:w-full [&_video]:h-full" />
 
             {/* Viewfinder Overlay Frame */}
             {scannerReady && (

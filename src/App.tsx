@@ -24,7 +24,8 @@ import { Language } from './types';
 import { pullCloudChanges } from './firebase/sync';
 import { scheduleDailyNotification } from './utils/notifications';
 import { initHardwareBackButton } from './utils/hardwareBackButton';
-import { isiOSNativeApp } from './utils/platform';
+import { StatusBar, Style } from '@capacitor/status-bar';
+import { isiOSNativeApp, isNativeApp } from './utils/platform';
 import { initRevenueCat } from './utils/revenueCat';
 
 export default function App() {
@@ -54,6 +55,14 @@ export default function App() {
 
     // Request OS to keep storage persistent
     requestPersistentStorage();
+
+    // Initialize native status bar style (dark icons for light app background)
+    if (isNativeApp()) {
+      StatusBar.setStyle({ style: Style.Light }).catch(() => {});
+      if (!isiOSNativeApp()) {
+        StatusBar.setBackgroundColor({ color: '#F2F2F7' }).catch(() => {});
+      }
+    }
 
     // Initialize RevenueCat for iOS native IAP
     initRevenueCat(isiOSNativeApp()).catch((err) => console.warn('RevenueCat init error:', err));

@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import {
   loginWithPassword,
   registerWithPassword,
@@ -22,7 +22,6 @@ import {
   CheckCircle2,
   ArrowRight
 } from 'lucide-react';
-import { LegalModal } from '../components/LegalModal';
 import { LoadingScreen } from '../components/LoadingScreen';
 
 interface LoginScreenProps {
@@ -37,10 +36,6 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
   const [mode, setMode] = useState<'login' | 'register'>(
     searchParams.get('mode') === 'register' ? 'register' : 'login'
   );
-
-  // Legal Modal State
-  const [isLegalOpen, setIsLegalOpen] = useState(false);
-  const [legalTab, setLegalTab] = useState<'privacy' | 'terms'>('privacy');
 
   // Password State
   const [loginId, setLoginId] = useState('');
@@ -493,37 +488,26 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
         <div className="mt-5 pt-3.5 border-t border-slate-100 text-center">
           <p className="text-[11px] text-slate-400">
             By continuing, you agree to our{' '}
-            <button
-              type="button"
-              onClick={() => {
-                setLegalTab('terms');
-                setIsLegalOpen(true);
-              }}
+            <Link
+              to="/terms"
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-iosBlue hover:underline font-medium"
             >
               Terms of Service
-            </button>
+            </Link>
             {' & '}
-            <button
-              type="button"
-              onClick={() => {
-                setLegalTab('privacy');
-                setIsLegalOpen(true);
-              }}
+            <Link
+              to="/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-iosBlue hover:underline font-medium"
             >
               Privacy Policy
-            </button>
+            </Link>
           </p>
         </div>
       </div>
-
-      {/* Legal & Trust Modal */}
-      <LegalModal
-        isOpen={isLegalOpen}
-        onClose={() => setIsLegalOpen(false)}
-        initialTab={legalTab}
-      />
     </div>
   );
 }

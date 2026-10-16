@@ -1,4 +1,6 @@
 import { formatINR } from '../i18n';
+import { Share } from '@capacitor/share';
+import { isNativeApp } from './platform';
 
 export interface ShareDataInput {
   shopName: string;
@@ -27,7 +29,30 @@ export function buildShareSummaryText(data: ShareDataInput): string {
 }
 
 export async function shareSummary(text: string, title = 'Summary'): Promise<boolean> {
-  if (navigator.share) {
+  // 1. Native Capacitor Share (iOS Activity Sheet / Android Share Sheet)
+  if (isNativeApp()) {
+    try {
+      await Share.share({
+        title,
+        text,
+        dialogTitle: title,
+      });
+      return true;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (
+        msg.toLowerCase().includes('cancel') ||
+        msg.toLowerCase().includes('abort') ||
+        msg.toLowerCase().includes('dismiss')
+      ) {
+        return false;
+      }
+      // If native sharing fails unexpectedly, fall through to web share / URL
+    }
+  }
+
+  // 2. Web Share API
+  if (typeof navigator !== 'undefined' && navigator.share) {
     try {
       await navigator.share({
         title,
@@ -39,12 +64,16 @@ export async function shareSummary(text: string, title = 'Summary'): Promise<boo
       if (err instanceof Error && err.name === 'AbortError') {
         return false;
       }
-      // If native share fails unexpectedly, fall back to WhatsApp URL
     }
   }
 
-  // Fallback: Open WhatsApp web / mobile
+  // 3. Fallback: Open WhatsApp web / mobile
   const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
   window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
   return true;
 }
+
+export async function shareText(text: string, title = 'Share'): Promise<boolean> {
+  return shareSummary(text, title);
+}
+
